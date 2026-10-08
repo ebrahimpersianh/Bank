@@ -103,7 +103,7 @@ fun QuickCategoryDialog(
             ) {
                 if (t != null) {
                     val amount = ir.sadteam.loancalc.core.fmt(rialToToman(t.amount.toLong()).toDouble()).faDigits()
-                    Text("$amount تومان", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                    Text("$amount ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
                     Text(t.description, color = AppMuted, fontSize = 12.sp, maxLines = 1)
                     if (CategoryLearning.counterpartyOf(t) != null) {
                         Text("دفعه‌ی بعد برای همین طرف، خودم همین دسته را می‌زنم.", color = AppMuted, fontSize = 11.sp)

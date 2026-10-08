@@ -174,12 +174,12 @@ class WeeklySummaryWorker @AssistedInject constructor(
         val top = week.filter { it.type == out }.groupBy { it.category ?: "سایر" }
             .mapValues { (_, l) -> l.sumOf { it.amount } }.maxByOrNull { it.value }
         val text = buildString {
-            append("خرج ${spent.rialToFaCompact()} · درآمد ${earned.rialToFaCompact()} تومان")
+            append("خرج ${spent.rialToFaCompact()} · درآمد ${earned.rialToFaCompact()} ${ir.sadteam.loancalc.core.CoreMoneyUnit.label}")
             if (prevSpent > 0) {
                 val d = ((spent - prevSpent) * 100 / prevSpent).toInt()
                 append(if (d > 0) " · ${toFa(d)}٪ بیشتر از هفته‌ی قبل" else if (d < 0) " · ${toFa(-d)}٪ کمتر از هفته‌ی قبل" else "")
             }
-            top?.let { append("\nبیشترین خرج: ${it.key} (${it.value.rialToFaCompact()} تومان)") }
+            top?.let { append("\nبیشترین خرج: ${it.key} (${it.value.rialToFaCompact()} ${ir.sadteam.loancalc.core.CoreMoneyUnit.label})") }
         }
         notify(applicationContext, 918_990, "خلاصه‌ی این هفته", text, "report")
         ir.sadteam.loancalc.data.UsageStats.action("weekly_summary_sent")

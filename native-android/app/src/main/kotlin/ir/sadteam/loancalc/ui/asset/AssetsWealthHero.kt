@@ -132,7 +132,7 @@ internal fun TotalWealthHero(
                 }
                 // واحد تو کارتِ خلاصه میاد - قاعده‌ی عددِ TOKENS.md، مثلِ AccountsTotalHero.
                 Text(
-                    "تومان",
+                    "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                     color = HeroMuted,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -157,7 +157,7 @@ internal fun TotalWealthHero(
                         val ago = trend.lastIndex - index
                         if (ago == 0) "امروز" else "${ago.toFa()} روز پیش"
                     },
-                    valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
+                    valueLabel = { value -> "${value.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}" },
                 )
                 // برچسبِ دو سرِ محور، مثلِ کارتِ خانه - جای قرصِ بزرگِ قبلی که کارت را بلند می‌کرد.
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
@@ -242,7 +242,7 @@ private fun NetWorthCard(total: Double, liabilities: Double, loans: Double, owe:
             }
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    maskIfPrivate(masked, (if (net < 0) "−" else "") + kotlin.math.abs(net).rialToFaCompact()) + " تومان",
+                    maskIfPrivate(masked, (if (net < 0) "−" else "") + kotlin.math.abs(net).rialToFaCompact()) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                     color = if (net < 0) AppDanger else AppPrimaryInk,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Black,

@@ -140,7 +140,7 @@ fun DebtPayoffScreen(onBack: () -> Unit, vm: DebtPayoffViewModel = hiltViewModel
     var extraRaw by rememberSaveable { mutableStateOf("") }
     var mode by rememberSaveable { mutableIntStateOf(0) }
     // فیلد تومان است (قاعده‌ی برنامه)، محاسبه ریال.
-    val extra = (extraRaw.toDoubleOrNull() ?: 0.0) * 10
+    val extra = (extraRaw.toDoubleOrNull() ?: 0.0) * ir.sadteam.loancalc.ui.jibak.unitDivD
     val base = remember(items) { simulatePayoff(items, 0.0, false) }
     val plan = remember(items, extra, mode) { simulatePayoff(items, extra, mode == 1) }
 
@@ -167,8 +167,8 @@ fun DebtPayoffScreen(onBack: () -> Unit, vm: DebtPayoffViewModel = hiltViewModel
         item {
             AppCard {
                 Text("کلِ بدهی", color = AppMuted, fontSize = 12.sp)
-                Text(maskIfPrivate(privacy, items.sumOf { it.balance }.rialToFaCompact()) + " تومان", color = AppText, fontSize = 22.sp, fontWeight = FontWeight.Black)
-                Text("قسطِ ماهانه‌ی فعلی ${maskIfPrivate(privacy, items.sumOf { it.minPayment }.rialToFaCompact())} تومان · بدونِ مبلغِ اضافه ${toFa(base.months)} ماه تا تسویه", color = AppMuted, fontSize = 12.sp)
+                Text(maskIfPrivate(privacy, items.sumOf { it.balance }.rialToFaCompact()) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppText, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                Text("قسطِ ماهانه‌ی فعلی ${maskIfPrivate(privacy, items.sumOf { it.minPayment }.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} · بدونِ مبلغِ اضافه ${toFa(base.months)} ماه تا تسویه", color = AppMuted, fontSize = 12.sp)
             }
         }
         item {
@@ -184,7 +184,7 @@ fun DebtPayoffScreen(onBack: () -> Unit, vm: DebtPayoffViewModel = hiltViewModel
                     colors = appFieldColors(),
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    suffix = { Text("تومان") },
+                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}") },
                     placeholder = { Text("مثلاً ۲٬۰۰۰٬۰۰۰") },
                 )
                 if (extra > 0) Text(numberToWordsFa(extra / 10) + " تومان", color = AppMuted, fontSize = 11.5.sp, modifier = Modifier.padding(top = 4.dp))

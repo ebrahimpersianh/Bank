@@ -128,7 +128,7 @@ internal fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Ca
                                 )
                             }
                             Text(
-                                ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt((p.amount) / 10)} تومان"),
+                                ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt((p.amount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
                                 color = if (p.type == TransactionType.DEPOSIT.name) AppPrimary else AppDanger,
                                 fontSize = 13.sp,
                             )
@@ -207,8 +207,8 @@ private fun AddRecurringForm(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-            val amountRial = (amountText.toLongOrNull() ?: 0L) * 10
+                suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+            val amountRial = (amountText.toLongOrNull() ?: 0L) * ir.sadteam.loancalc.ui.jibak.unitDiv
             if (amountRial > 0) {
                 Text(
                     "${numberToWordsFa((amountRial / 10).toDouble())} تومان",
@@ -243,7 +243,7 @@ private fun AddRecurringForm(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             GradientButton(
                 onClick = {
-                    val amount = (amountText.toDoubleOrNull() ?: 0.0) * 10
+                    val amount = (amountText.toDoubleOrNull() ?: 0.0) * ir.sadteam.loancalc.ui.jibak.unitDivD
                     error = when {
                         name.isBlank() -> "اسم رو وارد کن"
                         amount <= 0 -> "مبلغ رو وارد کن"

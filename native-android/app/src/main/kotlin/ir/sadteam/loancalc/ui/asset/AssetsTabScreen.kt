@@ -395,7 +395,7 @@ fun AssetsTabScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(e.name, color = AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
                                 marketPrices[e.symbol]?.let { p ->
-                                    Text("${p.rialToFaCompact()} تومان", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("${p.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }

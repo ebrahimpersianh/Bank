@@ -170,7 +170,7 @@ fun ChequeDetailScreen(
                             modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(typeColor.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 3.dp),
                         )
                     }
-                    DetailRow("مبلغ", ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman((cheque.amount).toLong()).toDouble())} تومان"), big = true)
+                    DetailRow("مبلغ", ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman((cheque.amount).toLong()).toDouble())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"), big = true)
                     DetailRow("شماره چک", toFa(cheque.chequeNumber))
                     // smart-cast مستقیم رو یه property از یه ماژول دیگه (:data) مجاز نیست، برای
                     // همین اول تو یه val محلی می‌ریزیمش.

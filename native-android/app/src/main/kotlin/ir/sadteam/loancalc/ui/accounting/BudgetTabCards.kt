@@ -177,7 +177,7 @@ internal fun StarterSuggestions(
                     )
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            "ماهِ قبل ${maskIfPrivate(masked, (starter.lastMonth).rialToFaCompact())} تومان",
+                            "ماهِ قبل ${maskIfPrivate(masked, (starter.lastMonth).rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                             color = AppMuted,
                             fontSize = 10.5.sp,
                             modifier = Modifier.padding(top = 1.dp),
@@ -255,7 +255,7 @@ internal fun DailyAllowanceHero(
                         )
                     }
                     Text(
-                        "تومان",
+                        "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                         color = Color.White.copy(alpha = 0.8f),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -278,7 +278,7 @@ internal fun DailyAllowanceHero(
             HeroChart(
                 values = monthDaily,
                 labels = monthDaily.indices.map { i -> if (i + 1 == dayOfMonth) "امروز" else "${toFa(i + 1)} این ماه" },
-                valueLabel = { value -> if (privacyMode) "•••" else "${value.rialToFaCompact()} تومان" },
+                valueLabel = { value -> if (privacyMode) "•••" else "${value.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}" },
                 currentIndex = (dayOfMonth - 1).coerceIn(0, monthDaily.lastIndex),
                 natural = HeroChartStyle.BARS,
                 height = 34.dp,
@@ -445,7 +445,7 @@ internal fun MonthTotalCard(
             Icon(Icons.Filled.Lightbulb, contentDescription = null, tint = GoldInk, modifier = Modifier.size(16.dp))
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    "با این روند ${maskIfPrivate(masked, projectedLeft.rialToFaCompact())} تومان تا آخرِ ماه می‌مونه.",
+                    "با این روند ${maskIfPrivate(masked, projectedLeft.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} تا آخرِ ماه می‌مونه.",
                     color = AppMuted,
                     fontSize = 10.5.sp,
                     fontWeight = FontWeight.Bold,
@@ -493,7 +493,7 @@ internal fun CategoryBudgetRow(row: BudgetRowData, privacyMode: Boolean, onClick
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         "${maskIfPrivate(masked, row.spent.rialToFaCompact())} از " +
-                            "${maskIfPrivate(masked, row.cap.rialToFaCompact())} تومان",
+                            "${maskIfPrivate(masked, row.cap.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                         color = AppMuted,
                         fontSize = 9.sp,
                         modifier = Modifier.padding(top = 2.dp),
@@ -524,8 +524,8 @@ internal fun CategoryBudgetRow(row: BudgetRowData, privacyMode: Boolean, onClick
         PrivacyCrossfade(privacyMode) { masked ->
             val left = row.cap - row.spent
             Text(
-                if (left >= 0) "${maskIfPrivate(masked, left.rialToFaCompact())} تومان باقی مانده"
-                else "${maskIfPrivate(masked, (-left).rialToFaCompact())} تومان بیشتر از بودجه",
+                if (left >= 0) "${maskIfPrivate(masked, left.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} باقی مانده"
+                else "${maskIfPrivate(masked, (-left).rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} بیشتر از بودجه",
                 color = if (left >= 0) AppMuted else OverInk,
                 fontSize = 9.5.sp,
                 fontWeight = FontWeight.Bold,
@@ -732,7 +732,7 @@ private fun WeekShareStrip(week: List<Boolean>, spent: List<Double>, privacyMode
             ChartTooltip(
                 title = when (ago) { 0 -> "امروز"; 1 -> "دیروز"; else -> "${toFa(ago)} روز پیش" },
                 value = if (privacyMode) "•••" else
-                    "${amount.rialToFaCompact()} تومان · ${if (week.getOrElse(index) { true }) "زیرِ سهم" else "بیشتر از سهم"}",
+                    "${amount.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()} · ${if (week.getOrElse(index) { true }) "زیرِ سهم" else "بیشتر از سهم"}",
                 centerX = widthPx * (index + 0.5f) / week.size,
                 containerWidth = widthPx,
                 background = Color.Black.copy(alpha = 0.45f),

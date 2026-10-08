@@ -41,7 +41,7 @@ object SmartInsights {
 
     /** منفی با «−»ِ جلوی عدد (قاعده‌ی طرح) - قبلاً «۴٬۰۹۵٬۰۶۰-» چاپ می‌شد. */
     private fun toman(rial: Double): String {
-        val v = (rial / 10).roundToLong()
+        val v = (rial / CoreMoneyUnit.div).roundToLong()
         val s = toFa(fmt(abs(v).toDouble()))
         return if (v < 0) "−$s" else s
     }
@@ -66,9 +66,9 @@ object SmartInsights {
             out += Insight(
                 "dues_${today.y}_${today.m}_${today.d / 7}", Kind.DUES_OVER_BALANCE,
                 "هفته‌ی بعد پولت کم میاد",
-                "تا ۷ روزِ آینده ${toman(upcomingDues7d)} تومان قسط و چک داری ولی موجودیِ حساب‌هات " +
+                "تا ۷ روزِ آینده ${toman(upcomingDues7d)} ${CoreMoneyUnit.label} قسط و چک داری ولی موجودیِ حساب‌هات " +
                     // علامتِ منفی در متنِ راست‌به‌چپ سمتِ اشتباه می‌افتاد؛ با کلمه گفته می‌شود.
-                    if (totalBalance < 0) "${toman(-totalBalance)} تومان منفیه." else "${toman(totalBalance)} تومانه.",
+                    if (totalBalance < 0) "${toman(-totalBalance)} ${CoreMoneyUnit.label} منفیه." else "${toman(totalBalance)} ${CoreMoneyUnit.label}ه.",
             )
         }
 
@@ -86,7 +86,7 @@ object SmartInsights {
                     out += Insight(
                         "unusual_${cat}_${today.y}_${today.m}", Kind.UNUSUAL_SPEND,
                         "خرجِ «$cat» بالاست",
-                        "این ماه تا امروز ${toFa(pct)}٪ بیشتر از معمولت برای «$cat» خرج کردی (${toman(now)} تومان).",
+                        "این ماه تا امروز ${toFa(pct)}٪ بیشتر از معمولت برای «$cat» خرج کردی (${toman(now)} ${CoreMoneyUnit.label}).",
                         payload = cat,
                     )
                 }
@@ -101,7 +101,7 @@ object SmartInsights {
                     out += Insight(
                         "forecast_${today.y}_${today.m}", Kind.MONTH_FORECAST,
                         "پیش‌بینیِ آخرِ ماه",
-                        "با این روند تا آخرِ ماه حدودِ ${toman(forecast)} تومان خرج می‌کنی؛ ماهِ قبل ${toman(lastMonthSpend)} بود.",
+                        "با این روند تا آخرِ ماه حدودِ ${toman(forecast)} ${CoreMoneyUnit.label} خرج می‌کنی؛ ماهِ قبل ${toman(lastMonthSpend)} بود.",
                     )
                 }
             }
@@ -113,7 +113,7 @@ object SmartInsights {
                 out += Insight(
                     "surplus_${today.y}_${today.m}", Kind.SAVE_SURPLUS,
                     "ماهِ قبل پول اضافه آوردی",
-                    "ماهِ قبل ${toman(surplus)} تومان کمتر از درآمدت خرج کردی. بخشی‌ش رو بذار برای هدفِ پس‌اندازت.",
+                    "ماهِ قبل ${toman(surplus)} ${CoreMoneyUnit.label} کمتر از درآمدت خرج کردی. بخشی‌ش رو بذار برای هدفِ پس‌اندازت.",
                 )
             }
         }
@@ -131,7 +131,7 @@ object SmartInsights {
                 out += Insight(
                     "salary_${today.y}_${today.m}", Kind.SALARY_MISSING,
                     "حقوقِ این ماه اومده؟",
-                    "معمولاً حدودِ ${toFa(usualDay)}ِ هر ماه حدودِ ${toman(avgAmount)} تومان واریزی داری که این ماه هنوز ثبت نشده.",
+                    "معمولاً حدودِ ${toFa(usualDay)}ِ هر ماه حدودِ ${toman(avgAmount)} ${CoreMoneyUnit.label} واریزی داری که این ماه هنوز ثبت نشده.",
                 )
             }
         }
@@ -148,7 +148,7 @@ object SmartInsights {
                 out += Insight(
                     "recurring_$desc", Kind.RECURRING,
                     "«${list.first().description}» هر ماه تکرار می‌شه",
-                    "سه ماهِ اخیر هر ماه حدودِ ${toman(amount)} تومان برای این پرداختی. پرداختِ تکراری بسازم تا یادت بندازه؟",
+                    "سه ماهِ اخیر هر ماه حدودِ ${toman(amount)} ${CoreMoneyUnit.label} برای این پرداختی. پرداختِ تکراری بسازم تا یادت بندازه؟",
                     payload = list.first().description,
                 )
             }

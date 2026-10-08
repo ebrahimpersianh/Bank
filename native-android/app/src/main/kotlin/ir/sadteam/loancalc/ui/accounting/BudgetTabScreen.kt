@@ -136,7 +136,7 @@ fun BudgetTabScreen(
     var editingRow by remember { mutableStateOf<BudgetRowData?>(null) }
     editingRow?.let { r ->
         val entity = budgets.firstOrNull { it.categoryName == r.category.name }
-        var capText by remember(r) { mutableStateOf((r.cap / 10).toLong().toString()) }
+        var capText by remember(r) { mutableStateOf((r.cap / ir.sadteam.loancalc.ui.jibak.unitDiv).toLong().toString()) }
         ir.sadteam.loancalc.ui.components.JibakAlertDialog(
             onDismissRequest = { editingRow = null },
             title = { androidx.compose.material3.Text("بودجه‌ی ${r.category.name}") },
@@ -150,7 +150,7 @@ fun BudgetTabScreen(
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        suffix = { androidx.compose.material3.Text("تومان") },
+                        suffix = { androidx.compose.material3.Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}") },
                         textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                         colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
                         shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
@@ -161,7 +161,7 @@ fun BudgetTabScreen(
                 androidx.compose.material3.TextButton(onClick = {
                     val toman = capText.toLongOrNull() ?: 0L
                     if (toman > 0L && entity != null) {
-                        viewModel.setBudget(r.category.name, toman * 10.0, entity.id, entity.accountId)
+                        viewModel.setBudget(r.category.name, toman * ir.sadteam.loancalc.ui.jibak.unitDivD, entity.id, entity.accountId)
                     }
                     editingRow = null
                 }) { androidx.compose.material3.Text("ذخیره") }
@@ -336,7 +336,7 @@ fun BudgetTabScreen(
             transfer?.let { t ->
                 item {
                     TransferSuggestionCard(
-                        text = "بودجه‌ی ${t.to.category.name} را ${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, (t.amount).rialToFaCompact())} تومان از " +
+                        text = "بودجه‌ی ${t.to.category.name} را ${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, (t.amount).rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} از " +
                             "${t.from.category.name} قرض بدهم تا ماه تراز شود؟",
                         // کنشِ بازگشت‌پذیر دیالوگ نمی‌گیرد، `UndoBar` می‌گیرد - قاعده‌ی `46b`.
                         // این تپ دو بودجه را هم‌زمان عوض می‌کند، پس بی راهِ برگشت نمی‌ماند.

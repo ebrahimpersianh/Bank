@@ -310,7 +310,7 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                         monthTotals[cat.name]?.takeIf { it > 0 }?.let { total ->
                             PrivacyCrossfade(privacyMode) { masked ->
                                 Text(
-                                    "${maskIfPrivate(masked, amountToman(total))} تومان",
+                                    "${maskIfPrivate(masked, amountToman(total))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                     color = AppMuted,
                                     fontSize = 12.sp,
                                     modifier = Modifier.padding(top = 2.dp),

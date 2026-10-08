@@ -42,7 +42,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 fun AmountWithUnit(
     formattedAmount: String,
     isExpense: Boolean,
-    unit: String = "تومان",
+    unit: String = "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.End) {

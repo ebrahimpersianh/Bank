@@ -157,7 +157,7 @@ internal fun ResultActionsSection(
                     Text("جدولِ کاملِ اقساط", color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Black)
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            "${toFa(outcome.n)} قسط · جمعِ ${maskIfPrivate(masked, amountToman(result.totalPaid))} تومان · تا ${toFa(endDate.d)} ${persianMonthName(endDate.m)} ${toFa(endDate.y)}",
+                            "${toFa(outcome.n)} قسط · جمعِ ${maskIfPrivate(masked, amountToman(result.totalPaid))} ${ir.sadteam.loancalc.ui.jibak.unitFa()} · تا ${toFa(endDate.d)} ${persianMonthName(endDate.m)} ${toFa(endDate.y)}",
                             color = AppMuted,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
@@ -211,7 +211,7 @@ internal fun ResultActionsSection(
                                 Text(dateLabel, fontSize = 12.sp)
                                 PrivacyCrossfade(privacyMode) { masked ->
                                     Text(
-                                        "${maskIfPrivate(masked, amountToman(row.installment))} تومان",
+                                        "${maskIfPrivate(masked, amountToman(row.installment))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                         fontSize = 12.5.sp,
                                         fontWeight = FontWeight.Bold,
                                     )

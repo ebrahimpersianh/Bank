@@ -427,14 +427,14 @@ fun BankLoanScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                        suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد - تقسیمِ
                     // دستیِ «/ ۱۰» رفت؛ تنها مرجعِ تبدیل tomanToRial/rialToToman ئه.
                     val tomanVal = cleanNum(amountText).toLongOrNull() ?: 0L
                     if (tomanVal > 0) {
                         // همیشه تک‌خطی - اگه جا نشه فونت کوچیک می‌شه، نه این‌که به خط دوم بشکنه.
                         AutoShrinkText(
-                            text = "${numberToWordsFa(tomanVal.toDouble())} تومان",
+                            text = "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(tomanVal.toDouble())} تومان",
                             color = AppMuted,
                             maxFontSize = 11.5.sp,
                             modifier = Modifier.padding(top = 4.dp),
@@ -625,7 +625,7 @@ internal fun HeroResultCell(label: String, rial: Double, privacyMode: Boolean, m
         Text(label, color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
         PrivacyCrossfade(privacyMode) { masked ->
             AutoShrinkText(
-                text = "${maskIfPrivate(masked, amountToman(rial))} تومان",
+                text = "${maskIfPrivate(masked, amountToman(rial))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                 color = Color.White,
                 maxFontSize = 13.sp,
                 fontWeight = FontWeight.Black,

@@ -239,7 +239,7 @@ private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accoun
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(top = 3.dp),
                     )
-                    Text("تومان · ${accounts.size.toFa()} حساب", color = HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("${ir.sadteam.loancalc.ui.jibak.unitFa()} · ${accounts.size.toFa()} حساب", color = HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 Box(
                     modifier = Modifier
@@ -320,7 +320,7 @@ private fun AccountCard(
                     Text(
                         // ریال → تومان، مثلِ هیرو. فرمِ کامل نه فشرده: این ستون عرض دارد و
                         // فهرستِ حساب جای عددِ دقیق است.
-                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${rialToToman(balance.toLong()).toFaMoney()} تومان"),
+                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${rialToToman(balance.toLong()).toFaMoney()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
                         // موجودیِ منفیِ کارتِ اعتباری وضعِ عادی است نه خطا: فقط عدد قرمز.
                         color = if (balance < 0) AppDangerInk else AppText,
                         fontSize = 14.sp,

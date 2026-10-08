@@ -452,7 +452,7 @@ private fun DebtList(
                             )
                         }
                         Text(
-                            maskIfPrivate(privacyMode, rialToToman(kotlin.math.abs(balance).toLong()).toFaMoney() + " تومان"),
+                            maskIfPrivate(privacyMode, rialToToman(kotlin.math.abs(balance).toLong()).toFaMoney() + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
                             color = ink,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Black,
@@ -499,7 +499,7 @@ private fun SummaryTile(label: String, rial: Double, ink: androidx.compose.ui.gr
             fontWeight = FontWeight.Black,
             modifier = Modifier.padding(top = 3.dp),
         )
-        Text("تومان", color = AppMuted, fontSize = 9.5.sp)
+        Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 9.5.sp)
     }
 }
 
@@ -593,7 +593,7 @@ private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Uni
                 value = amount,
                 onValueChange = { amount = cleanNum(it).take(13) },
                 label = { Text("مبلغ (اختیاری)") },
-                suffix = { Text("تومان") },
+                suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}") },
                 visualTransformation = ThousandsSeparatorTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
@@ -602,7 +602,7 @@ private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Uni
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             )
             amount.toLongOrNull()?.takeIf { it > 0 }?.let {
-                Text("${numberToWordsFa(it.toDouble())} تومان", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+                Text("${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(it.toDouble())} تومان", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
             }
             if ((amount.toLongOrNull() ?: 0L) > 0) {
                 Text("تاریخ", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 12.dp))
@@ -732,9 +732,9 @@ private fun CounterpartyDetail(
                             visualTransformation = ThousandsSeparatorTransformation(),
                             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                             singleLine = true,
-                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                            suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     }
-                    val amountRial = (amountText.toLongOrNull() ?: 0L) * 10
+                    val amountRial = (amountText.toLongOrNull() ?: 0L) * ir.sadteam.loancalc.ui.jibak.unitDiv
                     if (amountRial > 0) {
                         Text(
                             "${numberToWordsFa((amountRial / 10).toDouble())} تومان",
@@ -758,7 +758,7 @@ private fun CounterpartyDetail(
                     )
                     GradientButton(
                         onClick = {
-                            val amount = (amountText.toDoubleOrNull() ?: 0.0) * 10
+                            val amount = (amountText.toDoubleOrNull() ?: 0.0) * ir.sadteam.loancalc.ui.jibak.unitDivD
                             if (amount > 0) {
                                 onAddDebt(amount, type, description.trim(), year, month, day)
                                 amountText = ""
@@ -808,7 +808,7 @@ private fun CounterpartyDetail(
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    maskIfPrivate(privacyMode, "${fmt((debt.amount) / 10)} تومان"),
+                                    maskIfPrivate(privacyMode, "${fmt((debt.amount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
                                     color = if (debt.type == DebtType.OWED_TO_ME.name) AppPrimary else AppDanger,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
@@ -850,7 +850,7 @@ private fun CounterpartyDetail(
     confirmSettleDebt?.let { debt ->
         ConfirmPayDialog(
             title = "ثبتِ تسویه",
-            text = "«${fmt((debt.amount) / 10)} تومان» تسویه‌شده علامت بخوره؟",
+            text = "«${fmt((debt.amount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}» تسویه‌شده علامت بخوره؟",
             onConfirm = { onToggleSettled(debt, true) },
             onDismiss = { confirmSettleDebt = null },
         )
@@ -858,7 +858,7 @@ private fun CounterpartyDetail(
     confirmDeleteDebt?.let { debt ->
         ConfirmDeleteDialog(
             title = "حذفِ ردیف",
-            text = "این ردیفِ «${fmt((debt.amount) / 10)} تومان» حذف بشه؟",
+            text = "این ردیفِ «${fmt((debt.amount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}» حذف بشه؟",
             onConfirm = { onDeleteDebt(debt) },
             onDismiss = { confirmDeleteDebt = null },
         )

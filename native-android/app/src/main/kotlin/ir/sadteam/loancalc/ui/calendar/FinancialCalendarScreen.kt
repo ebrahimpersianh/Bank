@@ -378,7 +378,7 @@ fun FinancialCalendarScreen(
                                     Column(horizontalAlignment = Alignment.End) {
                                         PrivacyCrossfade(privacyMode) { masked ->
                                             Text(
-                                                "${maskIfPrivate(masked, amountToman(item.amount))} تومان",
+                                                "${maskIfPrivate(masked, amountToman(item.amount))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                                 color = AppText,
                                                 fontSize = 11.5.sp,
                                                 fontWeight = FontWeight.ExtraBold,

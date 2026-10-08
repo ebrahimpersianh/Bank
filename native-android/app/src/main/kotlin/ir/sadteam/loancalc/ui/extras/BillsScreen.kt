@@ -189,7 +189,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
     }
 
     paying?.let { bill ->
-        var amountText by remember(bill) { mutableStateOf(if (bill.lastAmount > 0) (bill.lastAmount.toLong() / 10).toString() else "") }
+        var amountText by remember(bill) { mutableStateOf(if (bill.lastAmount > 0) (bill.lastAmount.toLong() / ir.sadteam.loancalc.ui.jibak.unitDiv).toString() else "") }
         var accountId by remember(bill) { mutableStateOf(accounts.singleOrNull()?.id) }
         var payId by remember(bill) { mutableStateOf("") }
         JibakAlertDialog(
@@ -205,7 +205,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                             onValueChange = {
                                 payId = cleanNum(it).take(13)
                                 ir.sadteam.loancalc.core.BillCodes.parsePaymentId(payId, bill.billId)?.let { p ->
-                                    amountText = (p.amountRial / 10).toString()
+                                    amountText = (p.amountRial / ir.sadteam.loancalc.ui.jibak.unitDiv).toString()
                                 }
                             },
                             singleLine = true,
@@ -217,7 +217,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         value = amountText,
                         onValueChange = { amountText = cleanNum(it).take(12) },
                         singleLine = true,
-                        placeholder = { Text("مبلغ (تومان)") },
+                        placeholder = { Text("مبلغ (${ir.sadteam.loancalc.ui.jibak.unitFa()})") },
                         visualTransformation = ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     if (accounts.size > 1) {
@@ -230,7 +230,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
             },
             confirmButton = {
                 GradientButton(onClick = {
-                    val rial = (amountText.toLongOrNull() ?: 0L) * 10.0
+                    val rial = (amountText.toLongOrNull() ?: 0L) * ir.sadteam.loancalc.ui.jibak.unitDivD
                     viewModel.markBillPaid(bill, today.y, today.m, rial, accountId)
                     paying = null
                 }) { Text("پرداخت شد") }
@@ -297,7 +297,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                                     r.kind?.let { kind = it }
                                     pasteNote = buildString {
                                         append("✓ از پیامک خوانده شد")
-                                        r.amountRial?.let { append(" · مبلغِ این دوره ${toFa(it / 10)} تومان") }
+                                        r.amountRial?.let { append(" · مبلغِ این دوره ${toFa(it / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}") }
                                     }
                                 }
                             }

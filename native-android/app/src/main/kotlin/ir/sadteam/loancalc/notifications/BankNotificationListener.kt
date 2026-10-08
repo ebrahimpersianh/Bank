@@ -240,9 +240,9 @@ class BankNotificationListener : NotificationListenerService() {
                 kind = InboxMessageEntity.Kind.DETECTED_TX,
                 title = if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه",
                 body = if (confident) {
-                    "$amountToman تومان از «${account.name}» - دسته: $category. تایید می‌کنی؟"
+                    "$amountToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} از «${account.name}» - دسته: $category. تایید می‌کنی؟"
                 } else {
-                    "$amountToman تومان از «${account.name}» - دسته‌بندیش نامشخصه، لمس کن و خودت انتخاب کن."
+                    "$amountToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} از «${account.name}» - دسته‌بندیش نامشخصه، لمس کن و خودت انتخاب کن."
                 },
                 refId = txId.toString(),
                 sourceLabel = "اعلانِ ${appLabelOf(packageName)}",
@@ -276,7 +276,7 @@ class BankNotificationListener : NotificationListenerService() {
                     inboxRepository.post(
                         kind = InboxMessageEntity.Kind.SYSTEM,
                         title = "موجودیِ «${updated.name}» با بانک فرق دارد",
-                        body = "بانک مانده را $gapToman تومان " + (if (gap > 0) "بیشتر" else "کمتر") +
+                        body = "بانک مانده را $gapToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} " + (if (gap > 0) "بیشتر" else "کمتر") +
                         " از جیبک نوشته. احتمالاً تراکنشی ثبت نشده یا «موجودیِ روزِ شروع» درست نیست.",
                         sourceLabel = "اعلانِ ${appLabelOf(packageName)}",
                         sourceText = body,

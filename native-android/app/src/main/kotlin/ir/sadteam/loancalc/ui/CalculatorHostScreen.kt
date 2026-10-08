@@ -238,7 +238,7 @@ private fun AffordabilityBridgeCard(installment: Double, onClick: () -> Unit) {
                 fontWeight = FontWeight.Black,
             )
             Text(
-                "با قسطِ ${fmt(rialToToman(installment.toLong()).toDouble()).faDigits()} تومان به حالتِ توانِ بازپرداخت برو",
+                "با قسطِ ${fmt(rialToToman(installment.toLong()).toDouble()).faDigits()} ${ir.sadteam.loancalc.ui.jibak.unitFa()} به حالتِ توانِ بازپرداخت برو",
                 color = AppPrimaryInk,
                 fontSize = 9.5.sp,
                 fontWeight = FontWeight.Bold,

@@ -235,7 +235,7 @@ private fun HistoryRow(
         Text(entry.summary, color = AppMuted, fontSize = 11.5.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 3.dp))
         Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (entry.amount > 0) {
-                Text("${fmt((entry.amount) / 10)} تومان", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                Text("${fmt((entry.amount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
             }
             Box(modifier = Modifier.weight(1f))
             Box(

@@ -277,7 +277,7 @@ private fun BudgetSection(
                         modifier = Modifier.padding(top = 10.dp).height(14.dp),
                     )
                     Text(
-                        "${fmt((totalSpent) / 10)} از سقفِ ${fmt((totalCap) / 10)} تومان",
+                        "${fmt((totalSpent) / ir.sadteam.loancalc.ui.jibak.unitDiv)} از سقفِ ${fmt((totalCap) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                         color = AppLabel,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -363,8 +363,8 @@ private fun BudgetSection(
                                     modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
                                     colors = appFieldColors(),
-                                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                                val capRial = (capText.toLongOrNull() ?: 0L) * 10
+                                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                                val capRial = (capText.toLongOrNull() ?: 0L) * ir.sadteam.loancalc.ui.jibak.unitDiv
                                 if (capRial > 0) {
                                     Text(
                                         "${numberToWordsFa((capRial / 10).toDouble())} تومان",
@@ -388,7 +388,7 @@ private fun BudgetSection(
                                     }
                                     GradientButton(
                                         onClick = {
-                                            val cap = (capText.toDoubleOrNull() ?: 0.0) * 10
+                                            val cap = (capText.toDoubleOrNull() ?: 0.0) * ir.sadteam.loancalc.ui.jibak.unitDivD
                                             if (cap > 0) viewModel.setBudget(cat.name, cap, budget?.id)
                                             editingCategory = null
                                         },
@@ -485,8 +485,8 @@ private fun AddBudgetDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                    val capRial = (capText.toLongOrNull() ?: 0L) * 10
+                        suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                    val capRial = (capText.toLongOrNull() ?: 0L) * ir.sadteam.loancalc.ui.jibak.unitDiv
                     if (capRial > 0) {
                         Text(
                             "${numberToWordsFa((capRial / 10).toDouble())} تومان",
@@ -501,7 +501,7 @@ private fun AddBudgetDialog(
         confirmButton = {
             if (cat != null) {
                 TextButton(onClick = {
-                    val capVal = (capText.toDoubleOrNull() ?: 0.0) * 10
+                    val capVal = (capText.toDoubleOrNull() ?: 0.0) * ir.sadteam.loancalc.ui.jibak.unitDivD
                     if (capVal > 0) onSave(cat, capVal)
                 }, enabled = (capText.toDoubleOrNull() ?: 0.0) > 0) { Text("ذخیره") }
             }
@@ -541,7 +541,7 @@ private fun BudgetSuggestionRow(cat: CategoryEntry, spent: Double, onClick: () -
             }
             Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
                 Text(cat.name, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
-                Text("${fmt((spent) / 10)} تومان خرج شده", color = AppMuted, fontSize = 10.5.sp)
+                Text("${fmt((spent) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()} خرج شده", color = AppMuted, fontSize = 10.5.sp)
             }
             Text("+ سقف", color = AppPrimary, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
         }
@@ -574,7 +574,7 @@ private fun BudgetRow(
             Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(name, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Text("${fmt((spent) / 10)} تومان", color = ringColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("${fmt((spent) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = ringColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
                 Text(
                     if (cap == null) "سقفی تعیین نشده" else if (over) "بیشتر از سقف!" else "از ${fmt(cap)} — ${fmt(cap - spent)} مانده",
@@ -669,8 +669,8 @@ internal fun NewBudgetSheet(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                val rial = (capText.toLongOrNull() ?: 0L) * 10
+                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                val rial = (capText.toLongOrNull() ?: 0L) * ir.sadteam.loancalc.ui.jibak.unitDiv
                 if (rial > 0) {
                     Text("${numberToWordsFa((rial / 10).toDouble())} تومان", color = AppMuted, fontSize = 11.sp)
                 }
@@ -689,7 +689,7 @@ internal fun NewBudgetSheet(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val cap = (capText.toDoubleOrNull() ?: 0.0) * 10
+                    val cap = (capText.toDoubleOrNull() ?: 0.0) * ir.sadteam.loancalc.ui.jibak.unitDivD
                     val cat = selectedCat
                     if (cap > 0 && cat != null) onSave(cat, cap, selectedAccountId)
                 },

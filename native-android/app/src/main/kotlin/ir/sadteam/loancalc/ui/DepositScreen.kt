@@ -139,7 +139,7 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                                     )
                                 }
                                 Text(
-                                    "تومان",
+                                    "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                     color = HeroMuted,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
@@ -148,7 +148,7 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                             }
                             PrivacyCrossfade(privacyMode) { masked ->
                                 Text(
-                                    "${maskIfPrivate(masked, fmt(principalToman.toDouble()).faDigits())} تومان · ${depositMonthLabel(selectedMonths)} · ${toFa(trimRateDeposit(rate.toFloat()))}٪",
+                                    "${maskIfPrivate(masked, fmt(principalToman.toDouble()).faDigits())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} · ${depositMonthLabel(selectedMonths)} · ${toFa(trimRateDeposit(rate.toFloat()))}٪",
                                     color = HeroMuted,
                                     fontSize = 9.5.sp,
                                     fontWeight = FontWeight.Bold,
@@ -195,12 +195,12 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                        suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد.
                     val tomanVal = cleanNum(amountText).toLongOrNull() ?: 0L
                     if (tomanVal > 0) {
                         Text(
-                            text = "${numberToWordsFa(tomanVal.toDouble())} تومان",
+                            text = "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(tomanVal.toDouble())} تومان",
                             color = AppMuted,
                             fontSize = 11.5.sp,
                             modifier = Modifier.padding(top = 4.dp),
@@ -276,7 +276,7 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                         historyViewModel.log(
                             kind = "DEPOSIT",
                             title = "سود سپرده",
-                            summary = "مبلغ ${fmt(principalToman.toDouble()).faDigits()} تومان × ${toFa(selectedMonths)} ماه",
+                            summary = "مبلغ ${fmt(principalToman.toDouble()).faDigits()} ${ir.sadteam.loancalc.ui.jibak.unitFa()} × ${toFa(selectedMonths)} ماه",
                             amount = computed.finalAmount,
                         )
                     },

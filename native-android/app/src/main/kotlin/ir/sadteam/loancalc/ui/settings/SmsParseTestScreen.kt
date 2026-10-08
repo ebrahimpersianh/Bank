@@ -101,7 +101,7 @@ internal fun SmsParseTestScreen(onBack: () -> Unit) {
                     }
                     ParseResultRow(
                         label = "مبلغ",
-                        value = "${fmt((parsed.amountRial) / 10)} تومان",
+                        value = "${fmt((parsed.amountRial) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                         valueColor = if (parsed.type == TransactionType.WITHDRAWAL) AppDangerInk else AppPrimaryInk,
                     )
                     ParseResultRow(

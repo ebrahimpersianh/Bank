@@ -240,7 +240,7 @@ private fun DueHero(
                 modifier = Modifier.padding(top = 8.dp),
             )
         }
-        Text("تومان", color = HeroMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 1.dp))
+        Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = HeroMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 1.dp))
         Row(
             modifier = Modifier.padding(top = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -126,7 +126,7 @@ internal fun NewTxTemplatesRow(
                                 Text(t.name, color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                                 if (t.amount > 0) {
                                     Text(
-                                        rialToToman(t.amount.toLong()).toFaMoney() + " تومان",
+                                        rialToToman(t.amount.toLong()).toFaMoney() + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                         color = AppMuted,
                                         fontSize = 10.sp,
                                         maxLines = 1,
@@ -157,7 +157,7 @@ internal fun NewTxAmountCard(
                 // می‌دید و باید حدس می‌زد عددی که تایپ می‌کند کدام است. این تنها جای
                 // باقی‌مانده‌ی برنامه بود که ورودی ریالی می‌گرفت. ستونِ دیتابیس ریال می‌ماند؛
                 // `tomanToRial` در لبه‌ی ثبت تبدیل می‌کند.
-                Text("مبلغ · تومان", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                Text("مبلغ · ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                 BasicTextField(
                     value = amountText,
                     // خطا با اولین اصلاح پاک می‌شود، نه با ثبتِ بعدی: پیامِ «مبلغ رو وارد کن»
@@ -195,7 +195,7 @@ internal fun NewTxAmountCard(
                 if (toman > 0) {
                     Text(
                         // دیگر تقسیم بر ده لازم نیست - خودِ فیلد تومان است.
-                        "${numberToWordsFa(toman.toDouble())} تومان",
+                        "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(toman.toDouble())} تومان",
                         color = AppMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -314,14 +314,14 @@ internal fun NewTxDetailsSection(
                             }
                             Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                                 Text(
-                                    splitSum.toFaMoney() + " تومان",
+                                    splitSum.toFaMoney() + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                     color = AppText,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Black,
                                     modifier = Modifier.weight(1f),
                                 )
                                 Text(
-                                    if (totalToman == 0L) "—" else remaining.toFaMoney() + " تومان",
+                                    if (totalToman == 0L) "—" else remaining.toFaMoney() + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                     color = when {
                                         totalToman == 0L -> AppMuted
                                         remaining == 0L -> AppTxIn
@@ -387,7 +387,7 @@ internal fun NewTxDetailsSection(
                                 OutlinedTextField(
                                     value = amt,
                                     onValueChange = { v -> splits[i] = cat to cleanNum(v).take(13) },
-                                    placeholder = { Text("تومان", fontSize = 11.sp) },
+                                    placeholder = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", fontSize = 11.sp) },
                                     visualTransformation = ThousandsSeparatorTransformation(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     singleLine = true,

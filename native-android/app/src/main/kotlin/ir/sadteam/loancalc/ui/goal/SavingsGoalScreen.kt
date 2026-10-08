@@ -137,7 +137,7 @@ fun SavingsGoalScreen(
                         Text("کنار گذاشته‌ام", color = HeroMuted, fontSize = 13.sp)
                         PrivacyCrossfade(privacyMode) { masked ->
                             Text(
-                                "${maskIfPrivate(masked, amountToman(totalSaved))} تومان",
+                                "${maskIfPrivate(masked, amountToman(totalSaved))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                 color = Color.White,
                                 fontSize = 26.sp,
                                 fontWeight = FontWeight.Black,
@@ -147,7 +147,7 @@ fun SavingsGoalScreen(
                         // عددِ درشت پنهان باشد و این نه، پنهان‌کاری بی‌معنی است.
                         PrivacyCrossfade(privacyMode) { masked ->
                             Text(
-                                "از ${maskIfPrivate(masked, amountToman(totalTarget))} تومانِ " +
+                                "از ${maskIfPrivate(masked, amountToman(totalTarget))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}ِ " +
                                     "${toFa(goals.size)} هدف",
                                 color = HeroMuted,
                                 fontSize = 11.sp,
@@ -312,10 +312,10 @@ private fun GoalRow(
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         if (goal.reached) {
-                            "${maskIfPrivate(masked, amountToman(goal.savedRial))} تومان - رسیدی"
+                            "${maskIfPrivate(masked, amountToman(goal.savedRial))} ${ir.sadteam.loancalc.ui.jibak.unitFa()} - رسیدی"
                         } else {
                             "${maskIfPrivate(masked, amountToman(goal.savedRial))} از " +
-                                "${maskIfPrivate(masked, amountToman(goal.targetRial))} تومان"
+                                "${maskIfPrivate(masked, amountToman(goal.targetRial))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"
                         },
                         color = AppMuted,
                         fontSize = 10.5.sp,
@@ -382,7 +382,7 @@ private fun GoalRow(
             if (months != null && months > 0) {
                 Text(
                     "${toFa(months)} ماه مانده · ماهی " +
-                        "${maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, amountToman(goal.remainingRial / months))} تومان لازم است",
+                        "${maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, amountToman(goal.remainingRial / months))} ${ir.sadteam.loancalc.ui.jibak.unitFa()} لازم است",
                     color = AppMuted,
                     fontSize = 10.sp,
                     modifier = Modifier.padding(top = 6.dp),
@@ -417,7 +417,7 @@ private fun GoalRow(
                     if (goal.reached) {
                         "ثبتِ تغییر"
                     } else {
-                        "${maskIfPrivate(masked, amountToman(goal.remainingRial))} تومان مانده"
+                        "${maskIfPrivate(masked, amountToman(goal.remainingRial))} ${ir.sadteam.loancalc.ui.jibak.unitFa()} مانده"
                     },
                     color = AppMuted,
                     fontSize = 10.5.sp,
@@ -477,10 +477,10 @@ private fun AddGoalForm(
             singleLine = true,
             visualTransformation = ThousandsSeparatorTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            suffix = { Text("تومان") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+            suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         if (targetToman > 0.0) {
             Text(
-                "${numberToWordsFa(targetToman)} تومان",
+                "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(targetToman)} تومان",
                 color = AppMuted,
                 fontSize = 10.sp,
                 modifier = Modifier.padding(top = 4.dp),
@@ -590,10 +590,10 @@ private fun ContributeDialog(
                     modifier = Modifier.fillMaxWidth(),
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    suffix = { Text("تومان") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 if (valid) {
                     Text(
-                        "${numberToWordsFa(toman)} تومان",
+                        "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(toman)} تومان",
                         color = AppMuted,
                         fontSize = 10.sp,
                     )

@@ -86,7 +86,7 @@ fun AccountPickerSheet(
                             Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                                 Text(account.name, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(privacy, fmt(bal / 10)) + " تومان",
+                                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(privacy, fmt(bal / ir.sadteam.loancalc.ui.jibak.unitDiv)) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                     color = if (bal < 0) AppDanger else AppMuted,
                                     fontSize = 12.sp,
                                     modifier = Modifier.padding(top = 2.dp),

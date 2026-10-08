@@ -814,7 +814,7 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
             Column {
                 Text("دریافتی پاس‌شده", color = AppMuted, fontSize = 11.sp)
                 Text(
-                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman((stats.receivedPassedSum).toLong()).toDouble())} تومان"),
+                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman((stats.receivedPassedSum).toLong()).toDouble())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
                     color = AppPrimary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -824,7 +824,7 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
             Column(horizontalAlignment = Alignment.End) {
                 Text("پرداختی پاس‌شده", color = AppMuted, fontSize = 11.sp)
                 Text(
-                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman((stats.paidPassedSum).toLong()).toDouble())} تومان"),
+                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman((stats.paidPassedSum).toLong()).toDouble())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
                     color = AppDanger,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -852,7 +852,7 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
                     Text("مانده خالص", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
                 }
                 Text(
-                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${if (stats.netBalance >= 0) "+" else ""}${fmt(rialToToman((stats.netBalance).toLong()).toDouble())} تومان"),
+                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${if (stats.netBalance >= 0) "+" else ""}${fmt(rialToToman((stats.netBalance).toLong()).toDouble())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
                     color = netColor,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Black,

@@ -154,7 +154,7 @@ fun ResultScreen(
         historyViewModel.log(
             kind = "LOAN",
             title = if (outcome.borrower != "—") "وام ${outcome.borrower} (${outcome.bankName})" else outcome.bankName,
-            summary = "قسط ${amountToman(outcome.result.installment)} تومان × ${toFa(outcome.n)} ماه، نرخ ${toFa(outcome.ratePct)}٪",
+            summary = "قسط ${amountToman(outcome.result.installment)} ${ir.sadteam.loancalc.ui.jibak.unitFa()} × ${toFa(outcome.n)} ماه، نرخ ${toFa(outcome.ratePct)}٪",
             amount = outcome.result.principal,
         )
     }
@@ -363,7 +363,7 @@ fun ResultScreen(
                                 }
                             },
                             visualTransformation = ThousandsSeparatorTransformation(),
-                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
+                            suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
@@ -371,7 +371,7 @@ fun ResultScreen(
                         // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد.
                         (cleanNum(editAmountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
                             Text(
-                                "${numberToWordsFa(t.toDouble())} تومان",
+                                "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(t.toDouble())} تومان",
                                 color = AppMuted,
                                 fontSize = 11.5.sp,
                                 modifier = Modifier.padding(top = 4.dp),
@@ -518,7 +518,7 @@ fun ResultScreen(
                                 fontSize = 18.sp,
                             )
                         }
-                        Text("قسط ماهانه (تومان)", fontSize = 12.5.sp, color = AppMuted)
+                        Text("قسط ماهانه (${ir.sadteam.loancalc.ui.jibak.unitFa()})", fontSize = 12.5.sp, color = AppMuted)
                     }
                 }
             }
@@ -550,7 +550,7 @@ fun ResultScreen(
         item {
             StaggerIn(1) {
                 Text(
-                    text = "${numberToWordsFa(rialToToman(result.installment.toLong()).toDouble())} تومان",
+                    text = "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(rialToToman(result.installment.toLong()).toDouble())} تومان",
                     color = AppMuted,
                     fontSize = 13.5.sp,
                     textAlign = TextAlign.Center,
@@ -587,7 +587,7 @@ fun ResultScreen(
                         PrivacyCrossfade(privacyMode, modifier = Modifier.fillMaxWidth()) { masked ->
                             SummaryRow(
                                 label = "کلِ بازپرداخت",
-                                value = "${maskIfPrivate(masked, amountToman(animatedTotal))} تومان",
+                                value = "${maskIfPrivate(masked, amountToman(animatedTotal))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                 emphasis = true,
                             )
                         }
@@ -615,7 +615,7 @@ fun ResultScreen(
                             PrivacyCrossfade(privacyMode, modifier = Modifier.fillMaxWidth()) { masked ->
                                 SummaryRow(
                                     "کارمزدِ سالانه (قرض‌الحسنه)",
-                                    "${maskIfPrivate(masked, amountToman(feeAmount))} تومان · ${toFa(rateLabel)}٪",
+                                    "${maskIfPrivate(masked, amountToman(feeAmount))} ${ir.sadteam.loancalc.ui.jibak.unitFa()} · ${toFa(rateLabel)}٪",
                                 )
                             }
                         }

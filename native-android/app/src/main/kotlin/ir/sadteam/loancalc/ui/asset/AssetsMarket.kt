@@ -203,7 +203,7 @@ private fun MarketMiniCard(
             modifier = Modifier.padding(top = 6.dp),
         )
         Text(
-            (prices[e.symbol]?.rialToFaCompact() ?: "—") + " تومان",
+            (prices[e.symbol]?.rialToFaCompact() ?: "—") + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
             color = AppText,
             fontSize = 12.sp,
             fontWeight = FontWeight.Black,
@@ -316,7 +316,7 @@ internal fun MarketGridRow(
         ) {
             // «۶۹۰٫۹ میلیون تو…» نصفه می‌شد - حالا فونت کوچک می‌شود تا کلِ قیمت جا شود.
             ir.sadteam.loancalc.ui.components.AutoShrinkText(
-                text = price?.let { "$it تومان" } ?: "—",
+                text = price?.let { "$it ${ir.sadteam.loancalc.ui.jibak.unitFa()}" } ?: "—",
                 color = if (price == null) AppMuted else AppText,
                 maxFontSize = 11.sp,
                 minFontSize = 9.5.sp,

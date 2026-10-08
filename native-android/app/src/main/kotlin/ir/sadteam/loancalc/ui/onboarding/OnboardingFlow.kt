@@ -697,7 +697,7 @@ private fun FirstAccountStep(
     var name by remember { mutableStateOf("نقدی") }
     var balanceText by remember { mutableStateOf("") }
     var iconKey by remember { mutableStateOf(DEFAULT_ACCOUNT_ICON_KEY) }
-    val balanceRial = (balanceText.toDoubleOrNull() ?: 0.0) * 10
+    val balanceRial = (balanceText.toDoubleOrNull() ?: 0.0) * ir.sadteam.loancalc.ui.jibak.unitDivD
 
     Column(
         modifier = Modifier
@@ -724,7 +724,7 @@ private fun FirstAccountStep(
             label = { Text("موجودی اولیه") },
             singleLine = true,
             visualTransformation = ThousandsSeparatorTransformation(),
-            suffix = { Text("تومان") },
+            suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         if (balanceRial > 0) {

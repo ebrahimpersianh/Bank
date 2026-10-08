@@ -69,7 +69,7 @@ fun CurrencyAmountDialog(
     var amount by remember { mutableStateOf("") }
     var rate by remember { mutableStateOf("") }
     // نرخِ روز به تومان (سرور ریال می‌دهد)؛ با عوض شدنِ ارز یا رسیدنِ قیمت دوباره پر می‌شود.
-    LaunchedEffect(code, prices) { rate = prices[code]?.let { (it / 10).toLong().toString() } ?: "" }
+    LaunchedEffect(code, prices) { rate = prices[code]?.let { (it / ir.sadteam.loancalc.ui.jibak.unitDiv).toLong().toString() } ?: "" }
     val a = amount.toLongOrNull() ?: 0L
     val r = rate.toLongOrNull() ?: 0L
     val toman = a * r
@@ -93,14 +93,14 @@ fun CurrencyAmountDialog(
                 OutlinedTextField(
  textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = rate, onValueChange = { rate = cleanNum(it).take(10) },
-                    label = { Text("نرخِ هر $name (تومان)") }, singleLine = true, shape = AppFieldShape, colors = appFieldColors(),
+                    label = { Text("نرخِ هر $name (${ir.sadteam.loancalc.ui.jibak.unitFa()})") }, singleLine = true, shape = AppFieldShape, colors = appFieldColors(),
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(),
                     supportingText = { Text(if (prices.containsKey(code)) "نرخِ روز؛ اگر به نرخِ دیگری خریدی عوضش کن" else "نرخِ روزِ این ارز را نداریم؛ دستی بزن") },
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    if (toman > 0) "= ${toman.toFaMoney()} تومان" else "مبلغ و نرخ را بزن",
+                    if (toman > 0) "= ${toman.toFaMoney()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}" else "مبلغ و نرخ را بزن",
                     color = if (toman > 0) AppPrimary else AppMuted, fontSize = 16.sp, fontWeight = FontWeight.Black,
                 )
             }

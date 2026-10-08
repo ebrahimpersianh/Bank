@@ -363,8 +363,8 @@ fun ReportTabScreen(
                             iconInk = AppDanger,
                             bigValue = "${(over.percent).toFa()}٪ بیشتر",
                             bigInk = AppDangerInk,
-                            whyText = "این ماه ${maskIfPrivate(privacyMode, nowSpend.rialToFaCompact())} تومان · " +
-                                "میانگینِ سه ماهِ قبل ${maskIfPrivate(privacyMode, avgSpend.rialToFaCompact())} تومان",
+                            whyText = "این ماه ${maskIfPrivate(privacyMode, nowSpend.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} · " +
+                                "میانگینِ سه ماهِ قبل ${maskIfPrivate(privacyMode, avgSpend.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                             onDismiss = { discoveryDismissViewModel.dismiss("overspent@$monthKey", monthKey) },
                         )
                     },
@@ -380,7 +380,7 @@ fun ReportTabScreen(
                         DiscoveryCard(
                             icon = Icons.Filled.Autorenew,
                             title = "${(liveSubs.size).toFa()} خرجِ تکرارشونده پیدا شد",
-                            subtitle = "ماهی ${maskIfPrivate(privacyMode, (liveSubs.sumOf { it.typicalAmountRial }).rialToFaCompact())} تومان — لمس کن ببین چی‌ان",
+                            subtitle = "ماهی ${maskIfPrivate(privacyMode, (liveSubs.sumOf { it.typicalAmountRial }).rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} — لمس کن ببین چی‌ان",
                             bg = DiscoverWarnBg,
                             border = DiscoverWarnBorder,
                             pill = DiscoverWarnPill,
@@ -403,7 +403,7 @@ fun ReportTabScreen(
                         DiscoveryCard(
                             icon = Icons.Filled.EventRepeat,
                             title = "${(stats.recurringCount).toFa()} پرداختِ تکراریِ ثبت‌شده",
-                            subtitle = "ماهی ${maskIfPrivate(privacyMode, (stats.recurringMonthly).rialToFaCompact())} تومان",
+                            subtitle = "ماهی ${maskIfPrivate(privacyMode, (stats.recurringMonthly).rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                             bg = AppSurface,
                             border = AppLineRow,
                             pill = AppIconFrame,

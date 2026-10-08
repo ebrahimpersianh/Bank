@@ -129,7 +129,7 @@ internal fun InstallmentDetailScreen(
             ir.sadteam.loancalc.ui.components.AppHeroCard {
                 Text("مبلغِ قسط", color = ir.sadteam.loancalc.ui.components.HeroMuted, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "${amountToman(amount)} تومان",
+                    "${amountToman(amount)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                     color = androidx.compose.ui.graphics.Color.White,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Black,

@@ -108,7 +108,7 @@ private fun IncomeExpenseLegendRow(color: Color, label: String, amount: Double) 
         // همان دو اشتباهی که در صفحه‌ی آمارِ وام هم پیدا شد (دورِ ۹).
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                "${maskIfPrivate(masked, fmt(rialToToman(amount.toLong()).toDouble()))} تومان",
+                "${maskIfPrivate(masked, fmt(rialToToman(amount.toLong()).toDouble()))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                 color = AppText,
                 fontSize = 11.sp,
             )
@@ -492,7 +492,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                         Column(modifier = Modifier.weight(1f)) {
                             AppChip(label = "${toFa(dayTx.size)} تراکنش", selected = false, onClick = {})
                             Text(
-                                if (net < 0) ir.sadteam.loancalc.ui.jibak.isoSigned(false, "${fmt((kotlin.math.abs(net)) / 10)} تومان") else "${fmt((kotlin.math.abs(net)) / 10)} تومان",
+                                if (net < 0) ir.sadteam.loancalc.ui.jibak.isoSigned(false, "${fmt((kotlin.math.abs(net)) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}") else "${fmt((kotlin.math.abs(net)) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                 color = if (net >= 0) AppPrimary else AppDanger,
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Black,
@@ -527,7 +527,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                     // 🐛 همان باگِ ۱۰برابر: ریالِ خام با برچسبِ «ریال»، و بی ماسکِ حالتِ خصوصی.
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            "${maskIfPrivate(masked, fmt(rialToToman(activeAmount.toLong()).toDouble()))} تومان",
+                            "${maskIfPrivate(masked, fmt(rialToToman(activeAmount.toLong()).toDouble()))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                             color = AppText,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
@@ -539,7 +539,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                             Text(
                                 "${if (diffFromPrev > 0) "↗" else "↘"} " +
                                     maskIfPrivate(masked, fmt(rialToToman(kotlin.math.abs(diffFromPrev).toLong()).toDouble())) +
-                                    " تومان اختلاف با روز قبل",
+                                    " ${ir.sadteam.loancalc.ui.jibak.unitFa()} اختلاف با روز قبل",
                                 color = AppMuted,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 2.dp),
@@ -605,13 +605,13 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                                     )
                                     PrivacyCrossfade(privacyMode) { masked ->
                                         Text(
-                                            maskIfPrivate(masked, fmt(breakdownTotal / 10)),
+                                            maskIfPrivate(masked, fmt(breakdownTotal / ir.sadteam.loancalc.ui.jibak.unitDiv)),
                                             color = AppText,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                     }
-                                    Text("تومان", color = AppMuted, fontSize = 9.sp)
+                                    Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 9.sp)
                                 }
                             }
                         }
@@ -643,7 +643,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                                             modifier = Modifier.padding(start = 6.dp),
                                         )
                                     }
-                                    Text("${fmt((amount) / 10)} تومان", color = AppMuted, fontSize = 12.5.sp)
+                                    Text("${fmt((amount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 12.5.sp)
                                 }
                             }
                         }
@@ -737,16 +737,16 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
                         Text("درآمد", color = AppMuted, fontSize = 12.sp)
-                        Text("${fmt((income) / 10)} تومان", color = AppPrimary, fontSize = 14.sp)
+                        Text("${fmt((income) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppPrimary, fontSize = 14.sp)
                     }
                     Column {
                         Text("هزینه", color = AppMuted, fontSize = 12.sp)
-                        Text("${fmt((expense) / 10)} تومان", color = AppDanger, fontSize = 14.sp)
+                        Text("${fmt((expense) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppDanger, fontSize = 14.sp)
                     }
                     Column {
                         Text("مانده", color = AppMuted, fontSize = 12.sp)
                         Text(
-                            "${fmt((income - expense) / 10)} تومان",
+                            "${fmt((income - expense) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                             color = if (income - expense >= 0) AppText else AppDanger,
                             fontSize = 14.sp,
                         )
@@ -764,7 +764,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 Text(name, color = AppText, fontSize = 12.5.sp)
-                                Text("${fmt((amount) / 10)} تومان", color = AppMuted, fontSize = 12.5.sp)
+                                Text("${fmt((amount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 12.5.sp)
                             }
                         }
                     }

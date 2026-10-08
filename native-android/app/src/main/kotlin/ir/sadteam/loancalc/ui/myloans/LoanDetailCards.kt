@@ -301,7 +301,7 @@ internal fun LoanIdentityCard(
             LoanIdentityStat(
                 label = "مبلغِ وام",
                 value = maskIfPrivate(privacyMode, amountToman(amount)),
-                unit = "تومان",
+                unit = "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                 modifier = Modifier.weight(1.3f),
             )
             HeroStatDivider()
@@ -357,7 +357,7 @@ internal fun LoanKeyStatsCard(
                 bg = AppInfoPill,
                 label = installmentLabel,
                 value = maskIfPrivate(privacyMode, amountToman(installment)),
-                unit = "تومان",
+                unit = "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                 modifier = Modifier.weight(1.2f),
             )
             KeyStatDivider()

@@ -392,7 +392,7 @@ fun AddEditAccountScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 // ⚠️ `cleanNum` علامتِ منفی را حذف می‌کند، پس کارتِ اعتباری با موجودیِ منفی
                 // اصلاً قابلِ ثبت نیست - فیلد فقط عددِ مثبت می‌گیرد. تا وقتی cleanNum عوض
                 // نشود، راهِ کاربر یک تراکنشِ برداشت است. اگر لازم شد، بگویید تا فیلد را
@@ -400,7 +400,7 @@ fun AddEditAccountScreen(
                 val balanceToman = initialBalanceText.toLongOrNull() ?: 0L
                 if (balanceToman > 0) {
                     Text(
-                        "${numberToWordsFa(balanceToman.toDouble())} تومان",
+                        "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(balanceToman.toDouble())} تومان",
                         color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 4.dp),

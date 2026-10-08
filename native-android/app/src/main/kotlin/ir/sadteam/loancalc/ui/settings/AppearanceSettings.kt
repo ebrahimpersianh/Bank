@@ -157,7 +157,7 @@ internal fun AppearanceSettings(themeViewModel: ThemeViewModel, hapticsViewModel
         }
         // پیش‌نمایشِ زنده - اندازه‌ی انتخابی همین حالا روی کلِ برنامه نشسته، پس همین متن نمونه‌اش است.
         Text(
-            "نمونه: امروز ۲۵۰٬۰۰۰ تومان خرجِ خوراک ثبت شد.",
+            "نمونه: امروز ۲۵۰٬۰۰۰ ${ir.sadteam.loancalc.ui.jibak.unitFa()} خرجِ خوراک ثبت شد.",
             color = AppText,
             fontSize = 12.5.sp,
             fontWeight = FontWeight.Bold,
@@ -167,6 +167,41 @@ internal fun AppearanceSettings(themeViewModel: ThemeViewModel, hapticsViewModel
                 .clip(RoundedCornerShape(14.dp))
                 .background(AppSurface2)
                 .padding(12.dp),
+        )
+    }
+
+    // ── واحدِ مبلغ (۱۶ مهر): تومان یا ریال ───────────────────────────────────────
+    SettingsGroupLabel("واحدِ مبلغ")
+    SettingsGroup {
+        val unitContext = androidx.compose.ui.platform.LocalContext.current
+        SettingsRowItem(
+            title = "نمایشِ مبلغ‌ها",
+            icon = androidx.compose.material.icons.Icons.Filled.Paid,
+            tone = SettingsTone.GREEN,
+            status = if (ir.sadteam.loancalc.ui.jibak.MoneyUnit.rial) "ریال (دقیقِ بانک)" else "تومان",
+            onClick = null,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 13.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            AppChip(
+                label = "تومان",
+                selected = !ir.sadteam.loancalc.ui.jibak.MoneyUnit.rial,
+                onClick = { ir.sadteam.loancalc.ui.jibak.MoneyUnit.set(unitContext, false) },
+            )
+            AppChip(
+                label = "ریال",
+                selected = ir.sadteam.loancalc.ui.jibak.MoneyUnit.rial,
+                onClick = { ir.sadteam.loancalc.ui.jibak.MoneyUnit.set(unitContext, true) },
+            )
+        }
+        Text(
+            "با «ریال» همه‌ی مبلغ‌ها دقیقاً مثلِ بانک نوشته می‌شوند؛ حروفِ زیرِ کادرِ ورودی همچنان تومان می‌ماند.",
+            color = AppMuted,
+            fontSize = 10.5.sp,
+            lineHeight = 17.sp,
+            modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
         )
     }
 

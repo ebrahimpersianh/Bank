@@ -234,11 +234,11 @@ fun AccountDetailScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                            suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         val amountToman = amountText.toLongOrNull() ?: 0L
                         if (amountToman > 0) {
                             Text(
-                                "${numberToWordsFa(amountToman.toDouble())} تومان",
+                                "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(amountToman.toDouble())} تومان",
                                 color = AppMuted,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 4.dp),
@@ -435,7 +435,7 @@ private fun BalanceHero(balance: Double, monthIn: Double, monthOut: Double, mont
         Text("موجودیِ نقدی", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                maskIfPrivate(masked, rialToToman(balance.toLong()).toFaMoney()) + " تومان",
+                maskIfPrivate(masked, rialToToman(balance.toLong()).toFaMoney()) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                 color = Color.White,
                 fontSize = 26.sp,
                 letterSpacing = (-0.5).sp,
@@ -544,16 +544,24 @@ private fun EditTransactionDialog(
                     value = amountText,
                     onValueChange = { amountText = cleanNum(it) },
                     label = { Text("مبلغ") },
-                    suffix = { Text("تومان", fontSize = 14.sp) },
+                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", fontSize = 14.sp) },
                     // ۱۶ مهر: عددِ مبلغ درشت (قبلاً خیلی ریز بود).
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Black, color = AppText),
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                // ۱۶ مهر: وقتی ریالِ دقیق مضربِ ۱۰ نیست (مثلاً ۱٬۰۰۸) و نمایش تومان است، مبلغِ دقیقِ بانک هم دیده شود.
+                if (!ir.sadteam.loancalc.ui.jibak.MoneyUnit.rial && tx.amount.toLong() % 10L != 0L) {
+                    Text(
+                        "مبلغِ دقیق: " + toFa(tx.amount.toLong().let { kotlin.math.abs(it) }.toString().reversed().chunked(3).joinToString("٬").reversed()) + " ریال",
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                    )
+                }
                 if (toman > 0) {
                     Text(
-                        numberToWordsFa(toman.toDouble()) + " تومان",
+                        ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(toman.toDouble()) + " تومان",
                         color = AppMuted,
                         fontSize = 13.sp,
                     )
@@ -574,7 +582,8 @@ private fun EditTransactionDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(tomanToRial(toman).toDouble(), description) },
+                // اگر مبلغ دست نخورد، ریالِ دقیقِ اولیه می‌ماند (نه نسخه‌ی گردشده).
+                onClick = { onSave(if (toman == rialToToman(tx.amount.toLong())) tx.amount else tomanToRial(toman).toDouble(), description) },
                 enabled = toman > 0,
             ) { Text("ذخیره", color = if (toman > 0) AppPrimaryInk else AppMuted) }
         },

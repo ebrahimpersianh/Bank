@@ -210,7 +210,7 @@ fun AddManualLoanScreen(
                                 fontWeight = FontWeight.Black,
                             )
                             Text(
-                                "تومان",
+                                "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                 color = AppHeroLabel,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
@@ -299,13 +299,13 @@ fun AddManualLoanScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = appFieldColors(),
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد - تقسیمِ
                 // دستیِ «/ ۱۰» رفت؛ تنها مرجعِ تبدیل tomanToRial/rialToToman ئه.
                 val instToman = cleanNum(installmentText).toLongOrNull() ?: 0L
                 if (instToman > 0) {
                     Text(
-                        "${numberToWordsFa(instToman.toDouble())} تومان",
+                        "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(instToman.toDouble())} تومان",
                         color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 4.dp),

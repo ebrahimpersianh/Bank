@@ -65,6 +65,7 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
     override fun onCreate() {
         super.onCreate()
         crashReporter.install()
+        ir.sadteam.loancalc.ui.jibak.MoneyUnit.init(this)
         // ۱۶ مهر (سبک‌کردنِ شروع): کلاس‌های سنگینِ تم و تنظیمات پیش از آن‌که رشته‌ی اصلی لازمشان داشته باشد در
         // پس‌زمینه بار و خوانده می‌شوند (اندازه‌گیری: ~۵۰۰ms روی رشته‌ی اصلی در باز شدن).
         CoroutineScope(Dispatchers.IO).launch {

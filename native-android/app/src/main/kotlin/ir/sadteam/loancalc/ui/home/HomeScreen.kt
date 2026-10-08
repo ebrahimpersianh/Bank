@@ -613,7 +613,7 @@ private fun TodaySpendSheet(
                 Text("خرجِ امروز", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        maskIfPrivate(masked, rialToToman(total.toLong()).toFaMoney()) + " تومان",
+                        maskIfPrivate(masked, rialToToman(total.toLong()).toFaMoney()) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                         color = Color.White,
                         fontSize = 26.sp,
                         letterSpacing = (-0.5).sp,

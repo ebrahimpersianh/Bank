@@ -226,10 +226,10 @@ fun AssetTradeSheet(
                     // قفل‌کردنش کاربر را بی توضیح سرِ جا نگه می‌داشت.
                     enabled = picked != null,
                     placeholder = { if (picked == null) Text(if (isBuy) "اول بالا انتخاب کن چه خریدی" else "اول بالا انتخاب کن چه فروختی", color = AppMuted, fontSize = 12.sp) },
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 if (picked != null && toman > 0L) {
                     Text(
-                        "${numberToWordsFa(toman.toDouble())} تومان",
+                        "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(toman.toDouble())} تومان",
                         color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 4.dp),
@@ -497,7 +497,7 @@ private fun AssetPickField(
                 Text(
                     when {
                         picked == null -> "طلا، ارز، رمز ارز یا عنوانِ دلخواه"
-                        unitPriceRial != null -> "قیمتِ روز ${unitPriceRial.rialToFaCompactLocal()} تومان"
+                        unitPriceRial != null -> "قیمتِ روز ${unitPriceRial.rialToFaCompactLocal()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"
                         else -> "قیمتِ روز —"
                     },
                     color = AppMuted,
@@ -554,7 +554,7 @@ private fun QuantityField(
                 val market = marketUnitRial?.let { rialToToman(it.toLong()) }
                 Text(
                     buildString {
-                        append("قیمتِ واحدِ تو: ${yours.toFaCompact()} تومان")
+                        append("قیمتِ واحدِ تو: ${yours.toFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}")
                         // مقایسه فقط وقتی می‌آید که قیمتِ روز هم داشته باشیم؛ وگرنه
                         // «۰٪ اختلاف» چاپ می‌شد.
                         if (market != null && market > 0L) {

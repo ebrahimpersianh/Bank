@@ -136,7 +136,7 @@ internal fun PeriodSpendHero(
                 }
                 // واحد یک‌بار زیرِ عدد می‌آید، طبقِ قاعده‌ی عددِ سیستمِ طراحی.
                 Text(
-                    "تومان",
+                    "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                     color = Color.White.copy(alpha = 0.8f),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
@@ -166,7 +166,7 @@ internal fun PeriodSpendHero(
             HeroChart(
                 values = bars,
                 labels = barLabels,
-                valueLabel = { value -> if (privacyMode) "•••" else "${value.rialToFaCompact()} تومان" },
+                valueLabel = { value -> if (privacyMode) "•••" else "${value.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}" },
                 currentIndex = currentBarIndex,
                 natural = HeroChartStyle.BARS,
                 modifier = Modifier.padding(top = 12.dp),
@@ -220,7 +220,7 @@ internal fun PeriodStatRow(
             iconBg = AppPrimaryPill,
             title = "درآمد",
             value = maskIfPrivate(privacyMode, income.rialToFaCompact()),
-            unit = "تومان",
+            unit = "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
             footer = incomeChangePercent?.let { "${kotlin.math.abs(it).toFa()}٪ از دوره‌ی قبل" } ?: "دوره‌ی قبل خالی",
             footerTint = if ((incomeChangePercent ?: 0) >= 0) AppPrimaryInk else AppDangerInk,
             modifier = Modifier.weight(1f),
@@ -231,7 +231,7 @@ internal fun PeriodStatRow(
             iconBg = AppDangerPill,
             title = "هزینه",
             value = maskIfPrivate(privacyMode, spend.rialToFaCompact()),
-            unit = "تومان",
+            unit = "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
             footer = spendChangePercent?.let { "${kotlin.math.abs(it).toFa()}٪ از دوره‌ی قبل" } ?: "دوره‌ی قبل خالی",
             footerTint = if ((spendChangePercent ?: 0) > 0) AppDangerInk else AppPrimaryInk,
             modifier = Modifier.weight(1f),
@@ -350,8 +350,8 @@ internal fun FixedVsFreeCard(
         }
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                "اجاره، اقساط و قبض ${maskIfPrivate(masked, (fixedAmount).rialToFaCompact())} تومان از " +
-                    "درآمدت را برده — ${maskIfPrivate(masked, (freeAmount).rialToFaCompact())} تومان " +
+                "اجاره، اقساط و قبض ${maskIfPrivate(masked, (fixedAmount).rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} از " +
+                    "درآمدت را برده — ${maskIfPrivate(masked, (freeAmount).rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} " +
                     "برای خرجِ آزاد مانده.",
                 color = AppMuted,
                 fontSize = 10.sp,
@@ -505,7 +505,7 @@ internal fun CommitmentRows(
             CommitmentRow(
                 icon = Icons.Filled.EventRepeat,
                 title = "اقساط وام",
-                value = maskIfPrivate(privacyMode, rialToToman(monthlyInstallmentRial.toLong()).toFaMoney()) + " تومان",
+                value = maskIfPrivate(privacyMode, rialToToman(monthlyInstallmentRial.toLong()).toFaMoney()) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                 // ۱۶ مهر: «این ماه» معلوم نبود جمعِ سررسید است، نه پرداخت‌شده؛ و با «خرجِ» بالا اشتباه می‌شد.
                 caption = "سررسیدِ این ماه",
                 onClick = onOpenLoanStats,
@@ -589,11 +589,11 @@ internal fun MonthCompareCard(all: List<ir.sadteam.loancalc.data.db.AccountTrans
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("این ماه", color = AppMuted, fontSize = 10.sp)
-                    Text("${maskIfPrivate(masked, totalNow.rialToFaCompact())} تومان", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                    Text("${maskIfPrivate(masked, totalNow.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text("ماهِ قبل", color = AppMuted, fontSize = 10.sp)
-                    Text("${maskIfPrivate(masked, totalPrev.rialToFaCompact())} تومان", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                    Text("${maskIfPrivate(masked, totalPrev.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
                 }
             }
         }
@@ -669,7 +669,7 @@ internal fun TagsAndReimbursableCard(all: List<ir.sadteam.loancalc.data.db.Accou
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                     Text("#$tag", color = AppText, fontSize = 12.sp, modifier = Modifier.weight(1f))
                     PrivacyCrossfade(privacyMode) { masked ->
-                        Text(maskIfPrivate(masked, sum.rialToFaCompact()) + " تومان", color = AppMuted, fontSize = 12.sp)
+                        Text(maskIfPrivate(masked, sum.rialToFaCompact()) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 12.sp)
                     }
                 }
             }
@@ -678,7 +678,7 @@ internal fun TagsAndReimbursableCard(all: List<ir.sadteam.loancalc.data.db.Accou
             Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 Text("↩ خرج‌های بازپرداختی (قرار است پس بگیری)", color = AppText, fontSize = 12.sp, modifier = Modifier.weight(1f))
                 PrivacyCrossfade(privacyMode) { masked ->
-                    Text(maskIfPrivate(masked, reimb.rialToFaCompact()) + " تومان", color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(maskIfPrivate(masked, reimb.rialToFaCompact()) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

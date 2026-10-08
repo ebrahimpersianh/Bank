@@ -260,7 +260,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         (if (item.tx.type == "DEPOSIT") "واریز " else "برداشت ") +
-                                            rialToToman(item.tx.amount.toLong()).let { toFa(it) } + " تومان",
+                                            rialToToman(item.tx.amount.toLong()).let { toFa(it) } + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                         color = AppText,
                                         fontSize = 13.sp,
                                     )

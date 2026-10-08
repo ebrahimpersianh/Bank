@@ -300,8 +300,8 @@ private fun MainSection(
 
     val filtered = remember(allTransactions, searchQuery, typeFilter, accountFilter, minToman, maxToman) {
         val q = searchQuery.trim()
-        val minRial = minToman.toLongOrNull()?.let { it * 10.0 }
-        val maxRial = maxToman.toLongOrNull()?.let { it * 10.0 }
+        val minRial = minToman.toLongOrNull()?.let { it * ir.sadteam.loancalc.ui.jibak.unitDivD }
+        val maxRial = maxToman.toLongOrNull()?.let { it * ir.sadteam.loancalc.ui.jibak.unitDivD }
         allTransactions.filter {
             (q.isEmpty() || it.description.contains(q, ignoreCase = true) || (it.category?.contains(q, ignoreCase = true) == true) || (it.tags?.contains(q.removePrefix("#"), ignoreCase = true) == true)) &&
                 when (typeFilter) {
@@ -331,12 +331,12 @@ private fun MainSection(
                     Text("خرجِ ${faMonthNamesAccounting[today.m - 1]}", color = HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     RevealOnTap(privacyMode) { masked ->
                         Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp)) {
-                            Text(maskIfPrivate(masked, fmt(expense / 10)), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black, maxLines = 1)
-                            Text("تومان", color = HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp, bottom = 5.dp))
+                            Text(maskIfPrivate(masked, fmt(expense / ir.sadteam.loancalc.ui.jibak.unitDiv)), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black, maxLines = 1)
+                            Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp, bottom = 5.dp))
                         }
                     }
                     Row(modifier = Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                        HeroSmallPill("درآمد ${if (privacyMode) "•••" else toFa(fmt(income / 10))}")
+                        HeroSmallPill("درآمد ${if (privacyMode) "•••" else toFa(fmt(income / ir.sadteam.loancalc.ui.jibak.unitDiv))}")
                         HeroSmallPill("${toFa(allTransactions.count { it.year == today.y && it.month == today.m })} تراکنش این ماه")
                     }
                 }
@@ -381,7 +381,7 @@ private fun MainSection(
                         OutlinedTextField(
                             value = minToman,
                             onValueChange = { minToman = cleanNum(it).take(13) },
-                            placeholder = { Text("از مبلغ (تومان)") },
+                            placeholder = { Text("از مبلغ (${ir.sadteam.loancalc.ui.jibak.unitFa()})") },
                             visualTransformation = ThousandsSeparatorTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
@@ -392,7 +392,7 @@ private fun MainSection(
                         OutlinedTextField(
                             value = maxToman,
                             onValueChange = { maxToman = cleanNum(it).take(13) },
-                            placeholder = { Text("تا مبلغ (تومان)") },
+                            placeholder = { Text("تا مبلغ (${ir.sadteam.loancalc.ui.jibak.unitFa()})") },
                             visualTransformation = ThousandsSeparatorTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
@@ -539,12 +539,12 @@ private fun AccountingTransactionRow(
             PrivacyCrossfade(privacyMode) { masked ->
                 Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp)) {
                     AutoShrinkText(
-                        ir.sadteam.loancalc.ui.jibak.isoSigned(isIncome, maskIfPrivate(masked, fmt(tx.amount / 10))),
+                        ir.sadteam.loancalc.ui.jibak.isoSigned(isIncome, maskIfPrivate(masked, fmt(tx.amount / ir.sadteam.loancalc.ui.jibak.unitDiv))),
                         color = if (isIncome) AppPrimary else AppDanger,
                         maxFontSize = 14.sp,
                         fontWeight = FontWeight.Black,
                     )
-                    Text("تومان", color = AppMuted, fontSize = 10.sp)
+                    Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 10.sp)
                 }
             }
         }
@@ -610,8 +610,8 @@ internal fun AddTransactionForm(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-            val amountRial = (amountText.toLongOrNull() ?: 0L) * 10
+                suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+            val amountRial = (amountText.toLongOrNull() ?: 0L) * ir.sadteam.loancalc.ui.jibak.unitDiv
             if (amountRial > 0) {
                 Text(
                     "${numberToWordsFa((amountRial / 10).toDouble())} تومان",
@@ -661,7 +661,7 @@ internal fun AddTransactionForm(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             GradientButton(
                 onClick = {
-                    val amount = (amountText.toDoubleOrNull() ?: 0.0) * 10
+                    val amount = (amountText.toDoubleOrNull() ?: 0.0) * ir.sadteam.loancalc.ui.jibak.unitDivD
                     error = if (amount <= 0) "مبلغ رو وارد کن" else null
                     if (error == null) {
                         onSubmit(selectedAccountId, type, amount, selectedCategory?.name, description.trim(), txYear, txMonth, txDay)

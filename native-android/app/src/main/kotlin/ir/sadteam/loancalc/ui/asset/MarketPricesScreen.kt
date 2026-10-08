@@ -175,7 +175,7 @@ fun MarketPricesScreen(
                             // null یعنی هنوز یک‌بار هم گرفته نشده، نه «همین الان».
                             // واحد یک‌بار در سرصفحه می‌آید، نه کنارِ هر سطر.
                             (updatedClock?.let { "$it به‌روز شد" } ?: "هنوز به‌روز نشده") +
-                                " · تومان",
+                                " · ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                             color = AppMuted,
                             fontSize = 9.5.sp,
                             fontWeight = FontWeight.Bold,

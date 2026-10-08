@@ -3,6 +3,8 @@ package ir.sadteam.loancalc.ui.jibak
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
@@ -299,10 +301,17 @@ fun faCardTail(last4: String): String = "•••• ${last4.faDigits()}"
  *
  * سه فیلدِ ورودی: خرید/فروشِ دارایی، موجودیِ اولیه‌ی حساب، مبلغِ تراکنش.
  */
-fun tomanToRial(toman: Long): Long = toman * 10
+fun tomanToRial(toman: Long): Long = toman * unitDiv
 
-/** ریالِ دیتابیس → تومانِ فیلد. تقسیمِ صحیح؛ ریالِ باقی‌مانده دور می‌رود. */
-fun rialToToman(rial: Long): Long = rial / 10
+/**
+ * ریالِ دیتابیس → مبلغ در **واحدِ نمایش** (تومان یا ریال، رجوع کن به [MoneyUnit]). در حالتِ تومان **گرد می‌شود**
+ * (۱٬۰۰۸ ریال ← ۱۰۱)، نه اینکه ریالِ باقی‌مانده دور ریخته شود (۱۰۰) - گزارشِ کاربر، ۱۶ مهر.
+ */
+fun rialToToman(rial: Long): Long {
+    val d = unitDiv
+    if (d == 1L) return rial
+    return if (rial >= 0) (rial + d / 2) / d else -((-rial + d / 2) / d)
+}
 
 // ─── فیلدهای ورودی ────────────────────────────────────────────────────────────
 
@@ -353,3 +362,40 @@ val LocalFaDigits: ProvidableCompositionLocal<Boolean> = compositionLocalOf { tr
 @Composable
 fun localizedNumerals(text: String): String =
     if (LocalFaDigits.current) text.faDigits() else text
+
+
+/**
+ * 💱 واحدِ نمایشِ مبلغ: **تومان** (پیش‌فرض) یا **ریال** - تنظیمات ← ظاهر. حالتِ ساده‌ی `mutableStateOf` است تا با
+ * عوض‌شدنش همه‌ی صفحه‌هایی که مبلغ می‌نویسند خودکار تازه شوند. در SharedPreferences هم نگه‌داشته می‌شود تا
+ * بی‌انتظارِ DataStore از همان فریمِ اول درست باشد. دیتابیس همیشه ریال می‌ماند.
+ */
+object MoneyUnit {
+    private const val PREFS = "money_unit"
+    var rial by androidx.compose.runtime.mutableStateOf(false)
+        private set
+
+    fun init(context: android.content.Context) {
+        rial = context.applicationContext.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).getBoolean("rial", false)
+        ir.sadteam.loancalc.core.CoreMoneyUnit.rial = rial
+    }
+
+    fun set(context: android.content.Context, useRial: Boolean) {
+        context.applicationContext.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit().putBoolean("rial", useRial).apply()
+        rial = useRial
+        ir.sadteam.loancalc.core.CoreMoneyUnit.rial = useRial
+    }
+}
+
+/** ریال ÷ این = مبلغ در واحدِ نمایش (۱۰ برای تومان، ۱ برای ریال). */
+val unitDiv: Long get() = if (MoneyUnit.rial) 1L else 10L
+val unitDivD: Double get() = unitDiv.toDouble()
+
+/** برچسبِ واحد برای متن‌ها: «تومان» یا «ریال». */
+fun unitFa(): String = if (MoneyUnit.rial) "ریال" else "تومان"
+
+/** مبلغِ واحدِ نمایش → تومان (برای نوشتنِ حروفیِ زیرِ کادرِ ورودی که همیشه تومان می‌ماند). */
+fun displayToToman(amount: Double): Double = amount * unitDivD / 10.0
+
+/** حروفیِ مبلغ برای زیرِ کادرِ ورودی - **همیشه به تومان** (خواسته‌ی کاربر): ورودی در واحدِ نمایش است. */
+fun numberToWordsTomanFa(displayAmount: Double): String =
+    ir.sadteam.loancalc.core.numberToWordsFa(displayToToman(displayAmount))

@@ -131,7 +131,7 @@ fun SayadInquiryScreen(sayadId: String?, onBack: () -> Unit) {
                         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        SmsInfoStat(label = "هزینه", value = "۳۵۰ تومان", modifier = Modifier.weight(1f))
+                        SmsInfoStat(label = "هزینه", value = "۳۵۰ ${ir.sadteam.loancalc.ui.jibak.unitFa()}", modifier = Modifier.weight(1f))
                         SmsInfoStat(label = "سقف روزانه", value = "۴ استعلام", modifier = Modifier.weight(1f))
                         SmsInfoStat(label = "زمان پاسخ", value = "حداکثر ۱۵ دقیقه", modifier = Modifier.weight(1f))
                     }

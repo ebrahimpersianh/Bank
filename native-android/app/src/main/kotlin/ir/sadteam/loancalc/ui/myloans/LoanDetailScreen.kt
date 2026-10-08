@@ -230,7 +230,7 @@ fun LoanDetailScreen(
             // نه نمایشش؛ نتیجه برای کاربر دقیقاً «هیچ اتفاقی نمی‌افته» بود (نه پیام موفقیت، نه خطا).
             val result = runCatching {
                 DeviceCalendarExporter.insertInstallmentEvents(context, items) { m ->
-                    "[وام] قسط ${toFa(m)} ${loan.name} (${amountToman(amountByM[m] ?: loan.installment)} تومان)"
+                    "[وام] قسط ${toFa(m)} ${loan.name} (${amountToman(amountByM[m] ?: loan.installment)} ${ir.sadteam.loancalc.ui.jibak.unitFa()})"
                 }
             }
             withContext(Dispatchers.Main) {

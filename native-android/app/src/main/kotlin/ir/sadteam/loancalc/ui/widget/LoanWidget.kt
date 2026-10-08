@@ -220,7 +220,7 @@ private fun WidgetContent(next: NextInstallment?, privacy: Boolean = false) {
             )
             Spacer(modifier = GlanceModifier.width(5.dp))
             Text(
-                "تومان",
+                "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                 style = TextStyle(color = WidgetMuted, fontSize = if (compact) 10.sp else 12.sp, fontWeight = FontWeight.Medium),
             )
         }

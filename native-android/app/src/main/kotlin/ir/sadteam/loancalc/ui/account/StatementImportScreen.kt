@@ -153,7 +153,7 @@ fun StatementImportScreen(onBack: () -> Unit, vm: StatementImportViewModel = hil
                     Text(fileName, color = AppMuted, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("${toFa(list.size)} تراکنش", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
                     Text(
-                        "واریز ${list.filter { it.deposit }.sumOf { it.amount }.rialToFaCompact()} · برداشت ${list.filter { !it.deposit }.sumOf { it.amount }.rialToFaCompact()} تومان",
+                        "واریز ${list.filter { it.deposit }.sumOf { it.amount }.rialToFaCompact()} · برداشت ${list.filter { !it.deposit }.sumOf { it.amount }.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                         color = AppMuted, fontSize = 12.sp,
                     )
                     Spacer(Modifier.height(10.dp))

@@ -127,7 +127,7 @@ internal fun LoansHeroCard(
                 }
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        "${maskIfPrivate(masked, animatedMonthly.rialToFaCompact())} تومان", // ۱۶ مهر: فشرده، هم‌قالبِ بقیه‌ی صفحه‌ها
+                        "${maskIfPrivate(masked, animatedMonthly.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", // ۱۶ مهر: فشرده، هم‌قالبِ بقیه‌ی صفحه‌ها
                         color = Color.White,
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Black,
@@ -258,7 +258,7 @@ internal fun LoansHeroCard(
                     val waveMonths = (0 until debtCurve.size).map { ahead ->
                         persianMonthName(((todayForWave.m - 1 + ahead) % 12) + 1)
                     }
-                    val waveValue: (Double) -> String = { value -> if (privacyMode) "•••" else "مانده ${value.rialToFaCompact()} تومان" }
+                    val waveValue: (Double) -> String = { value -> if (privacyMode) "•••" else "مانده ${value.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}" }
                     // سبکِ خریده‌شده از فروشگاه روی این موج هم می‌نشیند؛ بی خرید، همان خطِ کم‌رنگِ قبلی.
                     if (LocalHeroChartStyle.current?.itemId != null) {
                         HeroChart(
@@ -412,7 +412,7 @@ internal fun LoansIncomeCard(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 PrivacyCrossfade(privacyMode) { masked ->
                                     Text(
-                                        "${maskIfPrivate(masked, amountToman(income.amount))} تومان",
+                                        "${maskIfPrivate(masked, amountToman(income.amount))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                         color = AppMuted,
                                         fontSize = 12.sp,
                                         modifier = Modifier.padding(end = 6.dp),
@@ -434,7 +434,7 @@ internal fun LoansIncomeCard(
                     }
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            "جمع درآمد: ${maskIfPrivate(masked, amountToman(totalIncome))} تومان",
+                            "جمع درآمد: ${maskIfPrivate(masked, amountToman(totalIncome))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                             color = AppText,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -457,7 +457,7 @@ internal fun LoansIncomeCard(
                         value = amountText,
                         onValueChange = { amountText = cleanNum(it) },
                         visualTransformation = ThousandsSeparatorTransformation(),
-                        label = { Text("مبلغ ماهانه (تومان)") },
+                        label = { Text("مبلغ ماهانه (${ir.sadteam.loancalc.ui.jibak.unitFa()})") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
@@ -466,7 +466,7 @@ internal fun LoansIncomeCard(
                     val incomeToman = amountText.toLongOrNull() ?: 0L
                     if (incomeToman > 0) {
                         AutoShrinkText(
-                            text = "${numberToWordsFa(incomeToman.toDouble())} تومان",
+                            text = "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(incomeToman.toDouble())} تومان",
                             color = AppMuted,
                             maxFontSize = 11.sp,
                         )

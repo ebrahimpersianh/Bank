@@ -530,7 +530,7 @@ private fun SmsRow(sms: SmsInboxMessage, added: Boolean, onAdd: () -> Unit) {
                 if (parsed != null) {
                     Text(
                         "${if (isWithdrawal) "برداشت" else "واریز"} " +
-                            "${fmt(rialToToman(parsed.amountRial.toLong()).toDouble()).faDigits()} تومان",
+                            "${fmt(rialToToman(parsed.amountRial.toLong()).toDouble()).faDigits()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                         color = AppText,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Black,

@@ -560,7 +560,7 @@ private fun SmsTestDialog(
                             )
                         }
                         if (r != null) {
-                            TestResultRow("مبلغ", "${rialToToman(r.amountRial).toFaMoney()} تومان")
+                            TestResultRow("مبلغ", "${rialToToman(r.amountRial).toFaMoney()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}")
                             TestResultRow("نوع", if (r.isWithdrawal) "خرج" else "دخل", if (r.isWithdrawal) AppDangerInk else AppPrimaryInk)
                             TestResultRow(
                                 "حساب",

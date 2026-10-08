@@ -368,7 +368,7 @@ private fun AssetSummaryCard(
                         fontWeight = FontWeight.Black,
                     )
                     Text(
-                        "تومان",
+                        "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                         color = p.subInk,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,

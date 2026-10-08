@@ -136,7 +136,7 @@ internal fun BankLoanHeroSection(
                                     )
                                 }
                                 Text(
-                                    "تومان",
+                                    "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                     color = HeroMuted,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,

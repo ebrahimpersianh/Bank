@@ -473,7 +473,7 @@ class DueDateReminderWorker @AssistedInject constructor(
                 } else {
                     // واحد **تومان** و رقمِ فارسی (بندِ ۲ی README + لایه‌ی ارقام). ستون ریال
                     // است پس تبدیل همین لبه.
-                    "«${payment.name}» (${fmt(rialToToman(payment.amount.toLong()).toDouble()).faDigits()} تومان) " +
+                    "«${payment.name}» (${fmt(rialToToman(payment.amount.toLong()).toDouble()).faDigits()} ${ir.sadteam.loancalc.core.CoreMoneyUnit.label}) " +
                         "$whenLabel سررسید می‌شه"
                 },
             )
@@ -552,12 +552,12 @@ class DueDateReminderWorker @AssistedInject constructor(
     }
 
     private suspend fun notifyWeeklySummary(w: ir.sadteam.loancalc.core.SmartInsights.Week, privacyMode: Boolean) {
-        fun t(rial: Double) = ir.sadteam.loancalc.core.toFa(ir.sadteam.loancalc.core.fmt(Math.round(rial / 10).toDouble()))
+        fun t(rial: Double) = ir.sadteam.loancalc.core.toFa(ir.sadteam.loancalc.core.fmt(Math.round(rial / ir.sadteam.loancalc.core.CoreMoneyUnit.div).toDouble()))
         val title = "خلاصه‌ی هفته‌ی تو"
         val body = if (privacyMode) {
             "خلاصه‌ی خرج‌های این هفته آماده‌ست - یه سر بزن."
         } else buildString {
-            append("این هفته ${t(w.spend)} تومان خرج کردی")
+            append("این هفته ${t(w.spend)} ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} خرج کردی")
             if (w.prevSpend > 0) {
                 val diff = ((w.spend / w.prevSpend - 1) * 100).toInt()
                 append(if (diff >= 0) " (${ir.sadteam.loancalc.core.toFa(diff)}٪ بیشتر از هفته‌ی قبل)" else " (${ir.sadteam.loancalc.core.toFa(-diff)}٪ کمتر از هفته‌ی قبل)")

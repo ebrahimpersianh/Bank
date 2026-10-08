@@ -70,7 +70,7 @@ object AutoTxNotifier {
                 if (privacyMode) {
                     if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه"
                 } else {
-                    "$amount تومان $verb"
+                    "$amount ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} $verb"
                 },
             )
             // خطِ دوم **منبع** است، نه دسته: اولین چیزی که کاربر می‌پرسد «این از کجا آمد؟»

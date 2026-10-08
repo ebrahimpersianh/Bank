@@ -128,8 +128,8 @@ fun SubscriptionFinderScreen(
                             // دوازده‌رقمیِ پشتِ‌هم می‌شد و هیچ‌کدام خوانده نمی‌شد.
                             // ⚠️ عددِ سالانه = ماهانه × ۱۲، **نه جمعِ گذشته**: سوال این است
                             // «اگر ادامه بدهم چه؟»، نه «تا حالا چه دادم؟».
-                            "تومان در ماه · با همین روند، سالی حدودِ " +
-                                maskIfPrivate(privacyMode, (monthlyTotal * 12).rialToFaCompact()) + " تومان",
+                            "${ir.sadteam.loancalc.ui.jibak.unitFa()} در ماه · با همین روند، سالی حدودِ " +
+                                maskIfPrivate(privacyMode, (monthlyTotal * 12).rialToFaCompact()) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                             color = HeroMuted,
                             fontSize = 10.sp,
                             lineHeight = 18.sp,

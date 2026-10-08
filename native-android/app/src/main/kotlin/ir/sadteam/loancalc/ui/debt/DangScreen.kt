@@ -168,7 +168,7 @@ fun DangListScreen(
                             )
                         }
                         Text(
-                            maskIfPrivate(privacyMode, "${fmt((event.totalAmount) / 10)} تومان"),
+                            maskIfPrivate(privacyMode, "${fmt((event.totalAmount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
                             color = if (event.settled) AppMuted else AppPrimary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
@@ -246,7 +246,7 @@ fun DangDetailScreen(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
                         Text(
-                            maskIfPrivate(privacyMode, "${fmt((event.totalAmount) / 10)} تومان"),
+                            maskIfPrivate(privacyMode, "${fmt((event.totalAmount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
                             color = AppText,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Black,
@@ -272,7 +272,7 @@ fun DangDetailScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(counterpartyNameFor(participant.counterpartyId), color = AppText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                         Text(
-                            maskIfPrivate(privacyMode, "${fmt((participant.shareAmount) / 10)} تومان"),
+                            maskIfPrivate(privacyMode, "${fmt((participant.shareAmount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
                             color = AppMuted,
                             fontSize = 12.sp,
                         )
@@ -377,7 +377,7 @@ private fun DangReceiptCard(
                 modifier = Modifier.padding(top = 2.dp),
             )
             Text(
-                "${fmt((event.totalAmount) / 10)} تومان",
+                "${fmt((event.totalAmount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                 color = AppText,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Black,
@@ -422,7 +422,7 @@ private fun DangReceiptCard(
                         Text("تسویه", color = AppPrimary, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
                     } else {
                         Text(
-                            "${fmt((participant.shareAmount) / 10)} تومان",
+                            "${fmt((participant.shareAmount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                             color = AppDanger,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Black,
@@ -482,7 +482,7 @@ fun DangCreateScreen(
             expenses.firstOrNull { it.id == initialExpenseId }?.let { e ->
                 pickedExpenseId = e.id
                 title = e.description.take(40)
-                totalText = (e.amount / 10).toLong().toString()
+                totalText = (e.amount / ir.sadteam.loancalc.ui.jibak.unitDiv).toLong().toString()
                 year = e.year; month = e.month; day = e.day
             }
         }
@@ -500,7 +500,7 @@ fun DangCreateScreen(
                                 .clickable {
                                     pickedExpenseId = e.id
                                     title = e.description.take(40)
-                                    totalText = (e.amount / 10).toLong().toString()
+                                    totalText = (e.amount / ir.sadteam.loancalc.ui.jibak.unitDiv).toLong().toString()
                                     year = e.year; month = e.month; day = e.day
                                     showExpensePicker = false
                                 }
@@ -508,7 +508,7 @@ fun DangCreateScreen(
                         ) {
                             Text(e.description.ifBlank { "خرج" }, color = AppText, fontWeight = FontWeight.Bold, maxLines = 1)
                             Text(
-                                "${fmt(e.amount / 10)} تومان · ${toFa(e.year)}/${toFa(e.month)}/${toFa(e.day)}",
+                                "${fmt(e.amount / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()} · ${toFa(e.year)}/${toFa(e.month)}/${toFa(e.day)}",
                                 color = AppMuted, fontSize = 11.sp,
                             )
                         }
@@ -602,10 +602,10 @@ fun DangCreateScreen(
                     }
                     // فرم تومان است، دیتابیس ریال - تبدیل فقط همین‌جا.
                     onSave(
-                        title.trim().ifEmpty { "دنگ" }, method, totalAmount * 10, year, month, day, isEventMode,
-                        participantInputs.map { it.copy(shareAmount = it.shareAmount * 10) },
+                        title.trim().ifEmpty { "دنگ" }, method, totalAmount * ir.sadteam.loancalc.ui.jibak.unitDivD, year, month, day, isEventMode,
+                        participantInputs.map { it.copy(shareAmount = it.shareAmount * ir.sadteam.loancalc.ui.jibak.unitDivD) },
                         itemInputs.map { item ->
-                            item.copy(amount = item.amount * 10, shares = item.shares.map { it.copy(shareAmount = it.shareAmount * 10) })
+                            item.copy(amount = item.amount * ir.sadteam.loancalc.ui.jibak.unitDivD, shares = item.shares.map { it.copy(shareAmount = it.shareAmount * ir.sadteam.loancalc.ui.jibak.unitDivD) })
                         },
                     )
     }
@@ -695,7 +695,7 @@ fun DangCreateScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
         }
         item {
@@ -778,7 +778,7 @@ fun DangCreateScreen(
                     if (method == DangMethod.CUSTOM) {
                         val sum = participants.value.sumOf { it.customAmountText.toLongOrNull()?.toDouble() ?: 0.0 }
                         Text(
-                            "جمعِ مبلغ‌ها: ${fmt(sum)} از ${fmt(totalAmount)} تومان",
+                            "جمعِ مبلغ‌ها: ${fmt(sum)} از ${fmt(totalAmount)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                             color = if (sum == totalAmount) AppPrimary else AppDanger,
                             fontSize = 11.sp,
                         )
@@ -819,7 +819,7 @@ fun DangCreateScreen(
                         }
                         val itemsSum = items.value.sumOf { it.amountText.toLongOrNull()?.toDouble() ?: 0.0 }
                         Text(
-                            "جمعِ قلم‌ها: ${fmt(itemsSum)} از ${fmt(totalAmount)} تومان",
+                            "جمعِ قلم‌ها: ${fmt(itemsSum)} از ${fmt(totalAmount)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                             color = if (itemsSum == totalAmount) AppPrimary else AppDanger,
                             fontSize = 11.sp,
                         )

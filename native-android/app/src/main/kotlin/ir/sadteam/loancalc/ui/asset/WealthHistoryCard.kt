@@ -72,7 +72,7 @@ internal fun WealthHistoryCard(snapshots: List<WealthSnapshotEntity>, privacyMod
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text(maskIfPrivate(privacyMode, last.rialToFaCompact()), color = AppText, fontSize = 22.sp, fontWeight = FontWeight.Black)
-            Text(" تومان", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(bottom = 3.dp))
+            Text(" ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(bottom = 3.dp))
             Spacer(Modifier.weight(1f))
             if (!privacyMode) {
                 Text(

@@ -296,7 +296,7 @@ internal fun InstallmentRow(
                     fontWeight = FontWeight.Black,
                 )
             }
-            Text("تومان", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

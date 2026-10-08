@@ -66,7 +66,7 @@ fun SharedSmsDialog(
     if (!confirmed) {
         ConfirmDialog(
             tone = ConfirmTone.PAYMENT,
-            title = "${if (isWithdrawal) "برداشتِ" else "واریزِ"} $tomanText تومان ثبت شود؟",
+            title = "${if (isWithdrawal) "برداشتِ" else "واریزِ"} $tomanText ${ir.sadteam.loancalc.ui.jibak.unitFa()} ثبت شود؟",
             // متنِ خودِ پیام داخلِ پیام می‌آید - کاربر باید ببیند از کدام پیام خوانده شده،
             // وگرنه عددِ بی‌زمینه است. `ConfirmDialog` جای محتوای دلخواه ندارد.
             consequence = "«${text.replace('\n', ' ').take(140)}»\n\n" +

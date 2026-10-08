@@ -164,7 +164,7 @@ fun AffordScreen(
                                     )
                                 }
                                 Text(
-                                    "تومان",
+                                    "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                     color = HeroMuted,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
@@ -191,7 +191,7 @@ fun AffordScreen(
                         Text(
                             maskIfPrivate(
                                 masked,
-                                "${numberToWordsFa(rialToToman(liveMax.toLong()).toDouble())} تومان",
+                                "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(rialToToman(liveMax.toLong()).toDouble())} تومان",
                             ),
                             color = AppMuted,
                             fontSize = 11.sp,
@@ -219,12 +219,12 @@ fun AffordScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                        suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد.
                     val tomanVal = cleanNum(payText).toLongOrNull() ?: 0L
                     if (tomanVal > 0) {
                         Text(
-                            text = "${numberToWordsFa(tomanVal.toDouble())} تومان",
+                            text = "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(tomanVal.toDouble())} تومان",
                             color = AppMuted,
                             fontSize = 11.5.sp,
                             modifier = Modifier.padding(top = 4.dp),
@@ -317,7 +317,7 @@ fun AffordScreen(
                         historyViewModel.log(
                             kind = "AFFORD",
                             title = "محاسبه‌گر سقف وام",
-                            summary = "قسط ${fmt(payToman.toDouble()).faDigits()} تومان × ${toFa(months)} ماه، نرخ ${toFa(rate)}٪",
+                            summary = "قسط ${fmt(payToman.toDouble()).faDigits()} ${ir.sadteam.loancalc.ui.jibak.unitFa()} × ${toFa(months)} ماه، نرخ ${toFa(rate)}٪",
                             amount = max,
                         )
                     },
@@ -373,10 +373,10 @@ private fun RateFinderCard() {
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("مبلغ وام (تومان)", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                suffix = { Text("مبلغ وام (${ir.sadteam.loancalc.ui.jibak.unitFa()})", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             (cleanNum(amountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
                 Text(
-                    "${numberToWordsFa(t.toDouble())} تومان",
+                    "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(t.toDouble())} تومان",
                     color = AppMuted,
                     fontSize = 11.sp,
                     modifier = Modifier.padding(top = 4.dp),
@@ -404,10 +404,10 @@ private fun RateFinderCard() {
                     .padding(top = 8.dp),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("مبلغ هر قسط (تومان)", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                suffix = { Text("مبلغ هر قسط (${ir.sadteam.loancalc.ui.jibak.unitFa()})", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             (cleanNum(installmentText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
                 Text(
-                    "${numberToWordsFa(t.toDouble())} تومان",
+                    "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(t.toDouble())} تومان",
                     color = AppMuted,
                     fontSize = 11.sp,
                     modifier = Modifier.padding(top = 4.dp),

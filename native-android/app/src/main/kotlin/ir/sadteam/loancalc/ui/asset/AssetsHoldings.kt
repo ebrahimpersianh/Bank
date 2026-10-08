@@ -136,7 +136,7 @@ internal fun AccountRow(
             Text("موجودی", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
             PrivacyCrossfade(privacyMode) { masked ->
                 AutoShrinkText(
-                    maskIfPrivate(masked, balance.rialToFaCompact()) + " تومان",
+                    maskIfPrivate(masked, balance.rialToFaCompact()) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                     // موجودیِ منفیِ کارتِ اعتباری وضعِ عادیه نه خطا: فقط عدد قرمز می‌شه.
                     color = if (balance < 0) AppDangerInk else AppText,
                     maxFontSize = 13.sp,
@@ -328,7 +328,7 @@ private fun HoldingRow(
             )
             Text(
                 // قیمتِ روز از همان جانشینِ ViewModel می‌آید، پس ردیفِ تازه هم عدد دارد.
-                unitPrice?.let { "قیمتِ روز ${it.rialToFaCompact()} تومان" } ?: "قیمتِ روز —",
+                unitPrice?.let { "قیمتِ روز ${it.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}" } ?: "قیمتِ روز —",
                 color = p.subInk,
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
@@ -440,7 +440,7 @@ internal fun MyAssetsSection(
                                 fontWeight = FontWeight.Black,
                             )
                         }
-                        Text("تومان", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                        Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                         change?.let { PriceChangeBadge(it, modifier = Modifier.padding(top = 2.dp)) }
                     }
                     Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.padding(start = 4.dp).size(18.dp))

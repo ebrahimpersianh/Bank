@@ -296,7 +296,7 @@ internal fun LazyItemScope.MyLoanListItem(
                                                             )
                                                             append(" · ")
                                                             append(maskIfPrivate(masked, loan.installment.rialToFaCompact()))
-                                                            append(" تومان")
+                                                            append(" ${ir.sadteam.loancalc.ui.jibak.unitFa()}")
                                                         }
                                                     },
                                                     color = when {
@@ -401,7 +401,7 @@ internal fun LazyItemScope.MyLoanListItem(
                                         }
                                         PrivacyCrossfade(LocalPrivacyMode.current) { masked ->
                                             Text(
-                                                "باقی‌مانده: ${maskIfPrivate(masked, amountToman(loan.installment * (loan.n - loan.paidCount)))} تومان",
+                                                "باقی‌مانده: ${maskIfPrivate(masked, amountToman(loan.installment * (loan.n - loan.paidCount)))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                                 color = AppPrimary,
                                                 fontSize = 13.sp,
                                                 modifier = Modifier.padding(top = 6.dp),

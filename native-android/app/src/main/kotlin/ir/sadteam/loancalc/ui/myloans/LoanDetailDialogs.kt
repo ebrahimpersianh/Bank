@@ -187,12 +187,12 @@ internal fun LoanEditMetaDialog(
                             onValueChange = { editMetaAmountText = cleanNum(it) },
                             visualTransformation = ThousandsSeparatorTransformation(),
                             label = { Text("مبلغ وام") },
-                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
+                            suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         editMetaAmountText.toLongOrNull()?.takeIf { it > 0 }?.let {
-                            Text("${ir.sadteam.loancalc.core.numberToWordsFa(it.toDouble())} تومان", color = AppMuted, fontSize = 11.sp)
+                            Text("${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(it.toDouble())} تومان", color = AppMuted, fontSize = 11.sp)
                         }
                         OutlinedTextField(
                             value = editMetaNText,
@@ -325,7 +325,7 @@ internal fun LoanEditRowAmountDialog(
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -443,7 +443,7 @@ internal fun LoanBulkPayChoiceDialog(
                 // یعنی تاییدِ کور، و واگردِ پرداختِ گروهی ردیف‌به‌ردیف است نه یک تپ.
                 val sum = rows.filter { (it["m"] as? Number)?.toInt() in selectedBulkMs }
                     .sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
-                Text("جمعاً ${amountToman(sum)} تومان. این اقساط سرِ موعد پرداخت شدن یا با تاخیر؟")
+                Text("جمعاً ${amountToman(sum)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}. این اقساط سرِ موعد پرداخت شدن یا با تاخیر؟")
             },
             confirmButton = {
                 TextButton(onClick = {

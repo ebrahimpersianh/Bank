@@ -142,7 +142,7 @@ internal fun ChequeReportScreen(
                             modifier = Modifier.padding(top = 2.dp),
                         )
                         Text(
-                            "تومان — دریافتیِ پاس‌شده منهای پرداختیِ پاس‌شده",
+                            "${ir.sadteam.loancalc.ui.jibak.unitFa()} — دریافتیِ پاس‌شده منهای پرداختیِ پاس‌شده",
                             color = HeroMuted,
                             fontSize = 9.5.sp,
                             modifier = Modifier.padding(top = 4.dp),

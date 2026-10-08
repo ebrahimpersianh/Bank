@@ -61,7 +61,7 @@ fun HomeSevenDayChart(
     HeroChart(
         values = values,
         labels = labels,
-        valueLabel = { value -> ir.sadteam.loancalc.ui.privacy.maskIfPrivate(privacy, "${value.rialToFaCompact()} تومان") },
+        valueLabel = { value -> ir.sadteam.loancalc.ui.privacy.maskIfPrivate(privacy, "${value.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}") },
         currentIndex = values.lastIndex,
         natural = HeroChartStyle.BARS,
         modifier = modifier,
