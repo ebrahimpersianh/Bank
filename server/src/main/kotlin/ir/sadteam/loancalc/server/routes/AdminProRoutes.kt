@@ -175,9 +175,10 @@ internal fun buildTimeline(conn: Connection, input: String): UserTimeline {
             add(TimelineInstall(it.getString(1).take(8), it.getString(2), it.getString(3), it.getInt(4), it.getObject(5) as? Int, it.getString(6), model))
         }
     }
-    val installFilter = "install_id IN (SELECT install_id FROM installs WHERE user_id = $uid)"
+    // 🔒 شناسه با «?» می‌رود، نه چسبیده به متنِ SQL (۱۶ مهر).
+    val installFilter = "install_id IN (SELECT install_id FROM installs WHERE user_id = ?)"
     val top = buildList {
-        conn.list("SELECT name, SUM(count) FROM usage_daily WHERE $installFilter AND name LIKE 'screen:%' GROUP BY 1 ORDER BY 2 DESC LIMIT 6") {
+        conn.list("SELECT name, SUM(count) FROM usage_daily WHERE $installFilter AND name LIKE 'screen:%' GROUP BY 1 ORDER BY 2 DESC LIMIT 6", uid) {
             add(NamedCount(it.getString(1).removePrefix("screen:"), it.getInt(2)))
         }
     }
@@ -185,6 +186,7 @@ internal fun buildTimeline(conn: Connection, input: String): UserTimeline {
         conn.list(
             "SELECT day, SUM(count), SUM(CASE WHEN name LIKE 'screen:%' THEN count ELSE 0 END) FROM usage_daily " +
                 "WHERE $installFilter GROUP BY day ORDER BY day DESC LIMIT 14",
+            uid,
         ) { add(TimelineDay(it.getString(1), it.getInt(2), it.getInt(3))) }
     }
     return UserTimeline(
