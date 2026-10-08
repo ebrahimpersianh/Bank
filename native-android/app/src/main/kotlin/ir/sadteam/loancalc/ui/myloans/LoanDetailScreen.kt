@@ -134,7 +134,7 @@ import kotlinx.coroutines.withContext
 /** یه عملِ «پرداخت‌شده کردن»ِ درحالِ‌انتظار - قبل از اجرای واقعیش، اگه حسابی وجود داشته باشه اول
  * باید حساب/کارتِ پرداخت‌کننده انتخاب بشه (رجوع کن به AccountPickerDialog تو LoanDetailScreen).
  * paidDate == null یعنی «به‌موقع»، غیرِnull یعنی «با تاخیر» با همون تاریخ. */
-private data class PendingLoanPayment(val ms: List<Int>, val paidDate: PersianDate?)
+internal data class PendingLoanPayment(val ms: List<Int>, val paidDate: PersianDate?)
 /**
  * پورت openDetail/renderTable تو www/index.html، برای وام‌های دستی (method=manual): هر قسط
  * وضعیت پرداخت مستقل داره و تاریخ سررسید واقعی (از startDate + intervalDays محاسبه می‌شه). تپ رو
@@ -159,7 +159,8 @@ fun LoanDetailScreen(
     // (loan_rows) می‌خونه، نه دیگه از رو JSONِ درون‌حافظه‌ای که همیشه از قبل تو خودِ loan بود - رجوع
     // کن به CLAUDE.md. با هر تغییرِ loan (مثلاً بعدِ پرداختِ یه قسط) دوباره لود می‌شه، دقیقاً همون
     // reactivity ای که remember(loan) قبلاً می‌داد.
-    var rows by remember { mutableStateOf<List<Map<String, Any?>>>(emptyList()) }
+    val rowsState = remember { mutableStateOf<List<Map<String, Any?>>>(emptyList()) }
+    var rows by rowsState
     LaunchedEffect(loan) {
         rows = viewModel.getRows(loan)
     }
@@ -193,7 +194,8 @@ fun LoanDetailScreen(
     // نتیجه با یه بنرِ داخلِ خودِ اپ نشون داده می‌شه، نه Toast سیستمی - چون Android 12+ (و بعضی
     // رام‌ها مثل MIUI) خودکار آیکونِ اپ رو کنارِ متنِ Toast می‌چسبونن که کاربر خواست حذف بشه (دقیقاً
     // همون دلیلی که هینتِ خروج تو MainActivity هم Toast نیست).
-    var calendarMessage by remember { mutableStateOf<String?>(null) }
+    val calendarMessageState = remember { mutableStateOf<String?>(null) }
+    var calendarMessage by calendarMessageState
     LaunchedEffect(calendarMessage) {
         if (calendarMessage != null) {
             kotlinx.coroutines.delay(2600)
@@ -203,7 +205,8 @@ fun LoanDetailScreen(
     // نشونه‌ی فوری «داره کار می‌کنه» - قبلاً بین زدنِ دکمه تا نتیجه‌ی نهایی هیچ فیدبکی نبود، برای
     // وامی با ۱۲۰ قسط این می‌تونست چند ثانیه طول بکشه (رجوع کن به کامنتِ applyBatch تو
     // DeviceCalendarExporter) و کاربر فکر می‌کرد «هیچ اتفاقی نمی‌افته».
-    var isExportingCalendar by remember { mutableStateOf(false) }
+    val isExportingCalendarState = remember { mutableStateOf(false) }
+    var isExportingCalendar by isExportingCalendarState
     fun runCalendarExport() {
         isExportingCalendar = true
         // قبلاً قسط‌های پرداخت‌شده اصلاً درج نمی‌شدن؛ حالا همه درج می‌شن (پرداخت‌شده‌ها با
@@ -259,29 +262,43 @@ fun LoanDetailScreen(
         }
     }
 
-    var editingRowM by remember { mutableStateOf<Int?>(null) }
-    var editAmountText by remember { mutableStateOf("") }
-    var applyAllPromptAmount by remember { mutableStateOf<Double?>(null) }
-    var payChoiceM by remember { mutableStateOf<Int?>(null) }
+    val editingRowMState = remember { mutableStateOf<Int?>(null) }
+    var editingRowM by editingRowMState
+    val editAmountTextState = remember { mutableStateOf("") }
+    var editAmountText by editAmountTextState
+    val applyAllPromptAmountState = remember { mutableStateOf<Double?>(null) }
+    var applyAllPromptAmount by applyAllPromptAmountState
+    val payChoiceMState = remember { mutableStateOf<Int?>(null) }
+    var payChoiceM by payChoiceMState
     // فریمِ `66c`: برداشتنِ پرداخت **همیشه** دیالوگ می‌گیرد - چه از تپ چه از منو. قبلاً تپ
     // روی ردیفِ پرداخت‌شده بی‌صدا پاکش می‌کرد و کاربر اصلاً خبر نداشت این کار ممکن است.
-    var confirmUnmarkM by remember { mutableStateOf<Int?>(null) }
-    var lateDateM by remember { mutableStateOf<Int?>(null) }
-    var lateYear by remember { mutableStateOf(1404) }
-    var lateMonth by remember { mutableStateOf(1) }
-    var lateDay by remember { mutableStateOf(1) }
+    val confirmUnmarkMState = remember { mutableStateOf<Int?>(null) }
+    var confirmUnmarkM by confirmUnmarkMState
+    val lateDateMState = remember { mutableStateOf<Int?>(null) }
+    var lateDateM by lateDateMState
+    val lateYearState = remember { mutableStateOf(1404) }
+    var lateYear by lateYearState
+    val lateMonthState = remember { mutableStateOf(1) }
+    var lateMonth by lateMonthState
+    val lateDayState = remember { mutableStateOf(1) }
+    var lateDay by lateDayState
     // عکس رسیدِ مخصوص یه قسطِ خاص (نه یه عکس کلی رو کل وام) - فقط رو قسط‌های پرداخت‌شده در دسترسه؛
     // چون این دیالوگ همیشه از رو یه ردیفِ مشخصِ همینِ وام باز می‌شه، «کدوم وام و کدوم قسط» خودش
     // مشخصه (خواسته‌ی کاربر).
-    var photoRowM by remember { mutableStateOf<Int?>(null) }
+    val photoRowMState = remember { mutableStateOf<Int?>(null) }
+    var photoRowM by photoRowMState
 
     // پرداختِ گروهیِ اقساط: چندتا قسطِ پرداخت‌نشده رو انتخاب می‌کنیم، بعد یه‌جا (با یه سوالِ
     // «به‌موقع یا با تاخیر» مشترک برای همه‌شون) پرداخت‌شده علامت می‌زنیم - به‌جای تک‌تک زدنِ هرکدوم.
-    var bulkPayMode by remember { mutableStateOf(false) }
-    var selectedBulkMs by remember { mutableStateOf<Set<Int>>(emptySet()) }
-    var bulkPayChoiceOpen by remember { mutableStateOf(false) }
+    val bulkPayModeState = remember { mutableStateOf(false) }
+    var bulkPayMode by bulkPayModeState
+    val selectedBulkMsState = remember { mutableStateOf<Set<Int>>(emptySet()) }
+    var selectedBulkMs by selectedBulkMsState
+    val bulkPayChoiceOpenState = remember { mutableStateOf(false) }
+    var bulkPayChoiceOpen by bulkPayChoiceOpenState
     // پرداختِ گروهی با تأخیر: قبلاً فقط «امروز» ثبت می‌شد؛ حالا تاریخِ واقعی انتخاب می‌شود (فریمِ `11b`).
-    var bulkLateMs by remember { mutableStateOf<List<Int>?>(null) }
+    val bulkLateMsState = remember { mutableStateOf<List<Int>?>(null) }
+    var bulkLateMs by bulkLateMsState
 
     // سینکِ خودکارِ پرداختِ وام ↔ حسابداری (تصمیمِ صریحِ کاربر، رجوع کن به CLAUDE.md): بعدِ انتخابِ
     // «به‌موقع»/«با تاخیر»، قبلِ ثبتِ واقعیِ پرداخت، باید حساب/کارتِ پرداخت‌کننده مشخص بشه - فقط
@@ -347,412 +364,119 @@ fun LoanDetailScreen(
     // canEditComputedAmount پایین‌تر + LoanRepository.updateComputedLoanAmount) - چون عوض‌کردنشون
     // نیازمندِ اجرای دوباره‌ی فرمولِ کاملِ LoanCalculator و بازسازیِ کاملِ ردیف‌هاست، که اگه قبلاً
     // پرداختی ثبت شده باشه، تاریخچه‌ش گم می‌شه.
-    var showEditMetaDialog by remember { mutableStateOf(false) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
-    var showDeletePaymentsAsk by remember { mutableStateOf(false) }
-    var editMetaName by remember { mutableStateOf("") }
-    var editMetaBank by remember { mutableStateOf("") }
-    var editMetaBorrower by remember { mutableStateOf("") }
-    var editMetaYear by remember { mutableStateOf(1404) }
-    var editMetaMonth by remember { mutableStateOf(1) }
-    var editMetaDay by remember { mutableStateOf(1) }
-    var editMetaGraceMonths by remember { mutableStateOf(0) }
+    val showEditMetaDialogState = remember { mutableStateOf(false) }
+    var showEditMetaDialog by showEditMetaDialogState
+    val showDeleteConfirmState = remember { mutableStateOf(false) }
+    var showDeleteConfirm by showDeleteConfirmState
+    val showDeletePaymentsAskState = remember { mutableStateOf(false) }
+    var showDeletePaymentsAsk by showDeletePaymentsAskState
+    val editMetaNameState = remember { mutableStateOf("") }
+    var editMetaName by editMetaNameState
+    val editMetaBankState = remember { mutableStateOf("") }
+    var editMetaBank by editMetaBankState
+    val editMetaBorrowerState = remember { mutableStateOf("") }
+    var editMetaBorrower by editMetaBorrowerState
+    val editMetaYearState = remember { mutableStateOf(1404) }
+    var editMetaYear by editMetaYearState
+    val editMetaMonthState = remember { mutableStateOf(1) }
+    var editMetaMonth by editMetaMonthState
+    val editMetaDayState = remember { mutableStateOf(1) }
+    var editMetaDay by editMetaDayState
+    val editMetaGraceMonthsState = remember { mutableStateOf(0) }
+    var editMetaGraceMonths by editMetaGraceMonthsState
     // نوعِ وام - نشانِ ردیفِ فهرست از همین می‌آید. `null` یعنی هنوز انتخاب نشده و نشان از
     // نامِ وام حدس زده می‌شود (رجوع کن به `loanGlyphFor`).
-    var editMetaCategory by remember(loan.id) { mutableStateOf(viewModel.categoryOf(loan)) }
+    val editMetaCategoryState = remember(loan.id) { mutableStateOf(viewModel.categoryOf(loan)) }
+    var editMetaCategory by editMetaCategoryState
     // مبلغ/تعدادِ اقساطِ وامِ محاسبه‌شده فقط وقتی هنوز هیچ قسطی پرداخت نشده قابلِ‌ویرایشه - رجوع کن
     // به کامنتِ LoanRepository.updateComputedLoanAmount برای دلیلِ این محدودیت.
     val canEditComputedAmount = loan.paidCount == 0
-    var editMetaAmountText by remember { mutableStateOf("") }
-    var editMetaNText by remember { mutableStateOf("") }
+    val editMetaAmountTextState = remember { mutableStateOf("") }
+    var editMetaAmountText by editMetaAmountTextState
+    val editMetaNTextState = remember { mutableStateOf("") }
+    var editMetaNText by editMetaNTextState
 
     // **فریمِ `36b`**: ویرایشِ مشخصاتِ وام صفحه‌ی کامل است نه پنجره‌ی شلوغ - محتوا اسکرول
     // می‌خورد و «ذخیره‌ی تغییرات» پایینِ صفحه ثابت می‌ماند.
-    if (showEditMetaDialog) {
-        FullScreenDialog(onDismissRequest = { showEditMetaDialog = false }) {
-            Column(modifier = Modifier.fillMaxSize().background(AppBg).imePadding()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 6.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = { showEditMetaDialog = false }) {
-                        Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
-                    }
-                    Text("ویرایش مشخصات وام", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black)
-                }
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    OutlinedTextField(
-                        value = editMetaName,
-                        onValueChange = { editMetaName = it },
-                        label = { Text("اسم وام") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                    // بانک فقط از فهرستِ جستجودار با لوگو (خواسته‌ی کاربر، ۷ مهر) - جای فیلدِ متنی + نوارِ لوگوها.
-                    ir.sadteam.loancalc.ui.components.BankPickerField(value = editMetaBank, onValueChange = { editMetaBank = it }, includeCreditServices = true)
-                    OutlinedTextField(
-                        value = editMetaBorrower,
-                        onValueChange = { editMetaBorrower = it },
-                        label = { Text("وام‌گیرنده (اختیاری)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                    // ═══ نوعِ وام ═══
-                    // تا امروز نشانِ ردیفِ فهرست فقط از **نامِ وام** حدس زده می‌شد؛ نامی مثل
-                    // «وام ۹۵ میلیونی» هیچ کلیدواژه‌ای ندارد و همیشه نشانِ پیش‌فرض می‌گرفت.
-                    // این ردیف همان حدس را به انتخاب تبدیل می‌کند.
-                    Text("نوعِ وام", color = AppMuted, fontSize = 11.sp)
-                    // نوعِ وام با آیکون (فریمِ `36b`)، سه‌تایی در هر ردیف - نه نوارِ اسکرولیِ بی‌آیکون.
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        LoanCategory.entries.chunked(3).forEach { rowCats ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                rowCats.forEach { category ->
-                                    val selected = editMetaCategory == category.id
-                                    LoanTypeOption(
-                                        category = category,
-                                        selected = selected,
-                                        // دوباره‌زدنِ نوعِ انتخاب‌شده آن را برمی‌دارد و به حدسِ خودکار برمی‌گرداند.
-                                        onClick = { editMetaCategory = if (selected) null else category.id },
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                }
-                                repeat(3 - rowCats.size) { Spacer(Modifier.weight(1f)) }
-                            }
-                        }
-                    }
-                    // برچسب + توضیحِ دینامیک قبلاً دو تیکه‌ی جدا بودن - همون رفعِ مورد ۳ که تو
-                    // BankLoanScreen انجام شد، اینجا هم یکی‌شون کردیم به یه جمله‌ی تمیز.
-                    Text(
-                        if (editMetaGraceMonths > 0) {
-                            "تاریخ دریافت وام (قسطِ اول ${toFa(editMetaGraceMonths)} ماه بعد، به‌خاطرِ دوره‌ی تنفس)"
-                        } else {
-                            "تاریخ دریافت وام (سررسیدِ قسطِ اول)"
-                        },
-                        fontSize = 13.sp,
-                        color = AppMuted,
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        InlineJalaliDateRow(
-                            year = editMetaYear,
-                            month = editMetaMonth,
-                            day = editMetaDay,
-                            onDateChange = { y, m, d -> editMetaYear = y; editMetaMonth = m; editMetaDay = d },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    // مبلغ/تعدادِ اقساط فقط وقتی هیچ قسطی پرداخت نشده قابلِ‌ویرایشه - رجوع کن به
-                    // کامنتِ بالای canEditComputedAmount. اگه یه قسط پرداخت شده باشه، تغییرشون یعنی
-                    // کلِ فرمول دوباره اجرا بشه و تاریخچه‌ی پرداخت گم بشه، برای همین قفله.
-                    if (canEditComputedAmount) {
-                        OutlinedTextField(
-                            value = editMetaAmountText,
-                            onValueChange = { editMetaAmountText = cleanNum(it) },
-                            visualTransformation = ThousandsSeparatorTransformation(),
-                            label = { Text("مبلغ وام") },
-                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                        editMetaAmountText.toLongOrNull()?.takeIf { it > 0 }?.let {
-                            Text("${ir.sadteam.loancalc.core.numberToWordsFa(it.toDouble())} تومان", color = AppMuted, fontSize = 11.sp)
-                        }
-                        OutlinedTextField(
-                            value = editMetaNText,
-                            onValueChange = { editMetaNText = cleanNum(it).take(3) },
-                            label = { Text("تعداد اقساط") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                        Text(
-                            "چون هنوز هیچ قسطی پرداخت نشده، عوض‌کردنِ این دوتا کلِ جدولِ اقساط رو از نو می‌سازه.",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                        )
-                    } else {
-                        Text(
-                            "چون قبلاً حداقل یه قسط پرداخت شده، مبلغ/تعدادِ اقساط دیگه قابلِ‌ویرایش نیست.",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                        )
-                    }
-                }
-                GradientButton(
-                    onClick = {
-                    // نامِ وام وقتی بانک انتخاب نشده از خودِ بانک («مشخص‌نشده») ساخته می‌شود؛ اگر کاربر
-                    // اسم را دست نزده و فقط بانک را عوض کرده، اسمِ فهرست هم با بانکِ تازه هماهنگ شود.
-                    val newBank = editMetaBank.trim()
-                    val nameIsAuto = editMetaName.trim() == loan.name &&
-                        (loan.name == loan.bank || loan.name == "مشخص‌نشده")
-                    val effectiveName = if (nameIsAuto && newBank.isNotEmpty()) newBank
-                    else editMetaName.trim().ifEmpty { loan.name }
-                    if (canEditComputedAmount) {
-                        viewModel.updateComputedLoanAmount(
-                            loan = loan,
-                            name = effectiveName,
-                            bank = editMetaBank.trim(),
-                            borrower = editMetaBorrower.trim().ifEmpty { "—" },
-                            principalAmount = editMetaAmountText.toLongOrNull()?.let { tomanToRial(it).toDouble() } ?: loan.amount,
-                            n = editMetaNText.toIntOrNull()?.takeIf { it > 0 } ?: loan.n,
-                            startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
-                            onSaved = {},
-                            category = editMetaCategory,
-                        )
-                    } else {
-                        viewModel.updateLoanMeta(
-                            loan = loan,
-                            name = effectiveName,
-                            bank = editMetaBank.trim(),
-                            borrower = editMetaBorrower.trim().ifEmpty { "—" },
-                            startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
-                            onSaved = {},
-                            category = editMetaCategory,
-                        )
-                    }
-                    showEditMetaDialog = false
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                ) {
-                    Text("ذخیره‌ی تغییرات", fontWeight = FontWeight.Black)
-                }
-            }
-        }
-    }
+    LoanEditMetaDialog(
+        loan = loan,
+        viewModel = viewModel,
+        canEditComputedAmount = canEditComputedAmount,
+        showEditMetaDialogState = showEditMetaDialogState,
+        editMetaNameState = editMetaNameState,
+        editMetaBankState = editMetaBankState,
+        editMetaBorrowerState = editMetaBorrowerState,
+        editMetaYearState = editMetaYearState,
+        editMetaMonthState = editMetaMonthState,
+        editMetaDayState = editMetaDayState,
+        editMetaGraceMonthsState = editMetaGraceMonthsState,
+        editMetaCategoryState = editMetaCategoryState,
+        editMetaAmountTextState = editMetaAmountTextState,
+        editMetaNTextState = editMetaNTextState,
+    )
 
     // **کارتِ `36d`**: تپ رو هر ردیفِ قسط یه **صفحه‌ی کامل** باز می‌کنه (یادداشت + چند عکسِ
     // رسید + شماره‌ی پیگیری)، نه دیگه دیالوگِ کوچیکِ تک‌عکسیِ قبلی.
-    if (photoRowM != null) {
-        val m = photoRowM!!
-        val row = rows.firstOrNull { (it["m"] as? Number)?.toInt() == m }
-        val rawPhoto = row?.get("photoPath") as? String
-        val photoPaths = rawPhoto?.split('|')?.filter { it.isNotBlank() } ?: emptyList()
-        val paidDate = row?.get("paidDate") as? Map<*, *>
-        val paidDateLabel = paidDate?.let {
-            val d = (it["d"] as? Number)?.toInt()
-            val mo = (it["m"] as? Number)?.toInt()
-            if (d != null && mo != null) "${toFa(d)} ${persianMonthName(mo)}" else null
-        }
-        FullScreenDialog(onDismissRequest = { photoRowM = null }) {
-            InstallmentDetailScreen(
-                loan = loan,
-                m = m,
-                amount = (row?.get("installment") as? Number)?.toDouble() ?: 0.0,
-                paid = row?.get("paid") == true,
-                paidDateLabel = paidDateLabel,
-                photoPaths = photoPaths,
-                note = row?.get("note") as? String,
-                trackingNumber = row?.get("trackingNumber") as? String,
-                onBack = { photoRowM = null },
-                onPickPhoto = { uri -> viewModel.setRowPhoto(loan, m, uri) },
-                onRemovePhoto = { path -> viewModel.removeRowPhoto(loan, m, path) },
-                onSaveDetails = { note, tracking ->
-                    viewModel.setRowDetails(loan, m, note, tracking)
-                    photoRowM = null
-                },
-            )
-        }
-    }
+    LoanInstallmentDetailHost(
+        loan = loan,
+        viewModel = viewModel,
+        photoRowMState = photoRowMState,
+        rowsState = rowsState,
+    )
 
-    if (editingRowM != null) {
-        JibakAlertDialog(
-            onDismissRequest = { editingRowM = null },
-            title = { Text("ویرایش مبلغ قسط ${toFa(editingRowM ?: 0)}") },
-            text = {
-                OutlinedTextField(
- textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
-                    value = editAmountText,
-                    onValueChange = { editAmountText = cleanNum(it) },
-                    visualTransformation = ThousandsSeparatorTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    // 🚨 فیلد **تومان** می‌گیرد (برچسبش هم همین را می‌گفت) ولی مقدارش ریالِ
-                    // خام می‌نشست - یعنی عددی که کاربر می‌دید ده برابر بود و ذخیره‌اش هم
-                    // ده‌برابرِ چیزی که تایپ کرده. قاعده‌ی «دیتابیس ریال، نمایش تومان».
-                    val newAmount = editAmountText.toLongOrNull()?.let { tomanToRial(it).toDouble() }
-                    val m = editingRowM
-                    if (newAmount != null && newAmount > 0 && m != null) {
-                        viewModel.setRowInstallment(loan, m, newAmount) {
-                            applyAllPromptAmount = newAmount
-                        }
-                    }
-                    editingRowM = null
-                }, enabled = (editAmountText.toLongOrNull() ?: 0L) > 0) { Text("ذخیره") }
-            },
-            dismissButton = {
-                TextButton(onClick = { editingRowM = null }) { Text("انصراف") }
-            },
-        )
-    }
+    LoanEditRowAmountDialog(
+        loan = loan,
+        viewModel = viewModel,
+        editingRowMState = editingRowMState,
+        editAmountTextState = editAmountTextState,
+        applyAllPromptAmountState = applyAllPromptAmountState,
+    )
 
-    if (applyAllPromptAmount != null) {
-        JibakAlertDialog(
-            onDismissRequest = { applyAllPromptAmount = null },
-            title = { Text("اعمال به همه‌ی اقساط") },
-            text = { Text("می‌خوای این مبلغ رو برای همه‌ی اقساط اعمال کنی؟") },
-            confirmButton = {
-                TextButton(onClick = {
-                    applyAllPromptAmount?.let { viewModel.setAllRowsInstallment(loan, it) }
-                    applyAllPromptAmount = null
-                }) { Text("بله، رو همه اعمال کن") }
-            },
-            dismissButton = {
-                TextButton(onClick = { applyAllPromptAmount = null }) { Text("نه") }
-            },
-        )
-    }
+    LoanApplyAllAmountDialog(
+        loan = loan,
+        viewModel = viewModel,
+        applyAllPromptAmountState = applyAllPromptAmountState,
+    )
 
-    if (payChoiceM != null) {
-        val m = payChoiceM!!
-        JibakAlertDialog(
-            onDismissRequest = { payChoiceM = null },
-            title = { Text("ثبت پرداخت قسط ${toFa(m)}") },
-            text = { Text("این قسط سر موعد پرداخت شده یا با تاخیر؟") },
-            confirmButton = {
-                TextButton(onClick = {
-                    applyPayment(PendingLoanPayment(listOf(m), null))
-                    payChoiceM = null
-                }) { Text("پرداخت به‌موقع") }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    // پیش‌فرض = امروز (نه سررسید) تا تراکنش در ماهِ واقعیِ پرداخت بیفتد.
-                    val t = JalaliCalendar.today()
-                    lateYear = t.y; lateMonth = t.m; lateDay = t.d
-                    lateDateM = m
-                    payChoiceM = null
-                }) { Text("پرداخت با تاخیر") }
-            },
-        )
-    }
+    LoanPayChoiceDialog(
+        applyPayment = ::applyPayment,
+        payChoiceMState = payChoiceMState,
+        lateDateMState = lateDateMState,
+        lateYearState = lateYearState,
+        lateMonthState = lateMonthState,
+        lateDayState = lateDayState,
+    )
 
-    if (bulkPayChoiceOpen) {
-        val count = selectedBulkMs.size
-        JibakAlertDialog(
-            onDismissRequest = { bulkPayChoiceOpen = false },
-            title = { Text("ثبت پرداختِ ${toFa(count)} قسط") },
-            text = {
-                // جمعِ مبلغ در متنِ تایید تکرار می‌شود (فریمِ `64b`) - «پرداختِ ۲ قسط» بی عدد
-                // یعنی تاییدِ کور، و واگردِ پرداختِ گروهی ردیف‌به‌ردیف است نه یک تپ.
-                val sum = rows.filter { (it["m"] as? Number)?.toInt() in selectedBulkMs }
-                    .sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
-                Text("جمعاً ${amountToman(sum)} تومان. این اقساط سرِ موعد پرداخت شدن یا با تاخیر؟")
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    applyPayment(PendingLoanPayment(selectedBulkMs.toList(), null))
-                    selectedBulkMs = emptySet()
-                    bulkPayChoiceOpen = false
-                    bulkPayMode = false
-                }) { Text("پرداخت به‌موقع") }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    val t = JalaliCalendar.today()
-                    lateYear = t.y; lateMonth = t.m; lateDay = t.d
-                    bulkLateMs = selectedBulkMs.sorted()
-                    bulkPayChoiceOpen = false
-                }) { Text("پرداخت با تاخیر") }
-            },
-        )
-    }
+    LoanBulkPayChoiceDialog(
+        applyPayment = ::applyPayment,
+        bulkPayChoiceOpenState = bulkPayChoiceOpenState,
+        bulkLateMsState = bulkLateMsState,
+        bulkPayModeState = bulkPayModeState,
+        lateYearState = lateYearState,
+        lateMonthState = lateMonthState,
+        lateDayState = lateDayState,
+        rowsState = rowsState,
+        selectedBulkMsState = selectedBulkMsState,
+    )
 
-    if (lateDateM != null) {
-        val m = lateDateM!!
-        JibakAlertDialog(
-            onDismissRequest = { lateDateM = null },
-            title = { Text("تاریخ واقعی پرداخت قسط ${toFa(m)}") },
-            text = {
-                // فریمِ `30c`: چرخِ تاریخ (همان کامپوننتِ فرمِ وام/چک) جای سه منوی کشویی، و زیرش
-                // «چند روز دیرتر از سررسید» که زنده عوض می‌شود - با رنگِ هشدار، نه سبز.
-                val dueMap = rows.firstOrNull { (it["m"] as? Number)?.toInt() == m }?.get("dueDate") as? Map<*, *>
-                val dueDate = dueMap?.let {
-                    val y = (it["y"] as? Number)?.toInt(); val mo = (it["m"] as? Number)?.toInt(); val d = (it["d"] as? Number)?.toInt()
-                    if (y != null && mo != null && d != null) PersianDate(y, mo, d) else null
-                }
-                Column {
-                    ir.sadteam.loancalc.ui.components.InlineJalaliDateRow(
-                        year = lateYear,
-                        month = lateMonth,
-                        day = lateDay,
-                        onDateChange = { y, mo, d -> lateYear = y; lateMonth = mo; lateDay = d },
-                    )
-                    if (dueDate != null) {
-                        val late = JalaliCalendar.daysBetween(dueDate, PersianDate(lateYear, lateMonth, lateDay))
-                        val (label, ink) = when {
-                            late > 0 -> "${toFa(late)} روز دیرتر از سررسید" to AppDangerInk
-                            late == 0 -> "همان روزِ سررسید" to AppMuted
-                            else -> "${toFa(-late)} روز زودتر از سررسید" to AppMuted
-                        }
-                        Text(
-                            label,
-                            color = ink,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 12.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(ink.copy(alpha = 0.12f))
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    applyPayment(PendingLoanPayment(listOf(m), PersianDate(lateYear, lateMonth, lateDay)))
-                    lateDateM = null
-                }) { Text("ثبت") }
-            },
-            dismissButton = {
-                TextButton(onClick = { lateDateM = null }) { Text("انصراف") }
-            },
-        )
-    }
+    LoanLateDateDialog(
+        applyPayment = ::applyPayment,
+        lateDateMState = lateDateMState,
+        lateYearState = lateYearState,
+        lateMonthState = lateMonthState,
+        lateDayState = lateDayState,
+        rowsState = rowsState,
+    )
 
-    bulkLateMs?.let { ms ->
-        JibakAlertDialog(
-            onDismissRequest = { bulkLateMs = null },
-            title = { Text("تاریخ واقعی پرداختِ ${toFa(ms.size)} قسط") },
-            text = {
-                Column {
-                    Text(
-                        "همه‌ی اقساطِ انتخاب‌شده با همین تاریخ ثبت می‌شوند.",
-                        color = AppMuted,
-                        fontSize = 11.5.sp,
-                        modifier = Modifier.padding(bottom = 10.dp),
-                    )
-                    ir.sadteam.loancalc.ui.components.InlineJalaliDateRow(
-                        year = lateYear,
-                        month = lateMonth,
-                        day = lateDay,
-                        onDateChange = { y, mo, d -> lateYear = y; lateMonth = mo; lateDay = d },
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    applyPayment(PendingLoanPayment(ms, PersianDate(lateYear, lateMonth, lateDay)))
-                    selectedBulkMs = emptySet()
-                    bulkPayMode = false
-                    bulkLateMs = null
-                }) { Text("ثبت") }
-            },
-            dismissButton = {
-                TextButton(onClick = { bulkLateMs = null }) { Text("انصراف") }
-            },
-        )
-    }
+    LoanBulkLateDialog(
+        applyPayment = ::applyPayment,
+        bulkLateMsState = bulkLateMsState,
+        bulkPayModeState = bulkPayModeState,
+        lateYearState = lateYearState,
+        lateMonthState = lateMonthState,
+        lateDayState = lateDayState,
+        selectedBulkMsState = selectedBulkMsState,
+    )
 
     Box(modifier = Modifier.fillMaxSize()) {
     // ── بازطراحیِ «داخلِ وام» (طرحِ ChatGPT، ۲ مهر) ─────────────────────────────────────
@@ -1196,133 +920,40 @@ fun LoanDetailScreen(
 
     // ── نوارِ چسبانِ پایین ─────────────────────────────────────────────────────────
     // در حالتِ پرداختِ گروهی جایش را به «جمعِ انتخاب‌شده + پرداخت» می‌دهد (فریمِ `64b`).
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(AppSurface)
-            .border(1.dp, AppLineRow)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-    ) {
-        if (bulkPayMode && selectedBulkMs.isNotEmpty()) {
-            val bulkSum = rows.filter { (it["m"] as? Number)?.toInt() in selectedBulkMs }
-                .sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column {
-                    Text("جمعِ انتخاب‌شده", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    PrivacyCrossfade(privacyMode) { masked ->
-                        Text(
-                            maskIfPrivate(masked, amountToman(bulkSum)),
-                            color = AppText,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Black,
-                        )
-                    }
-                }
-                GradientButton(onClick = { bulkPayChoiceOpen = true }) {
-                    Text("پرداختِ ${toFa(selectedBulkMs.size)} قسط", fontSize = 13.sp)
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                // ترتیبِ راست‌به‌چپ: پرداخت (اصلی) ← تقویم ← حذف (کم‌رنگ‌ترین).
-                if (!settled && nextRow != null) {
-                    LoanActionButton(
-                        label = "پرداخت قسط",
-                        icon = Icons.Filled.CreditCard,
-                        ink = Color.White,
-                        bg = AppPrimary,
-                        modifier = Modifier.weight(1.1f),
-                        onClick = { payChoiceM = (nextRow["m"] as? Number)?.toInt() },
-                    )
-                }
-                LoanActionButton(
-                    label = when {
-                        isExportingCalendar -> "در حال افزودن…"
-                        loan.calendarExported -> "در تقویم هست"
-                        else -> "افزودن به تقویم"
-                    },
-                    icon = Icons.Filled.CalendarMonth,
-                    ink = AppInfo,
-                    bg = AppInfoPill,
-                    enabled = !isExportingCalendar,
-                    modifier = Modifier.weight(1.1f),
-                    onClick = {
-                        if (loan.calendarExported) {
-                            // دیگه دوباره درج نمی‌کنیم (جلوگیری از رویدادهای تکراری تو تقویم گوشی با
-                            // هر بار کلیک) - فقط یادآوری می‌کنیم قبلاً اضافه شده.
-                            calendarMessage = "سررسیدهای این وام قبلاً به تقویم گوشی اضافه شده‌اند"
-                            return@LoanActionButton
-                        }
-                        isExportingCalendar = true
-                        val perms = arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)
-                        val allGranted = perms.all {
-                            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-                        }
-                        if (allGranted) runCalendarExport() else calendarPermissionLauncher.launch(perms)
-                    },
-                )
-                LoanActionButton(
-                    label = "حذف وام",
-                    icon = Icons.Filled.Delete,
-                    ink = AppDangerInk,
-                    bg = AppDangerPill,
-                    modifier = Modifier.weight(0.9f),
-                    onClick = { showDeleteConfirm = true },
-                )
-            }
-        }
+    LoanDetailBottomBar(
+        loan = loan,
+        privacyMode = privacyMode,
+        settled = settled,
+        nextRow = nextRow,
+        context = context,
+        runCalendarExport = ::runCalendarExport,
+        calendarPermissionLauncher = calendarPermissionLauncher,
+        bulkPayChoiceOpenState = bulkPayChoiceOpenState,
+        bulkPayModeState = bulkPayModeState,
+        calendarMessageState = calendarMessageState,
+        isExportingCalendarState = isExportingCalendarState,
+        payChoiceMState = payChoiceMState,
+        rowsState = rowsState,
+        selectedBulkMsState = selectedBulkMsState,
+        showDeleteConfirmState = showDeleteConfirmState,
+    )
     }
-    }
-    confirmUnmarkM?.let { unmarkM ->
-        ConfirmDialog(
-            tone = ConfirmTone.DESTRUCTIVE,
-            title = "پرداختِ قسط ${toFa(unmarkM)} برداشته شود؟",
-            consequence = "این ردیف به حالتِ پرداخت‌نشده برمی‌گردد.",
-            actionLabel = "بردار",
-            onConfirm = { confirmUnmarkM = null; viewModel.setRowUnpaid(loan, unmarkM) },
-            onDismiss = { confirmUnmarkM = null },
-        )
-    }
-    if (showDeleteConfirm) {
-        // قالبِ واحدِ بخشِ ۴۶: حذفِ وام بازگشت‌پذیر نیست، پس دیالوگ می‌گیره
-        // (نه واگردِ نواری) و لحنش DESTRUCTIVE ئه.
-        ConfirmDialog(
-            tone = ConfirmTone.DESTRUCTIVE,
-            title = "حذف وام",
-            consequence = "وامِ «${loan.name}» و همه‌ی قسط‌ها و عکس‌هایش حذف بشه؟ این کار قابلِ‌برگشت نیست.",
-            actionLabel = "حذف وام",
-            onConfirm = { showDeleteConfirm = false; showDeletePaymentsAsk = true },
-            onDismiss = { showDeleteConfirm = false },
-        )
-    }
-    if (showDeletePaymentsAsk) {
-        // قسط‌های پرداخت‌شده خرج ثبت کرده‌اند؛ کاربر انتخاب می‌کند بمانند یا بروند.
-        // 🚨 بستنِ پنجره (لمسِ بیرون/بازگشت) فقط **انصراف** است و وامی پاک نمی‌شود؛
-        // حذف فقط با یکی از دو دکمه انجام می‌شود.
-        JibakAlertDialog(
-            onDismissRequest = { showDeletePaymentsAsk = false },
-            title = { Text("تراکنش‌های پرداخت چه شود؟") },
-            text = { Text("خرج‌هایی که برای قسط‌های «${loan.name}» ثبت شده هم پاک شود و پولش به حساب برگردد؟") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeletePaymentsAsk = false
-                    viewModel.deleteLoanPayments(loan.id)
-                    onDelete()
-                }) { Text("پاک شود") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeletePaymentsAsk = false; onDelete() }) { Text("نه، فقط وام حذف شود") }
-            },
-        )
-    }
+    LoanUnmarkConfirmDialog(
+        loan = loan,
+        viewModel = viewModel,
+        confirmUnmarkMState = confirmUnmarkMState,
+    )
+    LoanDeleteConfirmDialog(
+        loan = loan,
+        showDeleteConfirmState = showDeleteConfirmState,
+        showDeletePaymentsAskState = showDeletePaymentsAskState,
+    )
+    LoanDeletePaymentsDialog(
+        loan = loan,
+        viewModel = viewModel,
+        onDelete = onDelete,
+        showDeletePaymentsAskState = showDeletePaymentsAskState,
+    )
 
 
         AnimatedVisibility(

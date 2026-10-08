@@ -539,7 +539,15 @@ fun HomeScreen(
         }
         if (showProfile) {
             // آدمکِ سربرگ → صفحه‌ی «حسابِ کاربری» (خواسته‌ی کاربر، ۳ مهر). نشان‌ها از تنظیمات در دسترس‌اند.
-            ir.sadteam.loancalc.ui.settings.SettingsScreen(onBack = { showProfile = false }, startAtAccount = false)
+            // 🚨 خودِ صفحه‌ی تنظیمات پس‌زمینه ندارد (در کشوی قدیمی داخلِ Surface بود)؛ بی این روکشِ مات،
+            // خانه از پشتش دیده می‌شد و لمس‌ها به کارت‌های زیرش می‌رسید (گزارشِ کاربر، ۱۶ مهر).
+            androidx.activity.compose.BackHandler { showProfile = false }
+            androidx.compose.material3.Surface(
+                color = ir.sadteam.loancalc.ui.theme.AppBg,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                ir.sadteam.loancalc.ui.settings.SettingsScreen(onBack = { showProfile = false }, startAtAccount = false)
+            }
         }
         if (showTodaySpend) {
             TodaySpendSheet(
