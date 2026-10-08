@@ -175,10 +175,11 @@ fun HomeScreen(
     BackHandler(enabled = showNewTransaction) { showNewTransaction = false }
 
     // خرجِ ۷ روزِ گذشته (قدیمی‌ترین → امروز) برای نمودارِ میله‌ایِ کارتِ قهرمان.
-    val weekSpend = remember(transactions) {
+    val netTx = remember(transactions) { transactions.netDangShares() }
+    val weekSpend = remember(netTx) {
         (6 downTo 0).map { back ->
             val d = PersianCalendar.addDays(today, -back)
-            transactions.netDangShares().filter { it.isExpenseOn(d.y, d.m, d.d) }.sumOf { it.amount }
+            netTx.filter { it.isExpenseOn(d.y, d.m, d.d) }.sumOf { it.amount }
         }
     }
     // درآمدِ امروز - برای جفتِ «درآمد/خرجِ امروز»ِ کارتِ قهرمان (خواسته‌ی کاربر با طرحِ
@@ -199,10 +200,10 @@ fun HomeScreen(
     val heroSeries = remember(transactions, effectivePeriod, today) {
         buildHeroSeries(transactions, today, effectivePeriod)
     }
-    val prevWeekTotal = remember(transactions) {
+    val prevWeekTotal = remember(netTx) {
         (13 downTo 7).sumOf { back ->
             val d = PersianCalendar.addDays(today, -back)
-            transactions.netDangShares().filter { it.isExpenseOn(d.y, d.m, d.d) }.sumOf { it.amount }
+            netTx.filter { it.isExpenseOn(d.y, d.m, d.d) }.sumOf { it.amount }
         }
     }
     val monthSpendByCategory = remember(transactions) {

@@ -185,27 +185,28 @@ fun BudgetTabScreen(
     val dailyAllowance = if (totalCap > 0) ((totalCap - totalSpent) / daysLeft).coerceAtLeast(0.0) else 0.0
     /** سهمِ منصفانه‌ی هر روز - مبنای میله‌های هفته و عددِ «ذخیره». */
     val fairShare = if (totalCap > 0) totalCap / daysInMonth else 0.0
-    val weekUnderShare = remember(allTransactions, today, fairShare) {
+    val netAll = remember(allTransactions) { allTransactions.netDangShares() }
+    val weekUnderShare = remember(netAll, today, fairShare) {
         if (fairShare <= 0.0) emptyList() else (6 downTo 0).map { back ->
             val d = PersianCalendar.addDays(today, -back)
-            allTransactions.netDangShares()
+            netAll
                 .filter { ir.sadteam.loancalc.data.countsInReports(it) && it.type == TransactionType.WITHDRAWAL.name && it.year == d.y && it.month == d.m && it.day == d.d }
                 .sumOf { it.amount } <= fairShare
         }
     }
     /** خرجِ هر یک از هفت روزِ اخیر (قدیمی→امروز) - برای حبابِ لمسِ نوارِ هفته. */
-    val weekSpent = remember(allTransactions, today) {
+    val weekSpent = remember(netAll, today) {
         (6 downTo 0).map { back ->
             val d = PersianCalendar.addDays(today, -back)
-            allTransactions.netDangShares()
+            netAll
                 .filter { ir.sadteam.loancalc.data.countsInReports(it) && it.type == TransactionType.WITHDRAWAL.name && it.year == d.y && it.month == d.m && it.day == d.d }
                 .sumOf { it.amount }
         }
     }
     // خرجِ هر روزِ همین ماه (نمودارِ میله‌ایِ کارتِ بالا) + درآمد و خرجِ کلِ ماه (دو باکسِ کنارش).
-    val monthDailySpent = remember(allTransactions, today, daysInMonth) {
+    val monthDailySpent = remember(netAll, today, daysInMonth) {
         (1..daysInMonth).map { day ->
-            allTransactions.netDangShares()
+            netAll
                 .filter { ir.sadteam.loancalc.data.countsInReports(it) && it.type == TransactionType.WITHDRAWAL.name && it.year == today.y && it.month == today.m && it.day == day }
                 .sumOf { it.amount }
         }
