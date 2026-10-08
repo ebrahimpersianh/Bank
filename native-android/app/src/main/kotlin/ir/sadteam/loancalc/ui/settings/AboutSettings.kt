@@ -212,8 +212,7 @@ private fun diagnosticsText(): String = buildString {
     append("نسخه: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})\n")
     append("فروشگاه: ${BuildConfig.FLAVOR}\n")
     append("گوشی: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}\n")
-    append("اندروید: ${android.os.Build.VERSION.RELEASE} (SDK ${android.os.Build.VERSION.SDK_INT})\n")
-    append(ir.sadteam.loancalc.crash.SlowMainWatcher.report())
+    append("اندروید: ${android.os.Build.VERSION.RELEASE} (SDK ${android.os.Build.VERSION.SDK_INT})")
 }
 @Composable
 private fun SupportRow(label: String, value: String, modifier: Modifier = Modifier, onClick: () -> Unit) {

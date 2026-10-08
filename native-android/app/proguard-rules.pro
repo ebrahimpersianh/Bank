@@ -69,7 +69,7 @@
 -keep class ir.myket.billingclient.** { *; }
 -dontwarn ir.myket.billingclient.**
 
-# 🔬 موقتی (۱۶ مهر، تشخیصِ کندی): نامِ کلاس/تابعِ برنامه در «پشته‌ی گیرِ رشته‌ی اصلی» خوانا بماند.
-# بعد از پیدا شدنِ علت حذف شود.
--keepnames class ir.sadteam.loancalc.** { *; }
+# 🔬 گزارش‌های کندی (SlowMainWatcher) نامِ فایل‌های صفحه (…Kt) را برای خوانایی روی سرور لازم دارند. فقط همین کلاس‌های
+# بالاسطحیِ برنامه (نه همه‌ی کلاس‌ها) تا حجمِ برنامه تقریباً دست‌نخورده بماند.
+-keepnames class ir.sadteam.loancalc.**Kt { *; }
 -keepattributes SourceFile,LineNumberTable
