@@ -52,12 +52,14 @@ import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.CategoryEntry
+import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -499,6 +501,7 @@ internal fun NewTxBottomBar(
     monthTxCount: Int,
     txPremium: Boolean,
     splits: androidx.compose.runtime.snapshots.SnapshotStateList<Pair<String?, String>>,
+    accent: Color,
     tagsTextState: MutableState<String>,
     reimbursableState: MutableState<Boolean>,
     receiptPathState: MutableState<String?>,
@@ -623,6 +626,27 @@ internal fun NewTxBottomBar(
                         onFailure = onSaveFailure,
                     )
                 }
+            }
+        }
+
+        AccentPillButton(
+            text = "ثبت · ${toFa(GamificationRepository.Reward.DAILY_LOG)} سکه",
+            accent = accent,
+            onClick = { submit(true) },
+            modifier = Modifier.weight(1f),
+        )
+
+            // «ثبت و بعدی» - ثبت می‌کند و فرم را برای تراکنشِ بعدی خالی نگه می‌دارد (قبلاً «+ باز»ِ نامفهوم).
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AppSurface)
+                    .border(1.5.dp, AppLine, RoundedCornerShape(999.dp))
+                    .pressScaleClickable { submit(false) }
+                    .padding(horizontal = 16.dp, vertical = 15.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("ثبت و بعدی", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
             }
         }
 }

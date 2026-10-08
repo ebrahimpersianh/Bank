@@ -69,7 +69,6 @@ private val depositMonthOptions = listOf(1 to "۱ ماهه", 3 to "۳ ماهه",
 private const val DEPOSIT_MIN_TOMAN = 10_000_000f
 private const val DEPOSIT_MAX_TOMAN = 1_000_000_000f
 
-private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
 
 /** `Locale.US` اجباریه - خروجی تو فیلدِ نرخ می‌شینه که بعد `toDoubleOrNull()` می‌شه. */
 private fun trimRateDeposit(v: Float): String =

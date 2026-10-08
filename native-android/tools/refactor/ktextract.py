@@ -54,17 +54,78 @@ def find_start(text, occ=1, line=None):
     return hits[occ - 1]
 
 
-def find_end(i):
-    ind = indent_of(lines[i])
-    for j in range(i + 1, len(lines)):
-        l = lines[j]
-        if not l.strip():
+def _depth_changes(line, state):
+    """Net {}/() depth change of one line, skipping strings, chars and comments.
+    `state` carries an open block comment / string across lines."""
+    d = 0
+    k = 0
+    n = len(line)
+    while k < n:
+        c = line[k]
+        if state.get('block'):
+            if line.startswith('*/', k):
+                state['block'] = False
+                k += 2
+                continue
+            k += 1
             continue
-        st = l.strip()
-        # `) {` after a multi-line argument list opens the body - not the end
-        if indent_of(l) == ind and st[0] in '})' and not st.endswith('{'):
+        if state.get('str'):
+            if c == '\\':
+                k += 2
+                continue
+            if line.startswith('${', k):
+                state.setdefault('tmpl', []).append(0)
+                state['str'] = False
+                k += 2
+                continue
+            if c == '"':
+                state['str'] = False
+            k += 1
+            continue
+        if line.startswith('//', k):
+            break
+        if line.startswith('/*', k):
+            state['block'] = True
+            k += 2
+            continue
+        if c == '"':
+            state['str'] = True
+            k += 1
+            continue
+        if c == "'":
+            m = re.match(r"'(\\.|[^'\\])'", line[k:])
+            if m:
+                k += len(m.group(0))
+                continue
+        if c in '{(':
+            if c == '{' and state.get('tmpl'):
+                state['tmpl'][-1] += 1
+            d += 1
+        elif c in '})':
+            if c == '}' and state.get('tmpl'):
+                if state['tmpl'][-1] == 0:
+                    state['tmpl'].pop()
+                    state['str'] = True  # back inside the string after ${...}
+                    k += 1
+                    continue
+                state['tmpl'][-1] -= 1
+            d -= 1
+        k += 1
+    return d
+
+
+def find_end(i):
+    """Line where the block opened on line `i` closes - by bracket counting, not indentation."""
+    state, depth, opened = {}, 0, False
+    for j in range(i, len(lines)):
+        # a `) {` opener (body after a multi-line argument list): ignore its leading closers
+        text = lines[j].lstrip().lstrip(')}') if j == i else lines[j]
+        depth += _depth_changes(text, state)
+        if depth > 0:
+            opened = True
+        if opened and depth == 0:
             return j
-        if indent_of(l) < ind and st[0] in '})':
+        if depth < 0:
             break
     sys.exit(f'no end for block at line {i + 1}: {lines[i].strip()}')
 
@@ -110,11 +171,16 @@ if scan:
     sys.exit(0)
 
 # 1) state declarations -> shared MutableState
-decl_re = re.compile(r'^(\s*)var (\w+) by (remember(?:\([^)]*\))? \{ mutableStateOf.*\})\s*$')
+decl_re = re.compile(r'^(\s*)var (\w+) by (remember\w*(?:\([^)]*\))? \{ mutable\w*StateOf.*\})\s*$')
+shared_re = re.compile(r'^\s*var (\w+) by (\w+)State\s*$')  # already shared by an earlier run
 state_types = spec['states']
 seen = set()
 for k, l in enumerate(lines):
     m = decl_re.match(l)
+    sm = shared_re.match(l)
+    if sm and sm.group(1) == sm.group(2) and sm.group(1) in state_types:
+        seen.add(sm.group(1))
+        continue
     if m and m.group(2) in state_types:
         ind, name, rhs = m.groups()
         lines[k] = f'{ind}val {name}State = {rhs}\n{ind}var {name} by {name}State'

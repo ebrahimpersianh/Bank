@@ -119,9 +119,6 @@ import kotlin.math.sin
 import java.util.Locale
 import kotlinx.coroutines.delay
 
-// نامِ ماه از `persianMonthName`ِ مشترک میاد - این لیستِ محلی یه کپیِ دیگه‌ش بود.
-// ذخیره/محاسبه ریال است و نمایش تومان (بندِ ۲ی README): تنها نقطه‌ی تبدیلِ نمایشِ این فایل.
-private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
 
 /** بازه‌ی اسلایدرِ مبلغ، **تومان**. قبلاً ریال بود و ÷۱۰ شد، وگرنه اسلایدر تا ده میلیارد تومان می‌رفت. */
 private const val AMOUNT_MIN_TOMAN = 10_000_000f
@@ -274,15 +271,19 @@ fun ResultScreen(
     val gateState by authViewModel.gateState.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
     val canSaveAnotherLoan = savedLoans.isEmpty() || (gateState == GateState.LOGGED_IN && subscribed)
-    var saved by remember { mutableStateOf(false) }
-    var saveMessage by remember { mutableStateOf<String?>(null) }
+    val savedState = remember { mutableStateOf(false) }
+    var saved by savedState
+    val saveMessageState = remember { mutableStateOf<String?>(null) }
+    var saveMessage by saveMessageState
     // همون گاردِ AddManualLoanScreen: قبل از این‌که `saved=true` بشه (که پوشِ شبکه‌ای بعدِ ذخیره هم
     // توش هست)، دکمه هنوز دیده می‌شد و قابلِ تپِ دوباره بود - با تاخیرِ شبکه، چندبار زدن می‌تونست
     // چندتا وامِ تکراری بسازه.
-    var saving by remember { mutableStateOf(false) }
+    val savingState = remember { mutableStateOf(false) }
+    var saving by savingState
     // برای وامی که تازه واقعاً وجود داره و کاربر داره از رو محاسبه‌گر واردش می‌کنه (نه یه وامِ
     // کاملاً جدید) - هم‌الگو با فیلدِ «تعداد اقساط پرداخت‌شده» تو فرمِ افزودنِ وامِ دستی.
-    var paidCountText by remember { mutableStateOf("") }
+    val paidCountTextState = remember { mutableStateOf("") }
+    var paidCountText by paidCountTextState
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -559,77 +560,16 @@ fun ResultScreen(
         }
 
         item {
-            // این صفحه بعدِ ذخیره جایی نمی‌ره (برخلافِ فرمِ افزودنِ دستی/چک که می‌بندن) - همینجا
-            // دکمه با این متنِ تاییدی عوض می‌شه. قبلاً این تعویض یهویی بود؛ الان با AnimatedVisibility
-            // یه ورودِ فنریِ کوچیک (بزرگ‌شدن از ۰.۸ + محو) داره.
-            AnimatedVisibility(
-                visible = saved,
-                enter = fadeIn(tween(Motion.FADE_IN_MS)) + scaleIn(animationSpec = Motion.snappy(), initialScale = 0.8f),
-            ) {
-                Text(
-                    "✓ وام تو «وام‌های من» ذخیره شد",
-                    color = AppPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.5.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
-                )
-            }
-            if (!saved) {
-                AppCard(label = "تعداد اقساط پرداخت‌شده (اختیاری)", modifier = Modifier.padding(bottom = 10.dp)) {
-                    Text(
-                        "اگه این وام از قبل هست و چندتا قسطش رو پرداخت کردی، اینجا بنویس",
-                        color = AppMuted,
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
-                    OutlinedTextField(
-                        value = paidCountText,
-                        onValueChange = { paidCountText = cleanNum(it) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                }
-                GradientButton(
-                    enabled = !saving,
-                    onClick = {
-                        if (saving) return@GradientButton
-                        val paidCount = (paidCountText.toIntOrNull() ?: 0).coerceIn(0, outcome.n)
-                        when {
-                            canSaveAnotherLoan -> {
-                                saving = true
-                                myLoansViewModel.saveComputedLoan(outcome, paidCount) {
-                                    saving = false
-                                    saved = true
-                                    saveMessage = null
-                                }
-                            }
-                            gateState == null -> Unit
-                            gateState != GateState.LOGGED_IN ->
-                                saveMessage = "برای ذخیره‌ی وام دوم اول باید وارد بشی — از تب «وام‌های من» وارد شو"
-                            else ->
-                                saveMessage = "برای ذخیره‌ی بیش از یک وام باید اشتراک بگیری — از تب «وام‌های من»"
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                ) {
-                    if (saving) {
-                        LottieSpinner(modifier = Modifier.size(18.dp))
-                    } else {
-                        Text("ذخیره وام", fontWeight = FontWeight.Bold)
-                    }
-                }
-                if (saveMessage != null) {
-                    Text(
-                        saveMessage!!,
-                        color = AppDanger,
-                        fontSize = 12.5.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    )
-                }
-            }
+            ResultSaveSection(
+                outcome = outcome,
+                myLoansViewModel = myLoansViewModel,
+                gateState = gateState,
+                canSaveAnotherLoan = canSaveAnotherLoan,
+                savedState = savedState,
+                saveMessageState = saveMessageState,
+                savingState = savingState,
+                paidCountTextState = paidCountTextState,
+            )
         }
 
         // 🚨 فریمِ `68b` بندِ ۱: هفت جعبه‌ی هم‌اندازه → یک فهرستِ برچسب/مقدار.
@@ -685,81 +625,14 @@ fun ResultScreen(
         }
 
         item {
-            StaggerIn(4) {
-            AppCard {
-                // فریمِ `68b` بندِ ۳: جدول **خلاصه** می‌گیرد - همان گپی که در فرمِ افزودن
-                // هم بود. کاربر جدولِ دوازده‌ردیفی را اسکرول می‌کرد تا جمع و تاریخِ پایان
-                // را پیدا کند، و هیچ‌کدام در جدول نبودند.
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                    Text("جدولِ کاملِ اقساط", color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Black)
-                    PrivacyCrossfade(privacyMode) { masked ->
-                        Text(
-                            "${toFa(outcome.n)} قسط · جمعِ ${maskIfPrivate(masked, amountToman(result.totalPaid))} تومان · تا ${toFa(endDate.d)} ${persianMonthName(endDate.m)} ${toFa(endDate.y)}",
-                            color = AppMuted,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                }
-
-                // و **سرستون** می‌گیرد: سه ستونِ بی‌برچسب یعنی کاربر باید حدس بزند عددِ
-                // سمتِ چپ مبلغِ قسط است یا ماندهٔ بدهی.
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = 10.dp, bottom = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text("شماره", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
-                    Text("سررسید", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
-                    Text("مبلغِ قسط", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
-                }
-                HorizontalDivider(color = AppLine)
-
-                // حداکثر ۵ قسط تو صفحه جا می‌شه، بقیه با اسکرول - کنارش یه اسکرول‌بار سبز نشون می‌ده
-                // چقدر پایین رفتیم (خواسته‌ی کاربر).
-                val tableState = rememberLazyListState()
-                val rowH = 48.dp
-                val visibleRows = minOf(result.rows.size, 5)
-                LazyColumn(
-                    state = tableState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(rowH * visibleRows)
-                        .lazyColumnScrollbar(tableState, AppPrimary),
-                    // start=10.dp (نه end) چون RTLه - رجوع کن به همین رفع رو LoanDetailScreen: start
-                    // تو RTL یعنی سمتِ راست، دقیقاً همونجایی که اسکرول‌بار (رسمِ raw canvas، مستقل از
-                    // جهت) کشیده می‌شه؛ بدونش متنِ «قسط N» زیرِ اسکرول‌بار می‌رفت.
-                    contentPadding = PaddingValues(start = 10.dp),
-                ) {
-                    itemsIndexed(result.rows, key = { _, row -> row.month }) { idx, row ->
-                        val due = dueDates[idx]
-                        val dateLabel = if (interval >= 28) {
-                            "${persianMonthName(due.m)} ${toFa(due.y)}"
-                        } else {
-                            "${toFa(due.d)} ${persianMonthName(due.m)}"
-                        }
-                        Column(Modifier.fillMaxWidth().height(rowH)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text("قسط ${toFa(row.month)}", fontSize = 12.sp)
-                                Text(dateLabel, fontSize = 12.sp)
-                                PrivacyCrossfade(privacyMode) { masked ->
-                                    Text(
-                                        "${maskIfPrivate(masked, amountToman(row.installment))} تومان",
-                                        fontSize = 12.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                }
-                            }
-                            if (idx != result.rows.lastIndex) HorizontalDivider(color = AppLine)
-                        }
-                    }
-                }
-            }
-            }
+            ResultActionsSection(
+                privacyMode = privacyMode,
+                outcome = outcome,
+                result = result,
+                interval = interval,
+                dueDates = dueDates,
+                endDate = endDate,
+            )
         }
     }
 }

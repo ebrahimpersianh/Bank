@@ -124,7 +124,7 @@ private val defaultAmountRangeToman = 10_000_000f..1_000_000_000f
  */
 private fun tomanSliderSteps(range: ClosedFloatingPointRange<Float>): Int =
     ((range.endInclusive - range.start) / AMOUNT_STEP_TOMAN).toInt().minus(1).coerceAtLeast(0)
-private val intervalChipOptions = listOf(7 to "هفتگی", 14 to "دوهفته‌ای", 30 to "ماهانه", 60 to "دوماهه", 90 to "سه‌ماهه")
+internal val intervalChipOptions = listOf(7 to "هفتگی", 14 to "دوهفته‌ای", 30 to "ماهانه", 60 to "دوماهه", 90 to "سه‌ماهه")
 
 data class BankLoanOutcome(
     val result: LoanResult,
@@ -169,48 +169,66 @@ fun BankLoanScreen(
     // فیلدهای ورودیِ ساده (String/Int/Float/Boolean) با rememberSaveable - چرخشِ صفحه یا اومدنِ اپ به
     // پس‌زمینه (که Compose گاهی state رو از دست می‌ده) دیگه فرمِ نیمه‌پرشده رو پاک نمی‌کنه. انتخابِ
     // بانک (BankEntry، شامل Color) عمداً هنوز remember ساده‌ست چون Saver سفارشی می‌خواد.
-    var borrowerName by rememberSaveable { mutableStateOf("") }
+    val borrowerNameState = rememberSaveable { mutableStateOf("") }
+    var borrowerName by borrowerNameState
     // فقط اسمِ بانک (String، قابلِ‌ذخیره) نگه داشته می‌شه، نه خودِ BankEntry (که Color داره و Saverِ
     // ساده نداره) - خودِ BankEntry هر بار از رو همین اسم از لیستِ بانک‌ها/خدماتِ اعتباری پیدا می‌شه.
     // این یعنی انتخابِ بانک هم مثلِ بقیه‌ی فیلدها، موقعِ برگشتن از «نتیجه‌ی محاسبه» (رجوع کن به
     // BankLoanTab تو MainActivity.kt) از دست نمی‌ره.
-    var selectedBankName by rememberSaveable { mutableStateOf<String?>(null) }
+    val selectedBankNameState = rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedBankName by selectedBankNameState
     val selectedBank = remember(selectedBankName, creditServices) {
         selectedBankName?.let { n -> banks.firstOrNull { it.name == n } ?: creditServices.firstOrNull { it.name == n } }
     }
-    var selectedPresetKey by rememberSaveable { mutableStateOf<String?>(null) }
+    val selectedPresetKeyState = rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedPresetKey by selectedPresetKeyState
     // «تصمیمِ ۱٫۵»: منبعِ نرخ. پیش‌فرض سرویسِ اعتباریه چون تنها حالتیه که نرخ واقعاً خودکار میاد.
-    var rateSource by rememberSaveable { mutableStateOf(RateSource.CREDIT_SERVICE) }
-    var selectedLoanType by rememberSaveable { mutableStateOf<String?>(null) }
+    val rateSourceState = rememberSaveable { mutableStateOf(RateSource.CREDIT_SERVICE) }
+    var rateSource by rateSourceState
+    val selectedLoanTypeState = rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedLoanType by selectedLoanTypeState
 
     // پیش‌فرض **امروز**ه. عددِ ثابتِ ۱۴۰۴/۱/۱ با گذشتِ سال کهنه می‌شد و کاربر تاریخی رو
     // می‌دید که هیچ ربطی به حالا نداشت.
     val today = remember { JalaliCalendar.today() }
-    var startYear by rememberSaveable { mutableIntStateOf(today.y) }
-    var startMonth by rememberSaveable { mutableIntStateOf(today.m) }
-    var startDay by rememberSaveable { mutableIntStateOf(today.d) }
+    val startYearState = rememberSaveable { mutableIntStateOf(today.y) }
+    var startYear by startYearState
+    val startMonthState = rememberSaveable { mutableIntStateOf(today.m) }
+    var startMonth by startMonthState
+    val startDayState = rememberSaveable { mutableIntStateOf(today.d) }
+    var startDay by startDayState
 
     // هر جا مبلغ نمایش داده می‌شود باید از حالتِ خصوصی عبور کند (بندِ ۳ی README) - هیروِ
     // زنده سه مبلغ نشان می‌دهد و تا امروز این صفحه هیچ مبلغِ **محاسبه‌شده**ای نداشت.
     val privacyMode = LocalPrivacyMode.current
 
     // state فقط رقم نگه می‌داره؛ کاما نمایشیه (ThousandsSeparatorTransformation) - رجوع کن به کامنتِ فیلد.
-    var amountText by rememberSaveable { mutableStateOf("250000000") }
-    var amountSliderRange by remember { mutableStateOf(defaultAmountRangeToman) }
+    val amountTextState = rememberSaveable { mutableStateOf("250000000") }
+    var amountText by amountTextState
+    val amountSliderRangeState = remember { mutableStateOf(defaultAmountRangeToman) }
+    var amountSliderRange by amountSliderRangeState
     var amountSlider by rememberSaveable { mutableFloatStateOf(250_000_000f) }
 
-    var rateText by rememberSaveable { mutableStateOf("23") }
-    var rateSlider by rememberSaveable { mutableFloatStateOf(23f) }
+    val rateTextState = rememberSaveable { mutableStateOf("23") }
+    var rateText by rateTextState
+    val rateSliderState = rememberSaveable { mutableFloatStateOf(23f) }
+    var rateSlider by rateSliderState
 
-    var selectedMonths by rememberSaveable { mutableIntStateOf(36) }
-    var customMonthsText by rememberSaveable { mutableStateOf("") }
+    val selectedMonthsState = rememberSaveable { mutableIntStateOf(36) }
+    var selectedMonths by selectedMonthsState
+    val customMonthsTextState = rememberSaveable { mutableStateOf("") }
+    var customMonthsText by customMonthsTextState
 
-    var intervalDays by rememberSaveable { mutableIntStateOf(30) }
+    val intervalDaysState = rememberSaveable { mutableIntStateOf(30) }
+    var intervalDays by intervalDaysState
 
-    var graceOn by rememberSaveable { mutableStateOf(false) }
-    var graceMonths by rememberSaveable { mutableFloatStateOf(6f) }
+    val graceOnState = rememberSaveable { mutableStateOf(false) }
+    var graceOn by graceOnState
+    val graceMonthsState = rememberSaveable { mutableFloatStateOf(6f) }
+    var graceMonths by graceMonthsState
     // تپِ «محاسبه کن» با فیلدِ خالی قبلاً بی‌صدا هیچ‌کاری نمی‌کرد.
-    var formError by remember { mutableStateOf<String?>(null) }
+    val formErrorState = remember { mutableStateOf<String?>(null) }
+    var formError by formErrorState
 
     var showCalendarPicker by rememberSaveable { mutableStateOf(false) }
     var showCheque by rememberSaveable { mutableStateOf(false) }
@@ -278,78 +296,17 @@ fun BankLoanScreen(
         // عدد غلط بود برمی‌گشت و دوباره. محاسبه از قبل بی‌هزینه در دست است، فقط دیده
         // نمی‌شد.
         item {
-            val heroToman = cleanNum(amountText).toLongOrNull() ?: 0L
-            val heroN = customMonthsText.toIntOrNull() ?: selectedMonths
-            val heroRate = rateText.toDoubleOrNull() ?: 0.0
-            // `compute` روی ترکیبِ نامعتبر (قرض‌الحسنه با یک قسط) تقسیم بر صفر می‌کرد، و
-            // این‌جا برخلافِ دکمه راهی برای نشان‌دادنِ خطا نیست - پس هیرو در آن حالت
-            // فقط ساخته نمی‌شود.
-            val heroResult = remember(heroToman, heroN, heroRate, graceOn, graceMonths, intervalDays) {
-                if (heroToman <= 0 || heroN <= 0) {
-                    null
-                } else {
-                    runCatching {
-                        LoanCalculator.compute(
-                            tomanToRial(heroToman).toDouble(),
-                            heroRate,
-                            heroN,
-                            if (heroRate > 0.0 && heroRate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD,
-                            if (graceOn) graceMonths.toInt() else 0,
-                            intervalDays,
-                        )
-                    }.getOrNull()
-                }
-            }
-            // فریمِ `70a`: میزبان قسطِ زنده را از همین‌جا می‌گیرد، نه از تپِ دکمه.
-            // `LaunchedEffect` روی خودِ مقدار: فقط وقتی عوض شد خبر می‌رود، نه هر recomposition.
-            LaunchedEffect(heroResult?.installment) { onLiveInstallment(heroResult?.installment) }
-            if (heroResult != null) {
-                StaggerIn(0) {
-                    AppHeroCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            Text(
-                                "قسطِ ماهانه",
-                                color = HeroMuted,
-                                fontSize = 9.5.sp,
-                                fontWeight = FontWeight.Black,
-                            )
-                            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 3.dp)) {
-                                PrivacyCrossfade(privacyMode) { masked ->
-                                    AutoShrinkText(
-                                        text = maskIfPrivate(masked, amountToman(heroResult.installment)),
-                                        color = Color.White,
-                                        maxFontSize = 25.sp,
-                                        fontWeight = FontWeight.Black,
-                                    )
-                                }
-                                Text(
-                                    "تومان",
-                                    color = HeroMuted,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(start = 5.dp, bottom = 2.dp),
-                                )
-                            }
-                            Text(
-                                "${toFa(heroN)} قسط",
-                                color = HeroMuted,
-                                fontSize = 9.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                            // کارتِ نتیجه‌ی برجسته (فریمِ `35`): کلِ بازپرداخت و سود هر کدام خانه‌ی خودشان را
-                            // دارند، نه یک خطِ ریزِ زیرِ قسط.
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                            ) {
-                                HeroResultCell("کلِ بازپرداخت", heroResult.totalPaid, privacyMode, Modifier.weight(1f))
-                                HeroResultCell("سودِ کل", heroResult.totalInterest, privacyMode, Modifier.weight(1f))
-                            }
-                        }
-                    }
-                }
-            }
+            BankLoanHeroSection(
+                onLiveInstallment = onLiveInstallment,
+                privacyMode = privacyMode,
+                amountTextState = amountTextState,
+                rateTextState = rateTextState,
+                selectedMonthsState = selectedMonthsState,
+                customMonthsTextState = customMonthsTextState,
+                intervalDaysState = intervalDaysState,
+                graceOnState = graceOnState,
+                graceMonthsState = graceMonthsState,
+            )
         }
 
         item {
@@ -399,170 +356,20 @@ fun BankLoanScreen(
         }
 
         item {
-            StaggerIn(2) {
-                AppCard(label = "بانک یا سرویس اعتباری") {
-                    // LazyRow به‌جای Row+horizontalScroll: قبلاً هر ۳۴ لوگوی بانک + ۶ سرویس همیشه یک‌جا
-                    // compose می‌شدن (یکی از منابع اصلی لگ تعویض تب)؛ حالا فقط ~۵ تای قابل‌دیدن.
-                    val banksScroll = rememberLazyListState()
-                    val creditScroll = rememberLazyListState()
-                    // هایلایتِ نوریِ مدام رو نشانگرهای اسکرولِ زیرِ بانک‌ها/خدمات (خواسته‌ی کاربر «اسکرول
-                    // زیر بانک‌ها رو یکم شیک‌تر بکن») - مستقل از خودِ اسکرول، همیشه در حال حرکته.
-                    val shimmerTransition = rememberInfiniteTransition(label = "bankScrollShimmer")
-                    val shimmerPhase by shimmerTransition.animateFloat(
-                        initialValue = 0f,
-                        targetValue = 1f,
-                        animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart),
-                        label = "shimmerPhase",
-                    )
-                    // سگمنتِ منبعِ نرخ (`27f`) - ریلِ چیپ با قرصِ فعالِ سطحِ سفید.
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 10.dp)
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(AppSegmentRail)
-                            .padding(3.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        RateSource.entries.forEach { src ->
-                            val selected = src == rateSource
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(999.dp))
-                                    .then(if (selected) Modifier.background(AppSegmentPill) else Modifier)
-                                    .pressScaleClickable { rateSource = src }
-                                    .heightIn(min = 44.dp)
-                                    .padding(vertical = 7.dp, horizontal = 6.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    src.label,
-                                    color = if (selected) AppText else AppMuted,
-                                    fontSize = 10.sp,
-                                    fontWeight = if (selected) FontWeight.Black else FontWeight.ExtraBold,
-                                    textAlign = TextAlign.Center,
-                                )
-                            }
-                        }
-                    }
-
-                    if (rateSource == RateSource.BANK_LOAN) {
-                        // قرص‌های نوعِ وام - فقط فیلدِ نرخ رو پر می‌کنن، خودِ نرخ قابلِ ویرایش می‌مونه.
-                        Text(
-                            "نوعِ وام نرخ را می‌دهد",
-                            fontSize = 10.sp,
-                            color = AppMuted,
-                            fontWeight = FontWeight.Black,
-                            modifier = Modifier.padding(bottom = 6.dp),
-                        )
-                        Row(
-                            modifier = Modifier
-                                .horizontalScroll(rememberScrollState())
-                                .padding(bottom = 10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
-                        ) {
-                            loanTypePresets.forEach { (name, pct) ->
-                                AppChip(
-                                    label = if (pct != null) "$name · ${toFa(trimRate(pct))}٪" else name,
-                                    selected = selectedLoanType == name,
-                                    onClick = {
-                                        selectedLoanType = name
-                                        if (pct != null) {
-                                            rateText = trimRate(pct)
-                                            rateSlider = pct.toFloat()
-                                        }
-                                    },
-                                )
-                            }
-                        }
-                        // تو این حالت انتخابِ بانک **اختیاری**ه و فقط اسم/لوگو/رنگ می‌ده، هیچ نرخی نه.
-                        Text(
-                            "بانک (اختیاری — فقط برای اسم)",
-                            fontSize = 13.sp,
-                            color = AppMuted,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    } else {
-                        Text("خدمات اعتباری", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
-                    }
-                    if (rateSource == RateSource.BANK_LOAN) {
-                    LazyRow(
-                        state = banksScroll,
-                        modifier = Modifier.padding(top = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        items(banks, key = { it.name }) { b ->
-                            BankTile(
-                                bank = b,
-                                selected = selectedBankName == b.name,
-                                onClick = { selectedBankName = b.name },
-                            )
-                        }
-                    }
-                    // نشانگر اسکرول افقی زیر ردیفِ بانک‌ها (تو همون فاصله‌ی ظریفِ زیرِ لیبل).
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 6.dp, bottom = 8.dp)
-                            .height(4.dp)
-                            .lazyRowScrollbar(banksScroll, AppPrimary, shimmerPhase = shimmerPhase),
-                    )
-                    } else if (creditRatesLoading) {
-                        Row(
-                            modifier = Modifier.padding(top = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            repeat(5) { BankTileShimmer() }
-                        }
-                    } else {
-                        LazyRow(
-                            state = creditScroll,
-                            modifier = Modifier.padding(top = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            // این لیست برخلافِ بانک‌ها ثابت نیست: نرخ‌ها از سرور می‌رسن و لیست
-                            // جایگزین می‌شه - بدونِ animateItem اون لحظه یه پرشِ ناگهانیه.
-                            items(creditServices, key = { it.name }) { b ->
-                                BankTile(
-                                    modifier = Modifier.animateItem(),
-                                    bank = b,
-                                    selected = selectedBankName == b.name,
-                                    onClick = {
-                                        selectedBankName = b.name
-                                        rateText = trimRate(b.ratePct)
-                                        rateSlider = b.ratePct.toFloat()
-                                        selectedMonths = b.months
-                                        customMonthsText = ""
-                                        val mid = (b.minAmount + b.maxAmount) / 2
-                                        applyAmount(mid)
-                                        amountSliderRange = rialToToman(b.minAmount).toFloat()..
-                                            rialToToman(b.maxAmount).toFloat()
-                                        selectedPresetKey = null
-                                    },
-                                )
-                            }
-                        }
-                    }
-                    if (rateSource == RateSource.CREDIT_SERVICE) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 6.dp)
-                                .height(4.dp)
-                                .lazyRowScrollbar(creditScroll, AppPrimary, shimmerPhase = shimmerPhase),
-                        )
-                        Text(
-                            "شش سرویسِ اعتباری نرخِ واحد دارند، پس خودکار می‌آید. برای وامِ بانکی " +
-                                "نرخ به نوعِ وام بستگی دارد نه به بانک.",
-                            fontSize = 9.5.sp,
-                            color = AppMuted,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
-                    }
-                }
-            }
+            BankLoanInputsSection(
+                creditServices = creditServices,
+                creditRatesLoading = creditRatesLoading,
+                applyAmount = ::applyAmount,
+                selectedBankNameState = selectedBankNameState,
+                selectedPresetKeyState = selectedPresetKeyState,
+                rateSourceState = rateSourceState,
+                selectedLoanTypeState = selectedLoanTypeState,
+                amountSliderRangeState = amountSliderRangeState,
+                rateTextState = rateTextState,
+                rateSliderState = rateSliderState,
+                selectedMonthsState = selectedMonthsState,
+                customMonthsTextState = customMonthsTextState,
+            )
         }
 
         item {
@@ -727,141 +534,32 @@ fun BankLoanScreen(
         // هر دو پیش‌فرضِ درستی دارند (ماهانه، خاموش) و اکثرِ کاربران دستشان نمی‌زنند، پس
         // دو کارتِ هم‌وزنِ فیلدهای اصلی گرفتن جایی که تصمیمِ واقعی نیست.
         item {
-            AppCard(label = "تنظیماتِ پیشرفته") {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "فاصله‌ی هر قسط",
-                        color = AppText,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()).padding(bottom = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    intervalChipOptions.forEach { (v, label) ->
-                        AppChip(
-                            label = label,
-                            selected = intervalDays == v,
-                            onClick = { intervalDays = v },
-                        )
-                    }
-                }
-                HorizontalDivider(color = AppLine, modifier = Modifier.padding(vertical = 10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column {
-                        Text("دوره تنفس", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        Text("بدون پرداخت اقساط در ماه‌های اول", fontSize = 13.sp, color = AppMuted)
-                    }
-                    Switch(
-                        checked = graceOn,
-                        onCheckedChange = { graceOn = it },
-                        colors = SwitchDefaults.colors(checkedTrackColor = AppPrimaryDim, checkedThumbColor = AppPrimary),
-                    )
-                }
-                if (graceOn) {
-                    Text("مدت تنفس (ماه)", fontSize = 13.5.sp, color = AppMuted, modifier = Modifier.padding(top = 12.dp))
-                    SlimSlider(
-                        value = graceMonths,
-                        onValueChange = { graceMonths = it },
-                        valueRange = 1f..24f,
-                        steps = 22,
-                    )
-                    Text(
-                        text = "${toFa(graceMonths.toInt())} ماه",
-                        fontSize = 12.5.sp,
-                        color = AppMuted,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
+            BankLoanAdvancedSection(
+                intervalDaysState = intervalDaysState,
+                graceOnState = graceOnState,
+                graceMonthsState = graceMonthsState,
+            )
         }
 
         item {
-            val tomanAmount = cleanNum(amountText).toLongOrNull() ?: 0L
-            val n = customMonthsText.toIntOrNull() ?: selectedMonths
-            val rate = rateText.toDoubleOrNull() ?: 0.0
-            formError?.let {
-                Text(
-                    it,
-                    color = AppDanger,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
-                    textAlign = TextAlign.Center,
-                )
-            }
-            GradientButton(
-                onClick = {
-                    // قبلاً `return@GradientButton`ِ خالی بود: تپ روی فیلدِ خالی بی هیچ نشونه‌ای
-                    // هیچ‌کاری نمی‌کرد و کاربر فکر می‌کرد دکمه خرابه.
-                    if (tomanAmount <= 0) {
-                        formError = "مبلغِ وام رو وارد کن"
-                        return@GradientButton
-                    }
-                    if (n <= 0) {
-                        formError = "تعدادِ اقساط باید بیشتر از صفر باشه"
-                        return@GradientButton
-                    }
-                    // 🚨 روشِ قرض‌الحسنه قسطِ اولِ هر سال را کاملاً کارمزدی می‌گیرد، پس با یک قسط
-                    // هیچ قسطی برای اصلِ وام نمی‌مانَد و محاسبه تقسیم بر صفر می‌شد (کرش).
-                    // ⚠️ نرخِ **صفر** هم عمداً از این مسیر بیرون رفت: خریدِ اقساطیِ بدونِ سود
-                    // (مثلِ پیش‌تنظیمِ چهارقسطی) باید اصل را بینِ همه‌ی اقساط مساوی تقسیم کند،
-                    // نه اینکه قسطِ اولش صفر شود - و مسیرِ STANDARD در نرخِ صفر دقیقاً همین است.
-                    if (rate in 0.0..4.0 && rate > 0.0 && n == 1) {
-                        formError = "وامِ قرض‌الحسنه با یک قسط قابلِ محاسبه نیست"
-                        return@GradientButton
-                    }
-                    formError = null
-                    val method = if (rate > 0.0 && rate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD
-                    val grace = if (graceOn) graceMonths.toInt() else 0
-                    // ورودی تومانه و موتورِ محاسبه ریال - تبدیل فقط همین یک نقطه.
-                    val rialAmount = tomanToRial(tomanAmount)
-                    val result = LoanCalculator.compute(rialAmount.toDouble(), rate, n, method, grace, intervalDays)
-                    onCalculated(
-                        BankLoanOutcome(
-                            result = result,
-                            startDate = PersianDate(startYear, startMonth, startDay),
-                            ratePct = rate,
-                            n = n,
-                            method = method,
-                            borrower = borrowerName.ifBlank { "—" },
-                            bankName = selectedBank?.name ?: "مشخص‌نشده",
-                            rateSourceLabel = rateSource.label,
-                        ),
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                // فریمِ `69b` بندِ ۶: «محاسبه کن» وقتی درست بود که نتیجه فقط آن‌جا دیده
-                // می‌شد. با هیروِ زنده، محاسبه از قبل جلوی چشم است و دکمه کارِ واقعی‌اش را
-                // می‌گوید: رفتن به جدول.
-                Text("جدولِ اقساط را ببین", fontWeight = FontWeight.Bold)
-            }
-
-            // فریمِ `69b` بندِ ۵: پانویس `AppCard` نمی‌گیرد - یک کارت که فقط متنِ
-            // خاکستریِ وسط‌چین دارد، وزنِ یک فیلد می‌گیرد برای چیزی که پانویس است.
-            Text(
-                "کارمزد بانک به‌صورت خودکار طبق قانون بانک مرکزی و ضوابط هر بانک محاسبه می‌شود.",
-                fontSize = 10.sp,
-                color = AppMuted,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 17.sp,
-                modifier = Modifier.fillMaxWidth().padding(top = 10.dp, start = 4.dp, end = 4.dp),
-                textAlign = TextAlign.Center,
+            BankLoanActionsSection(
+                onCalculated = onCalculated,
+                footer = footer,
+                selectedBank = selectedBank,
+                borrowerNameState = borrowerNameState,
+                rateSourceState = rateSourceState,
+                startYearState = startYearState,
+                startMonthState = startMonthState,
+                startDayState = startDayState,
+                amountTextState = amountTextState,
+                rateTextState = rateTextState,
+                selectedMonthsState = selectedMonthsState,
+                customMonthsTextState = customMonthsTextState,
+                intervalDaysState = intervalDaysState,
+                graceOnState = graceOnState,
+                graceMonthsState = graceMonthsState,
+                formErrorState = formErrorState,
             )
-
-            // «امور چک» از تهِ محاسبه‌گر برداشته شد (۱۰ مهر، خواسته‌ی کاربر) - از خانه/سررسید در دسترس است.
-            footer()
         }
     }
 
@@ -908,7 +606,7 @@ enum class RateSource(val label: String) {
  * عمداً **محلیه نه سرور** (تاکیدِ صریحِ هندآف): سالی یه‌بار عوض می‌شن و آفلاین هم باید کار کنه.
  * `null` یعنی «سایر» - نرخ رو دست نمی‌زنه و به خودِ کاربر واگذار می‌کنه.
  */
-private val loanTypePresets: List<Pair<String, Double?>> = listOf(
+internal val loanTypePresets: List<Pair<String, Double?>> = listOf(
     "ازدواج" to 4.0,
     "مسکن" to 18.0,
     "قرض‌الحسنه" to 0.0,
@@ -917,7 +615,7 @@ private val loanTypePresets: List<Pair<String, Double?>> = listOf(
 
 /** ذخیره/محاسبه ریال است و نمایش تومان (بندِ ۲ی README) - تنها نقطه‌ی تبدیلِ نمایشِ این فایل. */
 @Composable
-private fun HeroResultCell(label: String, rial: Double, privacyMode: Boolean, modifier: Modifier = Modifier) {
+internal fun HeroResultCell(label: String, rial: Double, privacyMode: Boolean, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
@@ -937,9 +635,8 @@ private fun HeroResultCell(label: String, rial: Double, privacyMode: Boolean, mo
     }
 }
 
-private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
 
-private fun trimRate(v: Double): String {
+internal fun trimRate(v: Double): String {
     // نمایشِ حداکثر دو رقمِ اعشار (خواسته‌ی صریحِ کاربر، مورد ۱) - وگرنه v.toString() خامِ فلوتینگ-
     // پوینت می‌تونست چیزی مثلِ «23.500000001» نشون بده.
     return if (v == v.toLong().toDouble()) v.toLong().toString() else String.format(Locale.US, "%.2f", v)

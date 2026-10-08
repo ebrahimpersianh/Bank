@@ -14,7 +14,7 @@ src_path, tgt_path = sys.argv[1], sys.argv[2]
 only = set(sys.argv[3:])
 root = subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=True, text=True).stdout.strip()
 rel = subprocess.run(['git', 'ls-files', '--full-name', src_path], capture_output=True, text=True).stdout.strip()
-orig = subprocess.run(['git', 'show', 'HEAD:' + rel], capture_output=True, text=True, cwd=root).stdout.split('\n')
+orig = subprocess.run(['git', 'show', __import__('os').environ.get('REV', 'HEAD') + ':' + rel], capture_output=True, text=True, cwd=root).stdout.split('\n')
 try:
     tgt_head_rel = subprocess.run(['git', 'ls-files', '--full-name', tgt_path], capture_output=True, text=True).stdout.strip()
     tgt_head = subprocess.run(['git', 'show', 'HEAD:' + tgt_head_rel], capture_output=True, text=True, cwd=root).stdout.split('\n') if tgt_head_rel else []
@@ -30,6 +30,20 @@ if only:
     fns = [f for f in fns if f in only]
 fnset = set(fns)
 
+def fold(ls):
+    res, i = [], 0
+    while i < len(ls):
+        m = re.match(r'^(\s*)val (\w+)State = (remember.*)$', ls[i])
+        if m and i + 1 < len(ls) and ls[i + 1].strip() == f'var {m.group(2)} by {m.group(2)}State':
+            res.append(f'{m.group(1)}var {m.group(2)} by {m.group(3)}')
+            i += 2
+            continue
+        res.append(ls[i])
+        i += 1
+    return res
+
+
+orig = fold(orig)
 out = []
 i = 0
 while i < len(src):

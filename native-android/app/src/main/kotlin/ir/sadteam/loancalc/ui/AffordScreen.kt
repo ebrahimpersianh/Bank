@@ -83,7 +83,6 @@ private const val LOAN_MAX_TOMAN = 1_000_000_000f
 private const val INST_MIN_TOMAN = 100_000f
 private const val INST_MAX_TOMAN = 20_000_000f
 
-private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
 
 /** نمایشِ حداکثر دو رقمِ اعشار. `Locale.US` اجباریه - خروجی تو فیلدِ نرخ می‌شینه که بعد
  * `toDoubleOrNull()` می‌شه؛ رقمِ فارسی یعنی نرخِ بی‌صدا صفر. */

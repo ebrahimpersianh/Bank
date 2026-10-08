@@ -543,6 +543,7 @@ fun NewTransactionSheet(
             monthTxCount = monthTxCount,
             txPremium = txPremium,
             splits = splits,
+            accent = accent,
             tagsTextState = tagsTextState,
             reimbursableState = reimbursableState,
             receiptPathState = receiptPathState,
@@ -557,27 +558,6 @@ fun NewTransactionSheet(
             categoryState = categoryState,
             errorState = errorState,
         )
-
-        AccentPillButton(
-            text = "ثبت · ${toFa(GamificationRepository.Reward.DAILY_LOG)} سکه",
-            accent = accent,
-            onClick = { submit(true) },
-            modifier = Modifier.weight(1f),
-        )
-
-            // «ثبت و بعدی» - ثبت می‌کند و فرم را برای تراکنشِ بعدی خالی نگه می‌دارد (قبلاً «+ باز»ِ نامفهوم).
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(AppSurface)
-                    .border(1.5.dp, AppLine, RoundedCornerShape(999.dp))
-                    .pressScaleClickable { submit(false) }
-                    .padding(horizontal = 16.dp, vertical = 15.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("ثبت و بعدی", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-            }
-        }
     }
 
         if (showCalendar) {
@@ -598,7 +578,7 @@ fun NewTransactionSheet(
  * با تبِ فعال عوض می‌شه (طرحِ Liquid Glass: «بدونِ گرادیان رو CTAهای اصلی»). رنگِ متن بر اساسِ
  * روشنیِ خودِ accent انتخاب می‌شه تا کنتراست همیشه کافی بمونه. */
 @Composable
-private fun AccentPillButton(text: String, accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun AccentPillButton(text: String, accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val contentColor = if (accent.luminance() > 0.45f) Color.Black else Color.White
     Surface(
         onClick = onClick,
