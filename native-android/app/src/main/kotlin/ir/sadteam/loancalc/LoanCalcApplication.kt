@@ -62,6 +62,7 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
     override fun onCreate() {
         super.onCreate()
         crashReporter.install()
+        ir.sadteam.loancalc.crash.SlowMainWatcher.start()
         ir.sadteam.loancalc.data.UsageStats.init(this, BuildConfig.FLAVOR)
         ir.sadteam.loancalc.data.UsageStats.profileProvider = { buildUsageProfile() }
         // بعد از آپدیت، سرویسِ خواندنِ اعلانِ بانک را دوباره وصل کن (۱۴ مهر).

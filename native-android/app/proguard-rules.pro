@@ -68,3 +68,8 @@
 # R8 بدونِ keep صریح ممکنه اسم/امضاش رو عوض کنه و باندشدن به سرویسِ مایکت رو زمانِ اجرا بشکنه. ---
 -keep class ir.myket.billingclient.** { *; }
 -dontwarn ir.myket.billingclient.**
+
+# 🔬 موقتی (۱۶ مهر، تشخیصِ کندی): نامِ کلاس/تابعِ برنامه در «پشته‌ی گیرِ رشته‌ی اصلی» خوانا بماند.
+# بعد از پیدا شدنِ علت حذف شود.
+-keepnames class ir.sadteam.loancalc.** { *; }
+-keepattributes SourceFile,LineNumberTable
