@@ -461,7 +461,10 @@ class LoanRepository(
     /** پورت rows[].paid تو www/index.html - وضعیت پرداخت هر قسط مستقله (نه یه آستانه‌ی ترتیبی)،
      * به‌علاوه `dueDate` که از startDate/intervalDaysِ خودِ وام محاسبه می‌شه (:app مستقیم به Gson
      * دسترسی نداره، برای همین این محاسبه اینجا تو :data انجام می‌شه، نه تو UI). */
-    suspend fun getRows(loan: LoanEntity): List<Map<String, Any?>> {
+    suspend fun getRows(loan: LoanEntity): List<Map<String, Any?>> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+        // ۱۶ مهر: تجزیه‌ی JSON و محاسبه‌ی تاریخِ همه‌ی اقساط (صدها ردیف برای چند وام) پیش‌تر روی رشته‌ی
+        // اصلی اجرا می‌شد (فراخوان‌ها از LaunchedEffect/viewModelScope می‌آمدند)؛ با هر تعویضِ تب صفحه
+        // چند ده تا چند صد میلی‌ثانیه خالی می‌ماند.
         val rows = getOrMigrateRows(loan).sortedBy { it.m }
         val data = parseData(loan)
         val startDate = parseStartDate(data)
@@ -473,7 +476,7 @@ class LoanRepository(
         // با اضافه‌کردنِ همون graceMonths به base، هم‌راستا با ResultScreen.
         val graceMonths = (data["graceMonths"] as? Number)?.toInt() ?: 0
         val base = if (graceMonths > 0) PersianCalendar.addMonths(startDate, graceMonths) else startDate
-        return rows.map { row ->
+        rows.map { row ->
             // قسطِ ۱ سررسیدش خودِ base ئه (خواسته‌ی صریحِ کاربر - تاریخی که تو «تاریخ دریافت وام»
             // می‌زنه مستقیم سررسیدِ قسطِ اول باشه، نه یه دوره جلوتر که رفتارِ قبلی/بانکیِ استاندارد
             // بود؛ برای وام‌هایی که دوره‌ی تنفس دارن، قسطِ اول base ئه که خودش startDate+graceMonths
