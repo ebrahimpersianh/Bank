@@ -52,13 +52,13 @@ enum class LiveBackground(val id: String, val nameFa: String, val darkOnly: Bool
  * با دوره‌های مساوی، دو لایه هر چند ثانیه هم‌فاز می‌شوند و چشم تکرار را می‌گیرد.
  */
 @Composable
-private fun phase(periodMs: Int): Float {
+private fun phase(periodMs: Int): State<Float> {
     val t = rememberInfiniteTransition(label = "lb")
     return t.animateFloat(
         initialValue = 0f, targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(periodMs, easing = LinearEasing)),
         label = "p"
-    ).value
+    )
 }
 
 private fun breathe(p: Float) = sin(p * 2f * Math.PI.toFloat())
@@ -84,12 +84,12 @@ fun LiveBackgroundLayer(
     Box(modifier.fillMaxSize()) {
         androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
             when (background) {
-                LiveBackground.AURORA -> drawAurora(primary, primaryLight, pA, pB)
-                LiveBackground.NIGHT_SWIRL -> drawNightSwirl(primary, primaryLight, pC, pD)
-                LiveBackground.SOFT_MESH -> drawSoftMesh(primary, pE)
-                LiveBackground.TIDE -> drawTide(primary, primaryLight, pF, pG)
-                LiveBackground.GALAXY -> drawGalaxy(primary, primaryLight, pH, pF)
-                LiveBackground.SKY -> drawSky(primaryLight, pI, pA)
+                LiveBackground.AURORA -> drawAurora(primary, primaryLight, pA.value, pB.value)
+                LiveBackground.NIGHT_SWIRL -> drawNightSwirl(primary, primaryLight, pC.value, pD.value)
+                LiveBackground.SOFT_MESH -> drawSoftMesh(primary, pE.value)
+                LiveBackground.TIDE -> drawTide(primary, primaryLight, pF.value, pG.value)
+                LiveBackground.GALAXY -> drawGalaxy(primary, primaryLight, pH.value, pF.value)
+                LiveBackground.SKY -> drawSky(primaryLight, pI.value, pA.value)
             }
         }
     }
