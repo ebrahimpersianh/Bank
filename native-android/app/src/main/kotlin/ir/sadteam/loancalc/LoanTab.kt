@@ -110,7 +110,16 @@ private fun BankLoanTab(
     // راست می‌ره؛ برگشت به فرم برعکس - به‌جای fade+scale قبلی.
     AnimatedContent(
         targetState = loanOutcome,
-        transitionSpec = { ir.sadteam.loancalc.ui.theme.Motion.contentEnter togetherWith ir.sadteam.loancalc.ui.theme.Motion.contentExit },
+        transitionSpec = {
+            val dir = if (targetState != null) -1 else 1
+            (
+                slideInHorizontally(
+                    animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+                ) { dir * it / 3 } + fadeIn(tween(220))
+                ).togetherWith(
+                    slideOutHorizontally(animationSpec = tween(180)) { -dir * it / 4 } + fadeOut(tween(150)),
+                )
+        },
         label = "bankLoanTab",
     ) { outcome ->
         if (outcome == null) {

@@ -28,6 +28,7 @@ import ir.sadteam.loancalc.notifications.DeepLinkViewModel
 import ir.sadteam.loancalc.ui.nav.NavDestination
 import ir.sadteam.loancalc.ui.nav.NavSlotsViewModel
 import ir.sadteam.loancalc.ui.nav.NavSuggestionCard
+import ir.sadteam.loancalc.ui.theme.Motion
 import kotlinx.coroutines.delay
 
 /** آیا هر پنج تب ساخته شده‌اند؟ اسپلش تا این `true` شدن (حداکثر ۶ ثانیه) می‌ماند. */
@@ -96,19 +97,22 @@ internal fun PersistentTabs(
         }
     }
 
+    // جهتِ لغزش: همان قاعده‌ی NavHost (از تبِ قبلی به تبِ تازه).
+    val routeMemo = remember { object { var cur = currentRoute; var prev = currentRoute } }
+    if (routeMemo.cur != currentRoute) {
+        routeMemo.prev = routeMemo.cur
+        routeMemo.cur = currentRoute
+    }
+    val slideDir = slideDirection(routeMemo.prev, routeMemo.cur)
+
     BottomTab.entries.forEach { tab ->
         val active = tab.route == currentRoute
         if (active || tab.route in composed) {
             key(tab.route) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .layout { measurable, constraints ->
-                            val p = measurable.measure(constraints)
-                            // تا پایانِ گرم‌شدن (زیرِ اسپلش) همه جا می‌گیرند و یک‌بار کشیده می‌شوند
-                            // (سایه‌ها، تصویرها، شیدرها)؛ بعدش فقط تبِ فعال.
-                            layout(p.width, p.height) { if (active || !TabWarmup.done.value) p.place(0, 0) }
-                        },
+                TabLayer(
+                    feel = feelOf(tab.route),
+                    dir = slideDir,
+                    active = active,
                 ) {
                     CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides (if (active) (realOwner ?: dummyOwner) else dummyOwner)) {
                         holder.SaveableStateProvider(tab.route) {
@@ -163,5 +167,92 @@ internal fun PersistentTabs(
                 }
             }
         }
+    }
+}
+
+/**
+ * حرکتِ تعویضِ تب (برگشتِ انیمیشن‌های هر بخش، ۱۶ مهر): چون تب‌ها دیگر از `NavHost` نمی‌گذرند،
+ * همان حس‌های [Motion.Feel] این‌جا با یک پیشرفتِ `Animatable` پیاده شده‌اند. ورود: از شفافیت/لغزش/مقیاسِ
+ * اولیه به حالتِ عادی؛ خروج: محو + لغزشِ کوتاه. تبِ پنهان (پیشرفت ۰) اصلاً جا نمی‌گیرد.
+ */
+@Composable
+private fun TabLayer(
+    feel: Motion.Feel,
+    dir: Int,
+    active: Boolean,
+    content: @Composable () -> Unit,
+) {
+    val progress = remember { androidx.compose.animation.core.Animatable(if (active) 1f else 0f) }
+    LaunchedEffect(active) {
+        if (active) {
+            val spec: androidx.compose.animation.core.AnimationSpec<Float> = when (feel) {
+                Motion.Feel.PLAYFUL -> androidx.compose.animation.core.spring(0.62f, androidx.compose.animation.core.Spring.StiffnessMediumLow)
+                Motion.Feel.FLOW -> androidx.compose.animation.core.spring(0.9f, androidx.compose.animation.core.Spring.StiffnessLow)
+                Motion.Feel.INSIGHT, Motion.Feel.SOLID -> androidx.compose.animation.core.spring(0.9f, androidx.compose.animation.core.Spring.StiffnessLow)
+                Motion.Feel.CALM -> androidx.compose.animation.core.tween(200)
+            }
+            progress.animateTo(1f, spec)
+        } else {
+            val ms = when (feel) {
+                Motion.Feel.PLAYFUL -> 160
+                Motion.Feel.FLOW -> 240
+                Motion.Feel.INSIGHT -> 160
+                Motion.Feel.SOLID -> 220
+                Motion.Feel.CALM -> 140
+            }
+            progress.animateTo(0f, androidx.compose.animation.core.tween(ms))
+        }
+    }
+    val inFrac = when (feel) {
+        Motion.Feel.PLAYFUL -> 1f / 6f
+        Motion.Feel.FLOW -> 1f / 2f
+        Motion.Feel.INSIGHT -> 0f
+        Motion.Feel.SOLID -> 1f / 5f
+        Motion.Feel.CALM -> 0f
+    }
+    val outFrac = when (feel) {
+        Motion.Feel.FLOW -> 1f / 3f
+        Motion.Feel.SOLID -> 1f / 6f
+        else -> 0f
+    }
+    val inScale = when (feel) {
+        Motion.Feel.PLAYFUL -> 0.92f
+        Motion.Feel.INSIGHT -> 0.96f
+        else -> 1f
+    }
+    val outScale = if (feel == Motion.Feel.PLAYFUL) 0.96f else 1f
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .layout { measurable, constraints ->
+                val pl = measurable.measure(constraints)
+                layout(pl.width, pl.height) {
+                    val warm = !TabWarmup.done.value
+                    val pr = progress.value
+                    if (active || pr > 0.001f || warm) {
+                        pl.placeWithLayer(0, 0) {
+                            if (warm && !active && pr <= 0.001f) {
+                                alpha = 1f
+                            } else {
+                                val a = pr.coerceIn(0f, 1f)
+                                alpha = a
+                                if (active) {
+                                    translationX = dir * size.width * inFrac * (1f - pr)
+                                    val sc = inScale + (1f - inScale) * pr
+                                    scaleX = sc
+                                    scaleY = sc
+                                } else {
+                                    translationX = -dir * size.width * outFrac * (1f - pr)
+                                    val sc = outScale + (1f - outScale) * pr
+                                    scaleX = sc
+                                    scaleY = sc
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+    ) {
+        content()
     }
 }

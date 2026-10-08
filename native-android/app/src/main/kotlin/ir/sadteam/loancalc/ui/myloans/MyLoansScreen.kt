@@ -473,8 +473,19 @@ fun MyLoansScreen(
     ) {
     AnimatedContent(
         targetState = screenKey,
-        // یک‌دست (۱۶ مهر): همه‌ی گذرها همان محوِ کوتاه؛ بزرگ‌شدن از روی کارت برداشته شد.
-        transitionSpec = { Motion.contentEnter togetherWith Motion.contentExit },
+        transitionSpec = {
+            if (targetState == "detail" || initialState == "detail") {
+                // فقط برای گذرِ لیست↔جزئیات؛ بقیه‌ی گذرها همون تعویضِ استانداردِ Motion رو دارن.
+                (fadeIn(tween(Motion.FADE_IN_MS)) +
+                    scaleIn(animationSpec = Motion.standard(), initialScale = 0.86f, transformOrigin = heroOrigin)
+                    ) togetherWith (
+                    fadeOut(tween(Motion.FADE_OUT_MS)) +
+                        scaleOut(animationSpec = Motion.standard(), targetScale = 0.94f, transformOrigin = heroOrigin)
+                    )
+            } else {
+                Motion.contentEnter togetherWith Motion.contentExit
+            }
+        },
         label = "myLoansScreen",
     ) { key ->
         when (key) {

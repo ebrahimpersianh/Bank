@@ -68,10 +68,12 @@ object Motion {
      * «میاد جلو» به‌جای اینکه فقط ظاهر بشه.
      */
     val contentEnter: EnterTransition
-        get() = fadeIn(tween(120), initialAlpha = 0.7f)
+        get() = fadeIn(tween(FADE_IN_MS)) +
+            scaleIn(animationSpec = standard(), initialScale = 0.97f)
 
     val contentExit: ExitTransition
-        get() = fadeOut(tween(70))
+        get() = fadeOut(tween(FADE_OUT_MS)) +
+            scaleOut(animationSpec = standard(), targetScale = 0.98f)
 
     // ── تعویضِ صفحه (بخشِ حرکت، ۶ مهر) ──────────────────────────────────────────
     // یک زبان برای همه‌ی صفحه‌ها: ورود با فنرِ سنگینِ بی‌سرریز + محوشدن، خروج کوتاه‌تر و
@@ -91,10 +93,10 @@ object Motion {
 
     /** زیرصفحه‌ای که روی تب می‌نشیند (جزئیاتِ دارایی/حساب/وام): از لبه‌ی شروع (راست در RTL). */
     val subScreenEnter: EnterTransition
-        get() = contentEnter
+        get() = slideInHorizontally(animationSpec = offset()) { -it / 3 } + fadeIn(tween(FADE_IN_MS))
 
     val subScreenExit: ExitTransition
-        get() = contentExit
+        get() = slideOutHorizontally(animationSpec = tween(220)) { -it / 4 } + fadeOut(tween(FADE_OUT_MS))
 
     // ── حسِ هر بخش (۷ مهر، خواسته‌ی کاربر: «هر بخش حسِ خودش؛ درونِ هر بخش یکدست») ────────────
     /**
@@ -106,12 +108,23 @@ object Motion {
      */
     enum class Feel { PLAYFUL, FLOW, INSIGHT, SOLID, CALM }
 
-    // تعویضِ تب (۱۶ مهر، دورِ سوم): هیچ لغزش/بزرگ‌شدنی نیست؛ دو صفحه‌ی شفاف وقتی با هم می‌لغزیدند
-    // روی هم می‌افتادند. حالا فقط یک محوِ خیلی کوتاه: قبلی در ۷۰ms می‌رود، تازه از ۰٫۷ پررنگ
-    // در ۱۲۰ms می‌آید. `feel` و `dir` برای سازگاری با فراخوان‌ها مانده‌اند.
-    @Suppress("UNUSED_PARAMETER")
-    fun enterFor(feel: Feel, dir: Int): EnterTransition = contentEnter
+    private fun <T> bouncy(): FiniteAnimationSpec<T> = spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow)
 
-    @Suppress("UNUSED_PARAMETER")
-    fun exitFor(feel: Feel, dir: Int): ExitTransition = contentExit
+    fun enterFor(feel: Feel, dir: Int): EnterTransition = when (feel) {
+        Feel.PLAYFUL -> scaleIn(animationSpec = bouncy(), initialScale = 0.92f) + fadeIn(tween(180)) +
+            slideInHorizontally(animationSpec = offset()) { dir * it / 6 }
+        Feel.FLOW -> slideInHorizontally(animationSpec = spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessLow)) { dir * it / 2 } +
+            fadeIn(tween(260))
+        Feel.INSIGHT -> fadeIn(tween(320)) + scaleIn(animationSpec = heavy(), initialScale = 0.96f)
+        Feel.SOLID -> slideInHorizontally(animationSpec = heavy<IntOffset>()) { dir * it / 5 } + fadeIn(tween(FADE_IN_MS))
+        Feel.CALM -> fadeIn(tween(200))
+    }
+
+    fun exitFor(feel: Feel, dir: Int): ExitTransition = when (feel) {
+        Feel.PLAYFUL -> scaleOut(animationSpec = tween(160), targetScale = 0.96f) + fadeOut(tween(140))
+        Feel.FLOW -> slideOutHorizontally(animationSpec = tween(240)) { -dir * it / 3 } + fadeOut(tween(180))
+        Feel.INSIGHT -> fadeOut(tween(160))
+        Feel.SOLID -> slideOutHorizontally(animationSpec = tween(220)) { -dir * it / 6 } + fadeOut(tween(FADE_OUT_MS))
+        Feel.CALM -> fadeOut(tween(140))
+    }
 }

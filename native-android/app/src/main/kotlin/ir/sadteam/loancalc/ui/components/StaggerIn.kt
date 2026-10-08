@@ -34,12 +34,26 @@ private const val STAGGER_MAX_STEPS = 4
  * @param index شماره‌ی ترتیبِ آیتم (از صفر) - تاخیرش از همین حساب می‌شه.
  */
 @Composable
-@Suppress("UNUSED_PARAMETER")
 fun StaggerIn(index: Int, content: @Composable () -> Unit) {
-    // ۱۶ مهر (گزارشِ کاربر: «هر صفحه را می‌زنم اول صفحه‌ی خالی می‌آید»): ورودِ پله‌ایِ کارت‌ها هر
-    // کارت را از شفافیتِ ۰ و با تأخیرِ تا ۲۲۰ms شروع می‌کرد، پس با هر تعویضِ تب چند فریم فقط
-    // زمینه دیده می‌شد. محتوا حالا **فوراً** دیده می‌شود؛ محوِ کوتاهِ صفحه (Motion) کافی است.
-    content()
+    // «انیمیشنِ کم» (تنظیمات ← ظاهر و تم): ورودِ کارت‌ها جزوِ **تزئین**ه، پس اینجا حذف می‌شه.
+    // بازخوردِ لمس (فشرده‌شدنِ دکمه، جابه‌جاییِ دستگیره‌ی کلید) عمداً دست‌نخورده می‌مونه.
+    if (LocalReducedMotion.current) {
+        content()
+        return
+    }
+    val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
+    val delay = index.coerceIn(0, STAGGER_MAX_STEPS) * STAGGER_STEP_MS
+    AnimatedVisibility(
+        visibleState = visibleState,
+        enter = fadeIn(tween(STAGGER_DURATION_MS, delayMillis = delay)) +
+            slideInVertically(tween(STAGGER_DURATION_MS, delayMillis = delay)) { it / 8 },
+    ) {
+        content()
+    }
 }
 
+/**
+ * «انیمیشنِ کم» - از `ThemeViewModel` تو `MainActivity` پر می‌شه و به کلِ درختِ UI می‌رسه.
+ * قاعده‌ی طراح: هرچه فقط تزئینه می‌ره، هرچه بازخوردِ لمسه می‌مونه.
+ */
 val LocalReducedMotion = androidx.compose.runtime.staticCompositionLocalOf { false }
