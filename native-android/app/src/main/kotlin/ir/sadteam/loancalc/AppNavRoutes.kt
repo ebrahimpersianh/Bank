@@ -16,6 +16,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -160,76 +161,11 @@ internal fun NavGraphBuilder.appRoutes(
     var shortcutDrawerOpen by shortcutDrawerOpenState
     var requestedLoanSubTab by requestedLoanSubTabState
     var bottomBarVisible by bottomBarVisibleState
-                composable(BottomTab.HOME.route) {
-                    key(tabResetKeys[BottomTab.HOME] ?: 0) {
-                        // route به‌عنوانِ رشته پاس داده می‌شه (نه خودِ enumِ BottomTab) چون
-                        // BottomTab تویِ همین فایلِ MainActivity.kt خصوصیه و HomeScreen تو یه
-                        // فایلِ جدا (ui/home/HomeScreen.kt) زندگی می‌کنه.
-                        HomeScreen(
-                            onNavigateToRoute = navigateTo,
-                            onOpenSettings = { showSettings = true },
-                            onOpenInbox = { showInbox = true },
-                            onOpenSearch = { showGlobalSearch = true },
-                            onOpenTransactions = { showAllTransactions = true },
-                            onOpenLoan = { deepLinkViewModel.openLoan(it) },
-                            // نوعِ صریح عمدیه: بدونش `let` لامبدا رو `() -> Unit`ِ ساده حساب
-                            // می‌کنه و به `@Composable () -> Unit` نمی‌خوره.
-                            navSuggestionSlot = navSuggestion?.let { suggestion ->
-                                @Composable {
-                                    NavSuggestionCard(
-                                        suggestion = suggestion,
-                                        currentSlots = navSlots,
-                                        onApply = { navSlotsViewModel.applySuggestion(suggestion) },
-                                        onEdit = {
-                                            navSlotsViewModel.snoozeSuggestion()
-                                            shortcutDrawerOpen = true
-                                        },
-                                        onDismiss = { navSlotsViewModel.dismissSuggestion(suggestion) },
-                                    )
-                                }
-                            },
-                        )
-                    }
-                }
-                composable(BottomTab.ASSETS.route) {
-                    // ⚠️ **بازنویسیِ فریمِ `26b`**: `AssetsScreen`ِ قدیمی دو نمای جدا با تاگل
-                    // بود؛ فریم یه صفحه‌ی پیوسته‌ست - رجوع کن به `ui/asset/AssetsTabScreen.kt`.
-                    key(tabResetKeys[BottomTab.ASSETS] ?: 0) { AssetsTabScreen() }
-                }
-                composable(BottomTab.REPORT.route) {
-                    // ⚠️ **بازنویسیِ فریمِ `26a`** - رجوع کن به `ui/accounting/ReportTabScreen.kt`.
-                    key(tabResetKeys[BottomTab.REPORT] ?: 0) {
-                        ReportTabScreen(
-                            onOpenLoanStats = { navigateTo(LOAN_STATS_ROUTE) },
-                            onOpenChequeReport = { navigateTo(CHEQUE_REPORT_ROUTE) },
-                        )
-                    }
-                }
-                composable(BottomTab.BUDGET.route) {
-                    key(tabResetKeys[BottomTab.BUDGET] ?: 0) { BudgetScreen() }
-                }
-                composable(BottomTab.DUE.route) {
-                    // ⚠️ **بازنویسیِ فریمِ `3a`** - رجوع کن به `ui/due/DueTabScreen.kt`.
-                    key(tabResetKeys[BottomTab.DUE] ?: 0) {
-                        DueTabScreen(
-                            onAddCheque = { navigateTo(CHEQUE_ROUTE) },
-                            onAddLoan = { navigateTo(LOAN_ROUTE) },
-                            // تپ روی ردیفِ چک همان چک را باز می‌کند. تپ روی ردیفِ
-                            // طلب‌وبدهی فعلاً خودِ صفحه را باز می‌کند، نه آن طرفِ‌حسابِ
-                            // مشخص - `DebtScreen` هیچ ورودیِ شناسه‌ای ندارد.
-                            onOpenCheque = { id ->
-                                deepLinkViewModel.openCheque(id)
-                                navigateTo(CHEQUE_ROUTE)
-                            },
-                            onOpenDebt = { id ->
-                                deepLinkViewModel.openDebt(id)
-                                navigateTo(DEBT_ROUTE)
-                            },
-                            // تپ رو ردیفِ قسط → همون وام تو «وام‌های من» باز می‌شه. از همون
-                            // مسیرِ دیپ‌لینکِ نوتیفیکیشن استفاده می‌کنه تا منطق یکی بمونه.
-                            onOpenLoan = { loanId -> deepLinkViewModel.openLoan(loanId) },
-                        )
-                    }
+                // پنج تبِ اصلی دیگر این‌جا ساخته نمی‌شوند: در [PersistentTabs] (بیرونِ NavHost) یک‌بار ساخته
+                // می‌شوند و زنده می‌مانند، تا تعویضِ تب هر بار صفحه را از صفر نسازد (۱۶ مهر). این‌جا فقط
+                // مقصدِ خالی ثبت می‌شود تا مسیرها و بازگشت کار کنند.
+                BottomTab.entries.forEach { tab ->
+                    composable(tab.route) { Box(Modifier.fillMaxSize()) }
                 }
                 // «وام» و «چک» دیگه تبِ نوارِ پایین نیستن (رجوع کن به کامنتِ بالای BottomTab) - از
                 // تبِ «سررسید»/«خانه» به‌عنوانِ صفحه‌ی پوش‌شده باز می‌شن، پس خودشون یه دکمه‌ی

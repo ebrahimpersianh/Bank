@@ -814,6 +814,20 @@ internal fun LoanCalcApp(
                     .consumeWindowInsets(padding)
                     .imePadding(),
             ) {
+            PersistentTabs(
+                currentRoute = currentRoute,
+                deepLinkViewModel = deepLinkViewModel,
+                navSlotsViewModel = navSlotsViewModel,
+                navSlots = navSlots,
+                navSuggestion = navSuggestion,
+                navigateTo = ::navigateTo,
+                tabResetKeys = tabResetKeys,
+                showSettingsState = showSettingsState,
+                showInboxState = showInboxState,
+                showGlobalSearchState = showGlobalSearchState,
+                showAllTransactionsState = showAllTransactionsState,
+                shortcutDrawerOpenState = shortcutDrawerOpenState,
+            )
             NavHost(
                 navController = navController,
                 startDestination = BottomTab.HOME.route,
