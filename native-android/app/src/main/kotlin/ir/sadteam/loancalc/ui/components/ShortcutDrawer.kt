@@ -655,15 +655,15 @@ fun ShortcutDrawerHandle(onOpen: () -> Unit, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Row(
-            // ۱۶ مهر: کمی پایین‌تر، نزدیک‌ترِ به نوارِ تب‌ها.
-            modifier = Modifier.offset(y = 6.dp),
+            // ۱۶ مهر (دورِ دوم): ۶dp بالاتر تا با قرصِ تبِ فعالِ وسط («گزارش») برخورد نکند.
+            modifier = Modifier.offset(y = 0.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Box(
                 modifier = Modifier
                     // ظریف‌تر (خواسته‌ی کاربر، ۲ مهر): «بمونه ولی به برنامه بیاد».
-                    .width(80.dp) // ۱۶ مهر: کمی کشیده‌تر (خواسته‌ی کاربر)
+                    .width(56.dp) // ۱۶ مهر: هم‌عرضِ قرصِ تبِ فعال، متناسب با نوار
                     .height(3.dp)
                     .clip(RoundedCornerShape(999.dp))
                     .background(AppPrimary.copy(alpha = 0.85f)),

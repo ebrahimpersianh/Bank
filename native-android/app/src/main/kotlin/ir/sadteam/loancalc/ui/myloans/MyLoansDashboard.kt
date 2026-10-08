@@ -289,7 +289,8 @@ internal fun DashboardSummary(
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
                     Text(
-                        if (over) "اقساطت از درآمدِ ثبت‌شده‌ات بیشتر است · ${toFa((incomeRatio * 100).roundToInt())}٪"
+                        // عدد وسطِ جمله، نه آخرش: «٪» تهِ جمله‌ی فارسی بعد از «·» برعکس چیده می‌شد («٪۱۰۹»).
+                        if (over) "قسط‌ها ${toFa((incomeRatio * 100).roundToInt())}٪ درآمدت است؛ بیشتر از درآمد"
                         else "${toFa((incomeRatio * 100).roundToInt())}٪ از درآمدت صرفِ اقساط می‌شه",
                         color = Color.White,
                         fontSize = 9.5.sp,
