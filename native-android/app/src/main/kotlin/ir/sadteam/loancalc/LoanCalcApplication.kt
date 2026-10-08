@@ -36,6 +36,9 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
     lateinit var crashReporter: CrashReporter
 
     @Inject
+    lateinit var crashRepository: ir.sadteam.loancalc.data.CrashRepository
+
+    @Inject
     lateinit var comeBackScheduler: ComeBackScheduler
 
     @Inject
@@ -62,7 +65,7 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
     override fun onCreate() {
         super.onCreate()
         crashReporter.install()
-        ir.sadteam.loancalc.crash.SlowMainWatcher.start()
+        ir.sadteam.loancalc.crash.SlowMainWatcher.start(this)
         ir.sadteam.loancalc.data.UsageStats.init(this, BuildConfig.FLAVOR)
         ir.sadteam.loancalc.data.UsageStats.profileProvider = { buildUsageProfile() }
         // بعد از آپدیت، سرویسِ خواندنِ اعلانِ بانک را دوباره وصل کن (۱۴ مهر).
@@ -117,6 +120,22 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
                     // همه‌ی تغییرها (یادداشت، بودجه، دارایی…) با رفتن به پس‌زمینه روی سرور می‌روند.
                     CoroutineScope(Dispatchers.IO).launch {
                         runCatching { authPrefs.authToken.first()?.let { accountRepository.pushToServer(it); ir.sadteam.loancalc.data.PhotoSync.sync(this@LoanCalcApplication, it) } }
+                    }
+                }
+                if (event == Lifecycle.Event.ON_STOP) {
+                    // گزارشِ کندی: روزی یک‌بار، فقط نامِ صفحه/تابع (رجوع کن به SlowMainWatcher).
+                    CoroutineScope(Dispatchers.IO).launch {
+                        runCatching {
+                            ir.sadteam.loancalc.crash.SlowMainWatcher.pendingToSend()?.let { text ->
+                                crashRepository.reportCrash(
+                                    message = "slow-main",
+                                    stack = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} · android ${android.os.Build.VERSION.SDK_INT}\n$text".take(7500),
+                                    context = "slow",
+                                    appVersion = BuildConfig.VERSION_NAME,
+                                )
+                                ir.sadteam.loancalc.crash.SlowMainWatcher.markSent()
+                            }
+                        }
                     }
                 }
                 if (event == Lifecycle.Event.ON_STOP) {

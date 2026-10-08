@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.crash
 
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -18,10 +19,20 @@ object SlowMainWatcher {
     @Volatile var route: String = "?"
     private val events = ArrayDeque<String>()
     @Volatile private var started = false
+    private var prefs: android.content.SharedPreferences? = null
+    private const val PREFS = "slow_main"
+    private const val KEY_EVENTS = "events"
+    private const val KEY_LAST_SENT_DAY = "last_sent_day"
+    private const val SEP = "\u0001"
 
-    fun start() {
+    fun start(context: Context) {
         if (started) return
         started = true
+        prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        // موردهای ثبت‌شده‌ی اجراهای قبلی (هنوز نفرستاده‌ایم) برمی‌گردند.
+        prefs?.getString(KEY_EVENTS, null)?.split(SEP)?.filter { it.isNotBlank() }?.takeLast(MAX_EVENTS)?.let { old ->
+            synchronized(events) { events.addAll(old) }
+        }
         val main = Handler(Looper.getMainLooper())
         val mainThread = Looper.getMainLooper().thread
         Thread({
@@ -46,6 +57,7 @@ object SlowMainWatcher {
                     synchronized(events) {
                         events.addLast(line)
                         while (events.size > MAX_EVENTS) events.removeFirst()
+                        prefs?.edit()?.putString(KEY_EVENTS, events.joinToString(SEP))?.apply()
                     }
                 }
                 Thread.sleep(60)
@@ -62,5 +74,24 @@ object SlowMainWatcher {
 
     fun report(): String = synchronized(events) {
         if (events.isEmpty()) "کندیِ ثبت‌شده: ندارد" else "کندیِ رشته‌ی اصلی (آخرین ${events.size}):\n" + events.joinToString("\n")
+    }
+
+    /**
+     * روزی یک‌بار (اگر موردی ثبت شده باشد): متنِ گزارش را برمی‌گرداند و حافظه را خالی می‌کند. فرستادنش با
+     * فراخوان است؛ بعد از موفقیتِ ارسال [markSent] را صدا بزن. فقط نامِ صفحه/تابع، بی هیچ داده‌ی کاربر.
+     */
+    fun pendingToSend(): String? {
+        val today = System.currentTimeMillis() / 86_400_000L
+        if (prefs?.getLong(KEY_LAST_SENT_DAY, -1L) == today) return null
+        return synchronized(events) {
+            if (events.isEmpty()) null else events.joinToString("\n")
+        }
+    }
+
+    fun markSent() {
+        synchronized(events) {
+            events.clear()
+            prefs?.edit()?.remove(KEY_EVENTS)?.putLong(KEY_LAST_SENT_DAY, System.currentTimeMillis() / 86_400_000L)?.apply()
+        }
     }
 }

@@ -10,6 +10,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.Db
+import ir.sadteam.loancalc.server.execute
 import ir.sadteam.loancalc.server.adminTokenMatches
 import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.executeCounting
@@ -159,7 +160,12 @@ data class StatsResponse(
     val crashesByVersion: List<NamedCount> = emptyList(),
     val topCrashes: List<NamedCount> = emptyList(),
     val activeByVersion: List<NamedCount> = emptyList(),
+    /** گزارش‌های «کندیِ رشته‌ی اصلی» اپ (۷ روزِ اخیر؛ قدیمی‌ترها پاک می‌شوند). فقط نامِ صفحه/تابع. */
+    val slowReports: List<SlowRow> = emptyList(),
 )
+
+@Serializable
+data class SlowRow(val version: String, val at: String, val text: String)
 
 /** ترتیبِ نمایشِ مشخصات؛ کلیدِ ناشناخته آخرِ فهرست می‌آید. */
 private val PROFILE_ORDER = listOf(
@@ -431,7 +437,7 @@ internal fun buildStats(conn: Connection): StatsResponse {
     val churned = conn.int("SELECT COUNT(*) FROM installs WHERE last_day < ?", churnCut)
 
     // 💥 کرش‌ها - `context = 'sync'` خطای بی‌سروصدای همگام‌سازی است، نه کرش.
-    val crashes30 = conn.int("SELECT COUNT(*) FROM crash_reports WHERE created_at >= ? AND coalesce(context, '') <> 'sync'", d30)
+    val crashes30 = conn.int("SELECT COUNT(*) FROM crash_reports WHERE created_at >= ? AND coalesce(context, '') NOT IN ('sync', 'slow')", d30)
     val nonFatal30 = conn.int("SELECT COUNT(*) FROM crash_reports WHERE created_at >= ? AND context = 'sync'", d30)
     val multiAccountDevices = runCatching {
         conn.int("SELECT COUNT(*) FROM (SELECT device_hash FROM device_users GROUP BY device_hash HAVING COUNT(*) >= 3)")
@@ -439,15 +445,23 @@ internal fun buildStats(conn: Connection): StatsResponse {
     val trialBlockedUsers = runCatching { conn.int("SELECT COUNT(*) FROM users WHERE trial_blocked = 1") }.getOrDefault(0)
     val crashesByVersion = buildList {
         conn.list(
-            "SELECT coalesce(app_version, '?'), COUNT(*) FROM crash_reports WHERE created_at >= ? AND coalesce(context, '') <> 'sync' GROUP BY 1 ORDER BY 2 DESC LIMIT 12",
+            "SELECT coalesce(app_version, '?'), COUNT(*) FROM crash_reports WHERE created_at >= ? AND coalesce(context, '') NOT IN ('sync', 'slow') GROUP BY 1 ORDER BY 2 DESC LIMIT 12",
             d30,
         ) { add(NamedCount(it.getString(1), it.getInt(2))) }
     }
     val topCrashes = buildList {
         conn.list(
-            "SELECT substr(message, 1, 90), COUNT(*) FROM crash_reports WHERE created_at >= ? AND coalesce(context, '') <> 'sync' GROUP BY 1 ORDER BY 2 DESC LIMIT 6",
+            "SELECT substr(message, 1, 90), COUNT(*) FROM crash_reports WHERE created_at >= ? AND coalesce(context, '') NOT IN ('sync', 'slow') GROUP BY 1 ORDER BY 2 DESC LIMIT 6",
             d30,
         ) { add(NamedCount(it.getString(1), it.getInt(2))) }
+    }
+
+    // ⏱ گزارش‌های کندی: بیش از ۷ روز نگه‌داشته نمی‌شوند (هر بار که آمار ساخته یا گزارشی ثبت شود پاک می‌شوند).
+    runCatching { conn.execute("DELETE FROM crash_reports WHERE context = 'slow' AND created_at < datetime('now', '-7 days')") }
+    val slowReports = buildList {
+        conn.list(
+            "SELECT coalesce(app_version, '?'), created_at, substr(coalesce(stack, ''), 1, 900) FROM crash_reports WHERE context = 'slow' ORDER BY id DESC LIMIT 20",
+        ) { add(SlowRow(it.getString(1), it.getString(2), it.getString(3))) }
     }
 
     return StatsResponse(
@@ -506,6 +520,7 @@ internal fun buildStats(conn: Connection): StatsResponse {
         crashesByVersion = crashesByVersion,
         topCrashes = topCrashes,
         activeByVersion = split("app_version"),
+        slowReports = slowReports,
     )
 }
 
@@ -671,7 +686,7 @@ internal fun buildDigest(conn: Connection, period: String, store: String? = null
     m += DigestMetric("revenue_myket", revenue(a, b, "myket"), revenue(pa, a, "myket"))
     m += DigestMetric("revenue_net", net(a, b), net(pa, a))
     m += pair("support", "SELECT COUNT(*) FROM bug_reports WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
-    m += pair("crashes", "SELECT COUNT(*) FROM crash_reports WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
+    m += pair("crashes", "SELECT COUNT(*) FROM crash_reports WHERE created_at >= ? AND created_at < ? AND coalesce(context, '') <> 'slow'", a, b, prevParams = arrayOf(pa, a))
     m += pair("transactions", "SELECT coalesce(SUM(count),0) FROM usage_daily WHERE day >= ? AND day < ? AND name = 'action:transaction_added'$useF", da, db, *fArgs, prevParams = arrayOf(dpa, da, *fArgs))
 
     fun top(prefix: String): List<NamedCount> = buildList {

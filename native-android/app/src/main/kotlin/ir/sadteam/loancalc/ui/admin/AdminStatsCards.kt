@@ -704,6 +704,19 @@ internal fun HealthCard(st: AdminStatsResponse) {
             val max = errors.maxOf { it.total }.coerceAtLeast(1)
             TopList(errors) { AdminBarRow(ERROR_LABELS[it.name] ?: it.name, it.total.toFloat() / max, "${adminNum(it.total)} بار · ${adminNum(it.users)} نفر") }
         }
+        val slow = st.slowReports.orEmpty()
+        if (slow.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            AdminSubSection("کندیِ برنامه · ۷ روزِ اخیر (${toFa(slow.size)})", "${slow.first().version} · ${slow.first().at}") {
+                slow.forEach { r ->
+                    Text(
+                        "${r.version} · ${r.at}\n${r.text}",
+                        color = AppMuted, fontSize = 10.sp, lineHeight = 15.sp, maxLines = 12, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(vertical = 4.dp),
+                    )
+                }
+            }
+        }
         val top = st.topCrashes.orEmpty()
         if (top.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))

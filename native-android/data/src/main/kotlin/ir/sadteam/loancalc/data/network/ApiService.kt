@@ -512,7 +512,10 @@ data class AdminStatsResponse(
     val crashesByVersion: List<AdminNamedCount>? = null,
     val topCrashes: List<AdminNamedCount>? = null,
     val activeByVersion: List<AdminNamedCount>? = null,
+    val slowReports: List<AdminSlowRow>? = null,
 )
+
+data class AdminSlowRow(val version: String = "", val at: String = "", val text: String = "")
 
 data class AdminCohortRow(val weekStart: String = "", val size: Int = 0, val weeks: List<Int>? = null)
 

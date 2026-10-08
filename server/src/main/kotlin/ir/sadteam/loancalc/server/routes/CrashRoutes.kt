@@ -44,6 +44,10 @@ fun Route.crashRoutes() {
                     "INSERT INTO crash_reports (message, stack, context, app_version, user_id) VALUES (?, ?, ?, ?, ?)",
                     message, stack, context, appVersion, uid
                 )
+                // گزارش‌های کندی (context = 'slow') فقط ۷ روز می‌مانند.
+                if (context == "slow") {
+                    conn.execute("DELETE FROM crash_reports WHERE context = 'slow' AND created_at < datetime('now', '-7 days')")
+                }
             }
 
             call.respond(mapOf("ok" to true))
