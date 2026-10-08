@@ -211,11 +211,7 @@ internal fun HomeHeader(
             ir.sadteam.loancalc.ui.components.HeaderIconButton(
                 icon = Icons.Filled.Storefront, description = "فروشگاه", onClick = onOpenShop,
             )
-            val homePrivacyVm: ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel = hiltViewModel()
-            ir.sadteam.loancalc.ui.components.PrivacyEyeHeaderButton(
-                privacyMode = ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current,
-                onToggle = { homePrivacyVm.toggle() },
-            )
+            // چشمِ مبلغ از صفحه‌ی خانه برداشته شد (خواسته‌ی کاربر، ۱۶ مهر) - در بقیه‌ی صفحه‌ها هست.
         }
     }
     }

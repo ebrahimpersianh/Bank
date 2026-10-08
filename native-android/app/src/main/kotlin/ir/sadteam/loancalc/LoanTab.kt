@@ -15,6 +15,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -239,6 +241,16 @@ internal fun LoanTab(
             ir.sadteam.loancalc.ui.components.PrivacyEyeHeaderButton(
                 privacyMode = ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current,
                 onToggle = { loanPrivacyVm.toggle() },
+            )
+            // تنظیمات برگشت به بالا-چپِ صفحه‌ی وام (خواسته‌ی کاربر، ۱۶ مهر).
+            val loanAdminUnread by ir.sadteam.loancalc.ui.admin.AdminSignals.unreadSupport.collectAsState()
+            ir.sadteam.loancalc.ui.components.HeaderIconButton(
+                icon = Icons.Filled.Settings,
+                description = "تنظیمات",
+                onClick = onOpenSettings,
+                badge = if (loanAdminUnread > 0) {
+                    { ir.sadteam.loancalc.ui.admin.UnreadDot(loanAdminUnread, Modifier.align(Alignment.TopEnd)) }
+                } else null,
             )
         }
         // حالتِ ساده: فقط «وام‌های من»، بی تب‌های سپرده/محاسبه‌گر.
