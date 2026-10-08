@@ -144,6 +144,13 @@ fun AssetsTabScreen(
     var showWealthDetail by rememberSaveable { mutableStateOf(false) }
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     var buyEntry by remember { mutableStateOf<AssetCatalogEntry?>(null) }
+    // «+»: اول فهرستِ «کدام دارایی؟» (یک صفحه‌ی جدا)، بعد صفحه‌ی خرید. برگشت از خرید دوباره فهرست را
+    // نشان می‌دهد (۱۶ مهر؛ قبلاً فهرست زیرِ صفحه‌ی خرید مدفون می‌ماند).
+    var buyFromChooser by remember { mutableStateOf(false) }
+    fun closeBuy() {
+        buyEntry = null
+        if (buyFromChooser) { buyFromChooser = false; showAddAsset = true }
+    }
     val changes by assetViewModel.monthChange.collectAsState()
     val updatedClock by assetViewModel.pricesUpdatedClock.collectAsState()
     // هر بار که تب باز می‌شود قیمت‌ها را دوباره بپرس (قبلاً فقط نیم‌ساعتی یک‌بار).
@@ -157,7 +164,7 @@ fun AssetsTabScreen(
             showAddAsset || showAddAccount || showAccountList || showPrices || buyEntry != null,
     ) {
         when {
-            buyEntry != null -> buyEntry = null
+            buyEntry != null -> closeBuy()
             showAddAsset -> showAddAsset = false
             showAddAccount -> showAddAccount = false
             showAccountList -> showAccountList = false
@@ -415,7 +422,7 @@ fun AssetsTabScreen(
         )
         SubScreen(buyEntry) { e ->
             AssetTradeSheet(
-                onDismiss = { buyEntry = null },
+                onDismiss = { closeBuy() },
                 viewModel = assetViewModel,
                 presetSymbol = e.symbol,
                 presetName = e.name,
@@ -467,7 +474,13 @@ fun AssetsTabScreen(
                 ir.sadteam.loancalc.ui.subscription.PremiumBlock(
                     blocked = true, key = "assets", label = "ثبتِ دارایی", onBlocked = { showAddAsset = false },
                 )
-                AssetTradeSheet(onDismiss = { showAddAsset = false }, viewModel = assetViewModel)
+                AssetPickerSheet(
+                    prices = marketPrices,
+                    changes = changes,
+                    selectedSymbol = null,
+                    onPick = { entry -> showAddAsset = false; buyFromChooser = true; buyEntry = entry },
+                    onDismiss = { showAddAsset = false },
+                )
         }
         SubScreen(if (showWealthDetail) Unit else null) { _ ->
             androidx.activity.compose.BackHandler { showWealthDetail = false }

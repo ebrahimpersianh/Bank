@@ -112,7 +112,7 @@ fun AssetTradeSheet(
     var isBuy by remember { mutableStateOf(!startWithSell) }
     var totalText by remember { mutableStateOf("") }
     var qtyText by remember { mutableStateOf("") }
-    var manualQty by remember { mutableStateOf(false) }
+    var manualQty by remember { mutableStateOf(presetCategory == ASSET_CATEGORY_CUSTOM) }
     var date by remember { mutableStateOf(JalaliCalendar.today()) }
     var description by remember { mutableStateOf("") }
     val payAccounts by viewModel.payAccounts.collectAsState()
