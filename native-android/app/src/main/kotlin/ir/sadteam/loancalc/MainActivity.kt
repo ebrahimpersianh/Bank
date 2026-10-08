@@ -348,7 +348,6 @@ private fun AppRoot(
     // ۱۶ مهر (گزارشِ کاربر: «بارِ اولِ هر تب خالی می‌آید»): صفحه‌ی اصلی و پنج تبش **زیرِ اسپلش** ساخته
     // می‌شوند و اسپلش تا آماده‌شدنشان می‌ماند (حداکثر ۶ ثانیه). `movableContentOf` همان
     // کامپوزیشن را بی‌ساخت‌ِ دوباره از زیرِ اسپلش به صفحه‌ی اصلی منتقل می‌کند.
-    val app = remember { movableContentOf { AnimatedAppEntrance { LoanCalcApp() } } }
     val pinHash by appLockViewModel.pinHash.collectAsState()
     val biometricEnabled by appLockViewModel.biometricEnabled.collectAsState()
     val unlocked by appLockViewModel.unlocked.collectAsState()
@@ -369,22 +368,31 @@ private fun AppRoot(
         }
     }
     val warmDone by TabWarmup.done
-    if (!introTimerDone || onboardingDone == null || gateState == null || (canWarm && !warmDone && !warmTimeout)) {
-        BackHandler(enabled = true) { }
+    val splashing = !introTimerDone || onboardingDone == null || gateState == null || (canWarm && !warmDone && !warmTimeout)
+    // 🚨 `movableContentOf` کرش می‌داد («already has a parent»، بیلد ۸۳۶). به‌جایش صفحه‌ی اصلی **یک جای ثابت**
+    // دارد و اسپلش فقط روی آن می‌نشیند؛ پس چیزی جابه‌جا نمی‌شود.
+    if (canWarm) {
         Box(modifier = Modifier.fillMaxSize()) {
-            if (canWarm) app()
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) awaitPointerEvent().changes.forEach { it.consume() }
-                        }
-                    },
-            ) {
-                SplashIntroScreen(onDone = { introTimerDone = true })
+            AnimatedAppEntrance { LoanCalcApp() }
+            if (splashing) {
+                BackHandler(enabled = true) { }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) awaitPointerEvent().changes.forEach { it.consume() }
+                            }
+                        },
+                ) {
+                    SplashIntroScreen(onDone = { introTimerDone = true })
+                }
             }
         }
+        return
+    }
+    if (splashing) {
+        SplashIntroScreen(onDone = { introTimerDone = true })
         return
     }
 
@@ -445,7 +453,7 @@ private fun AppRoot(
             // تورِ راهنمای اولین ورود دیگه یه گیتِ جداگانه‌ی قبل از ورود نیست - کاربر خواستِ
             // «تو خود برنامه بگه کجا بری»، پس یه اورلیِ spotlight داخلِ خودِ LoanCalcApp
             // (رو المان‌های واقعیِ چیدمان) نشون داده می‌شه - رجوع کن به AppTourOverlay اونجا.
-            app()
+            AnimatedAppEntrance { LoanCalcApp() }
         }
     }
 }
