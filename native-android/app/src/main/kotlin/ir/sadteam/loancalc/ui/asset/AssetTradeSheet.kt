@@ -388,6 +388,7 @@ fun AssetTradeSheet(
                 prices = prices,
                 changes = changes,
                 selectedSymbol = picked?.symbol,
+                viewModel = viewModel,
                 onPick = { entry ->
                     picked = entry
                     showPicker = false

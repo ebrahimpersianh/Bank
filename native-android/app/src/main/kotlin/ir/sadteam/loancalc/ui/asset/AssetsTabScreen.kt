@@ -478,6 +478,7 @@ fun AssetsTabScreen(
                     prices = marketPrices,
                     changes = changes,
                     selectedSymbol = null,
+                    viewModel = assetViewModel,
                     onPick = { entry -> showAddAsset = false; buyFromChooser = true; buyEntry = entry },
                     onDismiss = { showAddAsset = false },
                 )

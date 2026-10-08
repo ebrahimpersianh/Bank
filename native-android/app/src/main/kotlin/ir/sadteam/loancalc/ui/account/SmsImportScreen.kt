@@ -20,6 +20,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -188,8 +191,16 @@ fun SmsImportScreen(
         if (sender == null) {
             // فرستنده‌ها به‌ترتیبِ تازگی (چون خودِ فهرست جدیدترین-اول است)، ولی آن‌هایی که
             // پیامکِ مبلغ‌دار دارند بالا می‌آیند تا بینِ ده‌ها سرشماره‌ی تبلیغاتی گم نشوند.
+            // ۱۶ مهر (خواسته‌ی کاربر): پیش‌فرض **بر پایه‌ی تاریخِ آخرین پیام** (تازه‌ترین بالا)، و یک «فیلتر» مثلِ
+            // صفحه‌ی وام‌ها: ترتیب (تازه‌ترین / بیشترین پیام) و نمایش (همه / فقط بانکی).
+            var filterOpen by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+            var sortByCount by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+            var onlyBanky by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
             val groups = messages.groupBy { it.address }.entries
-                .sortedByDescending { entry -> entry.value.any { it.parsed != null } }
+                .filter { !onlyBanky || it.value.any { m -> m.parsed != null } }
+                .sortedByDescending { entry ->
+                    if (sortByCount) entry.value.size.toLong() else entry.value.maxOf { it.dateMs }
+                }
             if (bankAccounts.isEmpty()) {
                 AppCard(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                     Text(
@@ -211,6 +222,34 @@ fun SmsImportScreen(
                             onClick = { pickedAccountId = acc.id },
                         )
                     }
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "${toFa(groups.size)} سرشماره · " + (if (sortByCount) "بیشترین پیام" else "تازه‌ترین") + (if (onlyBanky) " · فقط بانکی" else ""),
+                    color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.heightIn(min = 44.dp).pressScaleClickable { filterOpen = !filterOpen }.padding(horizontal = 4.dp),
+                ) {
+                    Icon(Icons.Filled.FilterList, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+                    Text("فیلتر", color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 4.dp))
+                }
+            }
+            if (filterOpen) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(bottom = 8.dp).horizontalScroll(androidx.compose.foundation.rememberScrollState()),
+                ) {
+                    AppChip(label = "تازه‌ترین", selected = !sortByCount, onClick = { sortByCount = false })
+                    AppChip(label = "بیشترین پیام", selected = sortByCount, onClick = { sortByCount = true })
+                    AppChip(label = "همه", selected = !onlyBanky, onClick = { onlyBanky = false })
+                    AppChip(label = "فقط بانکی", selected = onlyBanky, onClick = { onlyBanky = true })
                 }
             }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -26,6 +26,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -96,10 +99,13 @@ fun AssetPickerSheet(
     prices: Map<String, Double>,
     changes: Map<String, Double>,
     selectedSymbol: String?,
+    viewModel: AssetViewModel,
     onPick: (AssetCatalogEntry) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
+    // جست‌وجو پیش‌فرض بسته است (فقط ذره‌بین)؛ با زدنش باز می‌شود (۱۶ مهر، خواسته‌ی کاربر).
+    var searchOpen by remember { mutableStateOf(false) }
     var filter by remember { mutableStateOf<String?>(null) }
     var customName by remember { mutableStateOf("") }
 
@@ -116,7 +122,7 @@ fun AssetPickerSheet(
 
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
-    Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+    Box(modifier = Modifier.fillMaxSize().background(ir.sadteam.loancalc.ui.theme.AppBg)) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
@@ -138,21 +144,23 @@ fun AssetPickerSheet(
                             modifier = Modifier.padding(top = 2.dp),
                         )
                     }
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(RoundedCornerShape(AppRadius.icon))
-                            .background(AppIconFrame)
-                            .pressScaleClickable(onClick = onDismiss),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.Filled.Close, contentDescription = "بستن", tint = AppText, modifier = Modifier.size(20.dp))
-                    }
+                    // ذره‌بین: با زدنش کادرِ جست‌وجو باز می‌شود (به‌جای کادرِ بزرگِ همیشه‌باز).
+                    ir.sadteam.loancalc.ui.components.HeaderIconButton(
+                        icon = Icons.Filled.Search,
+                        description = "جست‌وجو",
+                        active = searchOpen,
+                        onClick = { searchOpen = !searchOpen; if (!searchOpen) query = "" },
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    ir.sadteam.loancalc.ui.components.HeaderIconButton(
+                        icon = Icons.Filled.Close,
+                        description = "بستن",
+                        onClick = onDismiss,
+                    )
                 }
             }
 
-            item(key = "search") {
-                // جست‌وجوی کپسولی و سبک (طرحِ ChatGPT) - همان فیلترِ قبلی، فقط ظاهر.
+            if (searchOpen) item(key = "search") {
                 ir.sadteam.loancalc.ui.components.PillSearchField(
                     value = query,
                     onValueChange = { query = it },
@@ -238,14 +246,14 @@ fun AssetPickerSheet(
                     if (rows.isEmpty()) return@forEach
                     item(key = "h_$category") { PickerGroupLabel(title) }
                     items(rows, key = { "e_${it.symbol}" }) { entry ->
-                        PickerRow(entry, prices[entry.symbol], changes[entry.symbol], entry.symbol == selectedSymbol) {
+                        PickerRow(entry, prices[entry.symbol], entry.symbol == selectedSymbol, viewModel) {
                             onPick(entry)
                         }
                     }
                 }
             } else {
                 items(visible, key = { "e_${it.symbol}" }) { entry ->
-                    PickerRow(entry, prices[entry.symbol], changes[entry.symbol], entry.symbol == selectedSymbol) {
+                    PickerRow(entry, prices[entry.symbol], entry.symbol == selectedSymbol, viewModel) {
                         onPick(entry)
                     }
                 }
@@ -411,58 +419,29 @@ private fun CategoryBanner(category: String) {
 }
 
 /**
- * ردیفِ انتخاب. قیمتِ روز **کنارِ خودش** است — همان چیزی که در دیالوگِ قبلی نبود و کاربر
- * مجبور بود اسم را حدس بزند و بعد ببیند چند است.
- *
- * ردیفِ انتخاب‌شده حاشیه‌ی سبز و تیکِ کنارِ نشان می‌گیرد، تا وقتی انتخابگر دوباره باز
- * می‌شود معلوم باشد کجا بود.
+ * ردیفِ انتخاب - همان ردیفِ «نمای کلیِ بازار» در صفحه‌ی اصلیِ دارایی ([MarketGridRow]): نشان، نام،
+ * نمودارِ کوچک، قیمتِ روز و درصدِ تغییر (خواسته‌ی کاربر، ۱۶ مهر: «صفحه‌ی افزودن مثلِ صفحه‌ی اصلی»).
+ * ردیفِ انتخاب‌شده با نقطه‌ی سبزِ کنارِ نام علامت می‌خورد.
  */
 @Composable
 private fun PickerRow(
     entry: AssetCatalogEntry,
     priceRial: Double?,
-    changePercent: Double?,
     selected: Boolean,
+    viewModel: AssetViewModel,
     onClick: () -> Unit,
 ) {
-    // هم‌شکلِ `MarketWideRow`ِ تبِ دارایی: مستطیلِ کم‌ارتفاع و تک‌خطی (خواسته‌ی کاربر).
-    val shape = RoundedCornerShape(14.dp)
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(AppSurface)
-            .border(if (selected) AppStroke.card else AppStroke.row, if (selected) AppPrimary else AppLine, shape)
-            .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-    ) {
-        AssetBadge(entry.symbol, entry.category, 30.dp)
-        Text(
-            entry.name,
-            color = AppText,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Black,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            // «—» یعنی سرور قیمت نداده؛ جای عدد سرِ جایش می‌ماند.
-            priceRial?.let { it.rialToFaCompact() + " تومان" } ?: "—",
-            color = if (priceRial == null) AppMuted else AppText,
-            fontSize = 11.5.sp,
-            maxLines = 1,
-            softWrap = false,
-            fontWeight = FontWeight.Black,
-        )
-        if (changePercent != null) PriceChangeBadge(changePercent)
-        Icon(
-            if (selected) Icons.Filled.Check else Icons.Filled.ChevronLeft,
-            contentDescription = if (selected) "انتخاب‌شده" else null,
-            tint = if (selected) AppPrimaryInk else AppMuted,
-            modifier = Modifier.size(16.dp),
-        )
-    }
+    val change = rememberDailyChange(entry.symbol, viewModel)
+    val usd by viewModel.usdPrices.collectAsState()
+    MarketGridRow(
+        symbol = entry.symbol,
+        category = entry.category,
+        name = entry.name,
+        price = priceRial?.rialToFaCompact(),
+        secondLine = usd[entry.symbol]?.takeIf { entry.category == ASSET_CATEGORY_CRYPTO }?.let { "$" + formatUsd(it) },
+        owned = selected,
+        trend = { MiniTrend(entry.symbol, change, viewModel, modifier = Modifier.fillMaxWidth(), height = 22.dp) },
+        trailing = { change?.let { PriceChangeBadge(it) } },
+        onClick = onClick,
+    )
 }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -383,18 +384,20 @@ internal fun LoansIncomeCard(
     var incomePendingDelete by incomePendingDeleteState
         if (showIncome) AppCard(label = "تحلیل درآمد") {
             // تصویرِ سه‌بعدی (۸ مهر، ChatGPT).
+            // ۱۶ مهر (خواسته‌ی کاربر): وقتی منبعِ درآمد ثبت شده، تصویر کوچک و کارت جمع‌وجور می‌شود.
+            val compactIncome = incomes.isNotEmpty()
             androidx.compose.foundation.Image(
                 painter = androidx.compose.ui.res.painterResource(ir.sadteam.loancalc.R.drawable.jibak_income_chart),
                 contentDescription = null,
-                modifier = Modifier.fillMaxWidth().height(96.dp).padding(bottom = 8.dp),
+                modifier = Modifier.fillMaxWidth().height(if (compactIncome) 36.dp else 96.dp).padding(bottom = if (compactIncome) 2.dp else 8.dp),
             )
             if (incomes.isNotEmpty()) {
-                Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                Column(modifier = Modifier.padding(bottom = 4.dp)) {
                     incomes.forEach { income ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
+                                .padding(vertical = 1.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -415,8 +418,8 @@ internal fun LoansIncomeCard(
                                         modifier = Modifier.padding(end = 6.dp),
                                     )
                                 }
-                                IconButton(onClick = { incomePendingDelete = income }) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "حذف منبع درآمد", tint = AppDanger)
+                                IconButton(onClick = { incomePendingDelete = income }, modifier = Modifier.size(36.dp)) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "حذف منبع درآمد", tint = AppDanger, modifier = Modifier.size(18.dp))
                                 }
                             }
                         }
@@ -433,9 +436,9 @@ internal fun LoansIncomeCard(
                         Text(
                             "جمع درآمد: ${maskIfPrivate(masked, amountToman(totalIncome))} تومان",
                             color = AppText,
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(top = 4.dp),
+                            modifier = Modifier.padding(top = 2.dp),
                         )
                     }
                 }
@@ -495,8 +498,8 @@ internal fun LoansIncomeCard(
                     }
                 }
             } else {
-                OutlinedButton(onClick = { showAddIncome = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text("+ افزودن منبع درآمد")
+                OutlinedButton(onClick = { showAddIncome = true }, modifier = Modifier.fillMaxWidth().then(if (compactIncome) Modifier.heightIn(min = 40.dp) else Modifier)) {
+                    Text("+ افزودن منبع درآمد", fontSize = if (compactIncome) 12.sp else 14.sp)
                 }
             }
 
@@ -506,18 +509,18 @@ internal fun LoansIncomeCard(
                 // می‌شه، وگرنه همون گرادیانِ سبزآبی→طلاییِ استانداردِ ProgressRing.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 10.dp),
+                    modifier = Modifier.padding(top = 6.dp),
                 ) {
                     ProgressRing(
                         progress = ratio.toFloat(),
-                        size = 64.dp,
-                        strokeWidth = 7.dp,
+                        size = 46.dp,
+                        strokeWidth = 5.dp,
                         colors = if (ratio > 0.65) listOf(AppDanger, AppDanger) else listOf(AppPrimaryDim, AppPrimary, AppAccent),
                     ) {
                         Text(
                             "${toFa((ratio * 100).roundToInt())}٪",
                             color = AppText,
-                            fontSize = 13.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                         )
                     }
