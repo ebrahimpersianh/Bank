@@ -65,6 +65,12 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
     override fun onCreate() {
         super.onCreate()
         crashReporter.install()
+        // ۱۶ مهر (سبک‌کردنِ شروع): کلاس‌های سنگینِ تم و تنظیمات پیش از آن‌که رشته‌ی اصلی لازمشان داشته باشد در
+        // پس‌زمینه بار و خوانده می‌شوند (اندازه‌گیری: ~۵۰۰ms روی رشته‌ی اصلی در باز شدن).
+        CoroutineScope(Dispatchers.IO).launch {
+            runCatching { Class.forName("ir.sadteam.loancalc.ui.theme.ThemeKt") }
+            runCatching { uiPrefs.themeMode.first(); uiPrefs.activeFont.first(); uiPrefs.colorTheme.first() }
+        }
         ir.sadteam.loancalc.crash.SlowMainWatcher.start(this)
         ir.sadteam.loancalc.data.UsageStats.init(this, BuildConfig.FLAVOR)
         ir.sadteam.loancalc.data.UsageStats.profileProvider = { buildUsageProfile() }
@@ -114,6 +120,11 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
                     // دو گوشی: تازه‌ترین نسخه‌ی ابری (اگر گوشیِ دیگری نوشته) بیاید.
                     CoroutineScope(Dispatchers.IO).launch {
                         runCatching { authPrefs.authToken.first()?.let { accountRepository.pullIfNewer(it); ir.sadteam.loancalc.data.PhotoSync.sync(this@LoanCalcApplication, it) } }
+                        // نگهبانِ کندی فقط برای ادمین (رجوع کن به SlowMainWatcher).
+                        runCatching {
+                            if (authPrefs.authToken.first() == null) ir.sadteam.loancalc.crash.SlowMainWatcher.setAdmin(false)
+                            else if (authRepository.isAdmin()) ir.sadteam.loancalc.crash.SlowMainWatcher.setAdmin(true)
+                        }
                     }
                 }
                 if (event == Lifecycle.Event.ON_STOP) {

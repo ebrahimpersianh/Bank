@@ -7,7 +7,7 @@ import android.os.SystemClock
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * 🔬 **ابزارِ تشخیصِ کندی** (۱۶ مهر): وقتی رشته‌ی اصلی بیش از ~۱۲۰ میلی‌ثانیه گیر کند، از جایی که
+ * 🔬 **ابزارِ تشخیصِ کندی** (۱۶ مهر؛ فقط برای ادمین): وقتی رشته‌ی اصلی بیش از ~۱۲۰ میلی‌ثانیه گیر کند، از جایی که
  * گیر کرده «عکسِ پشته» می‌گیرد و در حافظه نگه می‌دارد (آخرین ۱۲ مورد). هیچ داده‌ی کاربر
  * (مبلغ، نام، شماره) ثبت نمی‌شود - فقط نامِ کلاس/تابعِ برنامه و نامِ صفحه. با ضربه‌ی طولانی
  * روی «نسخه» در تنظیمات ← درباره، همراهِ اطلاعاتِ فنی کپی می‌شود.
@@ -25,18 +25,54 @@ object SlowMainWatcher {
     private const val KEY_LAST_SENT_DAY = "last_sent_day"
     private const val SEP = "\u0001"
 
+    @Volatile private var enabled = false
+    @Volatile private var threadRunning = false
+    private const val KEY_ADMIN = "admin"
+
+    /** فقط برای **ادمین** کار می‌کند؛ کاربرِ عادی نه نگهبانی دارد و نه چیزی می‌فرستد. */
     fun start(context: Context) {
         if (started) return
         started = true
         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        if (prefs?.getBoolean(KEY_ADMIN, false) == true) {
+            loadOld()
+            startThread()
+        }
+    }
+
+    /** از جایی صدا زده می‌شود که وضعیتِ ادمین‌بودنِ حساب معلوم می‌شود (هر بار باز شدنِ برنامه). */
+    fun setAdmin(isAdmin: Boolean) {
+        val p = prefs ?: return
+        if (p.getBoolean(KEY_ADMIN, false) != isAdmin) p.edit().putBoolean(KEY_ADMIN, isAdmin).apply()
+        if (isAdmin) {
+            loadOld()
+            startThread()
+        } else {
+            enabled = false
+            synchronized(events) { events.clear() }
+            p.edit().remove(KEY_EVENTS).apply()
+        }
+    }
+
+    private var loaded = false
+
+    private fun loadOld() {
+        if (loaded) return
+        loaded = true
         // موردهای ثبت‌شده‌ی اجراهای قبلی (هنوز نفرستاده‌ایم) برمی‌گردند.
         prefs?.getString(KEY_EVENTS, null)?.split(SEP)?.filter { it.isNotBlank() }?.takeLast(MAX_EVENTS)?.let { old ->
             synchronized(events) { events.addAll(old) }
         }
+    }
+
+    private fun startThread() {
+        enabled = true
+        if (threadRunning) return
+        threadRunning = true
         val main = Handler(Looper.getMainLooper())
         val mainThread = Looper.getMainLooper().thread
         Thread({
-            while (true) {
+            while (enabled) {
                 val ack = AtomicLong(0)
                 val sent = SystemClock.uptimeMillis()
                 main.post { ack.set(SystemClock.uptimeMillis()) }
@@ -52,7 +88,7 @@ object SlowMainWatcher {
                     }
                 }
                 val total = ack.get() - sent
-                if (total >= STALL_MS && sample != null) {
+                if (total >= STALL_MS && sample != null && enabled) {
                     val line = "[${route}] ${total}ms: $sample"
                     synchronized(events) {
                         events.addLast(line)
@@ -62,6 +98,7 @@ object SlowMainWatcher {
                 }
                 Thread.sleep(60)
             }
+            threadRunning = false
         }, "slow-main-watch").apply { isDaemon = true }.start()
     }
 
@@ -81,6 +118,7 @@ object SlowMainWatcher {
      * فراخوان است؛ بعد از موفقیتِ ارسال [markSent] را صدا بزن. فقط نامِ صفحه/تابع، بی هیچ داده‌ی کاربر.
      */
     fun pendingToSend(): String? {
+        if (!enabled) return null
         val today = System.currentTimeMillis() / 86_400_000L
         if (prefs?.getLong(KEY_LAST_SENT_DAY, -1L) == today) return null
         return synchronized(events) {
