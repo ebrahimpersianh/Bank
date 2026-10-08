@@ -99,7 +99,7 @@ internal fun PersistentTabs(
                             layout(p.width, p.height) { if (active) p.place(0, 0) }
                         },
                 ) {
-                    CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides (if (active) realOwner else dummyOwner)) {
+                    CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides (if (active) (realOwner ?: dummyOwner) else dummyOwner)) {
                         holder.SaveableStateProvider(tab.route) {
                             key(tabResetKeys[tab] ?: 0) {
                                 when (tab) {
