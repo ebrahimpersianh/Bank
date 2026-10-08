@@ -136,6 +136,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.core:core-ktx:1.13.1")
+    // 🚀 پروفایلِ از-پیش‌کامپایلِ خودِ Compose/AndroidX را روی گوشی نصب می‌کند؛ بی آن، بارِ اول و تعویضِ تب‌ها
+    // با کدِ تفسیری اجرا می‌شود و «لگ» دارد. هیچ تغییرِ رفتاری ندارد.
+    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
     // اینترو/اسپلش‌اسکرین واقعی موقع باز شدن اپ (قبلاً اصلاً وجود نداشت - فقط یه صفحه‌ی خالی).
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")

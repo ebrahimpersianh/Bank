@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.ui.graphics.graphicsLayer
 import ir.sadteam.loancalc.ui.theme.AppHeroShadow
 import kotlin.math.sin
 import kotlin.math.cos
@@ -132,41 +133,38 @@ fun AppHeroCard(
         animationSpec = infiniteRepeatable(tween(14_000, easing = LinearEasing)),
         label = "heroWavePhase",
     )
-    Column(
+    // 🚀 بهینه‌سازی (۱۶ مهر، «برنامه لگ دارد»): قبلاً موجِ متحرک با `drawBehind` روی **خودِ ستون** می‌نشست؛
+    // یعنی هر فریم (۶۰ بار در ثانیه) کلِ کارت - متن‌ها و سایه‌ها - دوباره رسم می‌شد. حالا موج در یک لایه‌ی
+    // جدا (Canvas + graphicsLayer) است و فقط همان لایه تازه می‌شود؛ متن و عددها ثابت می‌مانند.
+    Box(
         modifier = modifier
             .fillMaxWidth()
             // سایه‌ی نرمِ هم‌رنگ (طرحِ ChatGPT) به‌جای سایه‌ی سختِ ۵dp.
             .shadow(14.dp, shape, ambientColor = shadow, spotColor = shadow)
             .clip(shape)
-            .background(gradient)
-            // 🌿 **نقشِ برگِ گوشه** (خواسته‌ی کاربر با طرحِ مرجع، ۳۱ شهریور).
-            //
-            // با `drawBehind` **زیرِ محتوا** کشیده می‌شود و هیچ فضایی نمی‌گیرد، پس چیدمانِ
-            // هیچ کارتی عوض نمی‌شود. گوشه‌ی بالا-چپ انتخاب شد نه راست: برنامه راست‌به‌چپ
-            // است و راستِ کارت جای برچسب و عدد است.
-            //
-            // ⚠️ **سفیدِ کم‌رنگ، نه یک رنگِ ثابت** - همین یک تصمیم کاری می‌کند که نقش با
-            // **هر تمی** جور دربیاید (خواسته‌ی دومِ همان پیام): روی سبز، بنفش، لاجورد یا
-            // هر تمِ خریدنیِ بعدی، رنگش از خودِ زمینه می‌آید. یک هگزِ ثابت روی نیمی از
-            // تم‌ها لکه می‌شد.
-            .drawBehind {
-                drawHeroWaves(wavePhase)
-                drawHeroLeaves(bothSides = true)
-                if (glow != null) {
-                    // از لبه‌ی **راست** (آغازِ راست‌به‌چپ) تا ۴۵٪ عرض محو می‌شود.
-                    drawRect(
-                        brush = Brush.horizontalGradient(
-                            listOf(Color.Transparent, glow.copy(alpha = 0.75f)),
-                            startX = size.width * 0.55f,
-                            endX = size.width,
-                        ),
-                    )
-                }
-            }
-            .padding(AppSpacing.cardPadding),
+            .background(gradient),
     ) {
-        CompositionLocalProvider(LocalContentColor provides Color.White) {
-            content()
+        // 🌿 نقشِ برگِ گوشه + موج: **زیرِ محتوا**، بی گرفتنِ فضا (قاعده‌ی قبلی همان است).
+        androidx.compose.foundation.Canvas(
+            modifier = Modifier.matchParentSize().graphicsLayer(),
+        ) {
+            drawHeroWaves(wavePhase)
+            drawHeroLeaves(bothSides = true)
+            if (glow != null) {
+                // از لبه‌ی **راست** (آغازِ راست‌به‌چپ) تا ۴۵٪ عرض محو می‌شود.
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        listOf(Color.Transparent, glow.copy(alpha = 0.75f)),
+                        startX = size.width * 0.55f,
+                        endX = size.width,
+                    ),
+                )
+            }
+        }
+        Column(modifier = Modifier.fillMaxWidth().padding(AppSpacing.cardPadding)) {
+            CompositionLocalProvider(LocalContentColor provides Color.White) {
+                content()
+            }
         }
     }
 }
