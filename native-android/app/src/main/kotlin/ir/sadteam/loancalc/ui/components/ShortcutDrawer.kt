@@ -318,7 +318,7 @@ fun ShortcutDrawer(
                             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                         )
                         val topIds = top.map { it.id }.toSet()
-                        val rest = (order.drop(8) + allShortcuts.filter { a -> order.none { it.id == a.id } })
+                        val rest = (order.drop(4) + allShortcuts.filter { a -> order.none { it.id == a.id } })
                             .filter { it.id !in topIds }
                         val q = toolQuery.trim()
                         val shown = if (q.isEmpty()) rest else (order + allShortcuts).distinctBy { it.id }.filter { it.label.contains(q) }
