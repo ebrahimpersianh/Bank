@@ -31,7 +31,13 @@ class AccountViewModel @Inject constructor(
     val accounts: StateFlow<List<AccountEntity>> = accountRepository.observeAccounts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val transactions: StateFlow<List<AccountTransactionEntity>> = accountRepository.observeTransactions()
+    // یک خواندنِ دیتابیس برای هر دو (قبلاً دو کوئریِ جدا از کلِ جدول بود): null = هنوز نخوانده.
+    private val txRaw: StateFlow<List<AccountTransactionEntity>?> = accountRepository.observeTransactions()
+        .map<List<AccountTransactionEntity>, List<AccountTransactionEntity>?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val transactions: StateFlow<List<AccountTransactionEntity>> = txRaw
+        .map { it ?: emptyList() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /**
@@ -43,8 +49,8 @@ class AccountViewModel @Inject constructor(
      * رد می‌شد تا محتوای واقعی را ببیند - همان چیزی که کاربر «انگار سه صفحه شده» گزارش کرد.
      * تپ روی «ترمیم» فقط اتفاقی هم‌زمان شد؛ علتش نبود.
      */
-    val transactionsLoaded: StateFlow<Boolean> = accountRepository.observeTransactions()
-        .map { true }
+    val transactionsLoaded: StateFlow<Boolean> = txRaw
+        .map { it != null }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val budgets: StateFlow<List<BudgetEntity>> = accountRepository.observeBudgets()
