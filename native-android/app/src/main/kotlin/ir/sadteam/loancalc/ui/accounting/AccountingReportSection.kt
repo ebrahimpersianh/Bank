@@ -492,7 +492,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                         Column(modifier = Modifier.weight(1f)) {
                             AppChip(label = "${toFa(dayTx.size)} تراکنش", selected = false, onClick = {})
                             Text(
-                                "${if (net < 0) "-" else ""}${fmt((kotlin.math.abs(net)) / 10)} تومان",
+                                if (net < 0) ir.sadteam.loancalc.ui.jibak.isoSigned(false, "${fmt((kotlin.math.abs(net)) / 10)} تومان") else "${fmt((kotlin.math.abs(net)) / 10)} تومان",
                                 color = if (net >= 0) AppPrimary else AppDanger,
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Black,

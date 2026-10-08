@@ -187,7 +187,7 @@ fun StatementImportScreen(onBack: () -> Unit, vm: StatementImportViewModel = hil
                     Text("${toFa(r.date.d)}/${toFa(r.date.m)}", color = AppMuted, fontSize = 11.5.sp, modifier = Modifier.width(44.dp))
                     Text(r.description, color = AppText, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     Text(
-                        (if (r.deposit) "+" else "−") + r.amount.rialToFaCompact(),
+                        ir.sadteam.loancalc.ui.jibak.isoSigned(r.deposit, r.amount.rialToFaCompact()),
                         color = if (r.deposit) AppPrimary else AppDangerInk, fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
                     )
                 }

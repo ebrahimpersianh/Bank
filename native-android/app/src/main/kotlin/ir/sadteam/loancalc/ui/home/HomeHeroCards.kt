@@ -245,7 +245,7 @@ private fun HeroFlowLine(
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    (if (income) "+ " else "− ") + maskIfPrivate(masked, heroFlowAmount(amount)),
+                    ir.sadteam.loancalc.ui.jibak.isoSigned(income, maskIfPrivate(masked, heroFlowAmount(amount))),
                     color = if (income) HeroIncome else HeroExpense,
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Black,

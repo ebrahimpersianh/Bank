@@ -95,6 +95,13 @@ fun Long.toFaMoney(): String {
 
 fun Int.toFaMoney(): String = toLong().toFaMoney()
 
+/**
+ * علامت + مبلغ در متنِ راست‌به‌چپ، با «جداسازِ چپ‌به‌راست» (U+2066…U+2069): علامت همیشه **سمتِ چپِ عدد**
+ * می‌نشیند («−۱۰۰»، «+۸ میلیون»)، نه ته‌اش. تنها راهِ درستِ نوشتنِ مبلغِ علامت‌دار در برنامه (گزارشِ کاربر، ۱۶ مهر:
+ * «منفی برعکس است» - بعضی جاها علامت را دستی جلوی رشته می‌چسباندند).
+ */
+fun isoSigned(positive: Boolean, body: String): String = "\u2066${if (positive) "+" else "\u2212"}$body\u2069"
+
 /** مبلغِ ردیفِ فهرست — با علامتِ + برای درآمد، − برای خرج. */
 fun Long.toFaSignedMoney(): String =
     if (this >= 0) "\u2066+${kotlin.math.abs(this).toFaMoney()}\u2069" else toFaMoney()
@@ -104,7 +111,7 @@ fun Long.toFaSignedMoney(): String =
  * دارایی. جدا از toFaSignedMoney چون آنجا جا برای عددِ کامل هست و اینجا نیست.
  */
 fun Long.toFaSignedCompact(): String =
-    if (this >= 0) "+${kotlin.math.abs(this).toFaCompact()}" else toFaCompact()
+    if (this >= 0) "\u2066+${kotlin.math.abs(this).toFaCompact()}\u2069" else toFaCompact()
 
 /** ۶۵ → «۶۵٪» */
 fun Int.toFaPercent(): String = "${toFa()}٪"
@@ -174,7 +181,7 @@ fun Double.rialToFaCompact(): String = rialToToman(toLong()).toFaCompact()
 /** همان، با علامت — برای سود و زیان. */
 fun Double.rialToFaSignedCompact(): String {
     val t = rialToToman(toLong())
-    return if (t >= 0) "+" + kotlin.math.abs(t).toFaCompact() else t.toFaCompact()
+    return if (t >= 0) "\u2066+" + kotlin.math.abs(t).toFaCompact() + "\u2069" else t.toFaCompact()
 }
 
 /**

@@ -343,7 +343,7 @@ private fun HeroMiniStat(up: Boolean, label: String, value: Double, privacyMode:
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 1.dp)) {
             PrivacyCrossfade(privacyMode) { masked ->
                 AutoShrinkText(
-                    (if (up) "+ " else "− ") + maskIfPrivate(masked, value.rialToFaCompact()),
+                    ir.sadteam.loancalc.ui.jibak.isoSigned(up, maskIfPrivate(masked, value.rialToFaCompact())),
                     color = ink,
                     maxFontSize = 11.5.sp,
                     fontWeight = FontWeight.Black,

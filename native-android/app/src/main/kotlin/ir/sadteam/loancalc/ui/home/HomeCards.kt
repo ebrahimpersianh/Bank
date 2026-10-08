@@ -534,7 +534,7 @@ internal fun RecentTransactionsCard(
                 }
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        (if (income) "+ " else "− ") + maskIfPrivate(masked, tx.amount.rialToFaCompact()),
+                        ir.sadteam.loancalc.ui.jibak.isoSigned(income, maskIfPrivate(masked, tx.amount.rialToFaCompact())),
                         color = if (income) AppPrimaryInk else AppDangerInk,
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Black,

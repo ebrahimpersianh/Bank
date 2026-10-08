@@ -465,7 +465,7 @@ private fun CoinEventRow(event: CoinEventEntity) {
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 AutoShrinkText(
-                    (if (spent) "−" else "+") + toFa(kotlin.math.abs(event.amount)),
+                    ir.sadteam.loancalc.ui.jibak.isoSigned(!spent, toFa(kotlin.math.abs(event.amount))),
                     color = ink,
                     maxFontSize = 14.sp,
                     fontWeight = FontWeight.Black,

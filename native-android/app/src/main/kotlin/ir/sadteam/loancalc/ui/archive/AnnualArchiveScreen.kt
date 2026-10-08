@@ -97,7 +97,7 @@ fun AnnualArchiveScreen(onBack: () -> Unit, accountViewModel: AccountViewModel =
                                 // منفی با «−» نه پرانتز، طبقِ قاعده‌ی عددهای برنامه.
                                 val sign = if (net < 0) "−" else "+"
                                 Text(
-                                    sign + " " + maskIfPrivate(privacyMode, rialToToman(kotlin.math.abs(net).toLong()).toFaMoney()) + " تومان",
+                                    ir.sadteam.loancalc.ui.jibak.isoSigned(net >= 0, maskIfPrivate(privacyMode, rialToToman(kotlin.math.abs(net).toLong()).toFaMoney()) + " تومان"),
                                     color = Color.White,
                                     fontSize = 26.sp,
                                     fontWeight = FontWeight.Black,

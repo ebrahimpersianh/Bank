@@ -539,7 +539,7 @@ private fun AccountingTransactionRow(
             PrivacyCrossfade(privacyMode) { masked ->
                 Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp)) {
                     AutoShrinkText(
-                        "${if (isIncome) "+" else "−"}${maskIfPrivate(masked, fmt(tx.amount / 10))}",
+                        ir.sadteam.loancalc.ui.jibak.isoSigned(isIncome, maskIfPrivate(masked, fmt(tx.amount / 10))),
                         color = if (isIncome) AppPrimary else AppDanger,
                         maxFontSize = 14.sp,
                         fontWeight = FontWeight.Black,
