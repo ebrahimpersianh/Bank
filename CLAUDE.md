@@ -22,7 +22,7 @@
 - همه‌چیز روی `main` (+ هم‌گام با `claude/bank-9fiumm`). push روی `server/**` بدونِ skip = **دیپلویِ سرور**؛ دستی jar آپلود نکن.
 - APK در Releases با اسمِ `Jibak-2.0.<run>-<store>.apk`.
 - قبل از بیلد: `native-android/tools/static-checks/*.py` (ایمپورتِ جاافتاده را همه نمی‌گیرند - دستی هم چک کن).
-- فایلِ UI بالای ~۷۰۰ خط نشود. جداکردن فقط با `tools/refactor/ktsplit.py` (جابه‌جاییِ خالص) + `ktverify.py` (مقایسه با HEAD)؛ بعدش تداخلِ نام/نوعِ خصوصی را چک کن. (۱۵ مهر: ۱۱ فایل جدا شد، بیلدِ ۸۱۶ سالم.) چهار تابعِ غول (`LoanDetailScreen`، `LoanCalcApp`، `NewTransactionSheet`، `MyLoansScreen`) + `LoanRepository` هنوز بزرگ‌اند - تکه‌کردنشان رفتاری است، تک‌به‌تک و با تست.
+- فایلِ UI بالای ~۷۰۰ خط نشود. جداکردن فقط با `tools/refactor/ktsplit.py` (جابه‌جاییِ خالص) + `ktverify.py` (مقایسه با HEAD)؛ بعدش تداخلِ نام/نوعِ خصوصی را چک کن. (۱۵ مهر: ۱۱ فایل جدا شد، بیلدِ ۸۱۶ سالم.) ۱۶ مهر: تابع‌های غول هم با `ktextract.py` (همان state، متنِ دست‌نخورده، انتهای بلوک با شمارشِ پرانتز) + `ktxverify.py` تکه شدند. **تصمیمِ کاربر: تقسیمِ بیشتر نه** - فقط فایلِ تازه زیرِ ~۷۰۰ خط بماند.
 
 ## سرور (VPS آروان، زنده)
 - `~/VameMan/` (pm2: `loan-calc-api`، `.env`، `data.sqlite`). دسترسی فقط از ورک‌فلوها (`appleboy/ssh-action` + سکرت‌های VPS).
