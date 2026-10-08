@@ -110,21 +110,27 @@ object Motion {
 
     private fun <T> bouncy(): FiniteAnimationSpec<T> = spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow)
 
+    // 🚨 «صفحه‌ی خالی» موقعِ تعویضِ تب (گزارشِ کاربر، ۱۶ مهر): صفحه‌ی قبلی ۱۴۰-۲۲۰ms محو می‌شد
+    // و صفحه‌ی تازه هم از شفافیتِ ۰ شروع می‌کرد؛ وسطِ راه هر دو نیمه‌شفاف بودند و فقط زمینه
+    // دیده می‌شد. حالا: ورود از شفافیتِ ۰٫۷ شروع می‌شود و خروج **محو نمی‌شود** (فقط می‌لغزد/
+    // کوچک می‌شود و پشتِ صفحه‌ی تازه می‌ماند)، پس هیچ لحظه‌ای صفحه‌ی خالی نیست.
+    private const val ENTER_ALPHA = 0.7f
+
     fun enterFor(feel: Feel, dir: Int): EnterTransition = when (feel) {
-        Feel.PLAYFUL -> scaleIn(animationSpec = bouncy(), initialScale = 0.92f) + fadeIn(tween(180)) +
+        Feel.PLAYFUL -> scaleIn(animationSpec = bouncy(), initialScale = 0.92f) + fadeIn(tween(180), initialAlpha = ENTER_ALPHA) +
             slideInHorizontally(animationSpec = offset()) { dir * it / 6 }
         Feel.FLOW -> slideInHorizontally(animationSpec = spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessLow)) { dir * it / 2 } +
-            fadeIn(tween(260))
-        Feel.INSIGHT -> fadeIn(tween(320)) + scaleIn(animationSpec = heavy(), initialScale = 0.96f)
-        Feel.SOLID -> slideInHorizontally(animationSpec = heavy<IntOffset>()) { dir * it / 5 } + fadeIn(tween(FADE_IN_MS))
-        Feel.CALM -> fadeIn(tween(200))
+            fadeIn(tween(200), initialAlpha = ENTER_ALPHA)
+        Feel.INSIGHT -> fadeIn(tween(220), initialAlpha = ENTER_ALPHA) + scaleIn(animationSpec = heavy(), initialScale = 0.96f)
+        Feel.SOLID -> slideInHorizontally(animationSpec = heavy<IntOffset>()) { dir * it / 5 } + fadeIn(tween(FADE_IN_MS), initialAlpha = ENTER_ALPHA)
+        Feel.CALM -> fadeIn(tween(200), initialAlpha = ENTER_ALPHA)
     }
 
     fun exitFor(feel: Feel, dir: Int): ExitTransition = when (feel) {
-        Feel.PLAYFUL -> scaleOut(animationSpec = tween(160), targetScale = 0.96f) + fadeOut(tween(140))
-        Feel.FLOW -> slideOutHorizontally(animationSpec = tween(240)) { -dir * it / 3 } + fadeOut(tween(180))
-        Feel.INSIGHT -> fadeOut(tween(160))
-        Feel.SOLID -> slideOutHorizontally(animationSpec = tween(220)) { -dir * it / 6 } + fadeOut(tween(FADE_OUT_MS))
-        Feel.CALM -> fadeOut(tween(140))
+        Feel.PLAYFUL -> scaleOut(animationSpec = tween(160), targetScale = 0.96f)
+        Feel.FLOW -> slideOutHorizontally(animationSpec = tween(240)) { -dir * it / 3 }
+        Feel.INSIGHT -> ExitTransition.None
+        Feel.SOLID -> slideOutHorizontally(animationSpec = tween(220)) { -dir * it / 6 }
+        Feel.CALM -> ExitTransition.None
     }
 }
