@@ -50,6 +50,9 @@ import androidx.core.content.ContextCompat
 import ir.sadteam.loancalc.core.BankSmsParser
 import ir.sadteam.loancalc.core.ParsedBankSms
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppChip
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -90,6 +93,7 @@ suspend fun readSmsSenders(context: Context, limit: Int = 400): List<SmsSenderIn
                 while (cursor.moveToNext()) {
                     val address = cursor.getString(addressIndex)?.trim().orEmpty()
                     if (address.isEmpty() || result.containsKey(address)) continue
+                    if (ir.sadteam.loancalc.core.isPersonalSmsSender(address)) continue
                     val body = cursor.getString(bodyIndex)?.trim().orEmpty()
                     result[address] = SmsSenderInfo(
                         address = address,
@@ -128,6 +132,11 @@ fun SmsSenderPickerDialog(
     var permissionDenied by remember { mutableStateOf(false) }
     var messages by remember { mutableStateOf<List<SmsInboxMessage>?>(null) }
     var query by remember { mutableStateOf("") }
+    // فیلترها (خواسته‌ی کاربر، ۱۶ مهر): پیش‌فرض فقط پیامک‌های بانکی، جدیدترین اول.
+    var bankOnly by remember { mutableStateOf(true) }
+    var newestFirst by remember { mutableStateOf(true) }
+    var typeFilter by remember { mutableStateOf<ir.sadteam.loancalc.core.TransactionType?>(null) }
+    var lastDays by remember { mutableStateOf(0) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -162,6 +171,22 @@ fun SmsSenderPickerDialog(
                 }
             }
             ir.sadteam.loancalc.ui.components.PillSearchField(value = query, onValueChange = { query = it }, placeholder = "جستجو در شماره یا متن", modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                AppChip(label = if (newestFirst) "جدیدترین" else "قدیمی‌ترین", selected = true, onClick = { newestFirst = !newestFirst })
+                AppChip(label = "فقط بانکی", selected = bankOnly, onClick = { bankOnly = !bankOnly })
+                AppChip(label = "واریز", selected = typeFilter == ir.sadteam.loancalc.core.TransactionType.DEPOSIT, onClick = {
+                    typeFilter = if (typeFilter == ir.sadteam.loancalc.core.TransactionType.DEPOSIT) null else ir.sadteam.loancalc.core.TransactionType.DEPOSIT
+                })
+                AppChip(label = "برداشت", selected = typeFilter == ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL, onClick = {
+                    typeFilter = if (typeFilter == ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL) null else ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL
+                })
+                listOf(1 to "امروز", 7 to "۷ روز", 30 to "۳۰ روز").forEach { (d, label) ->
+                    AppChip(label = label, selected = lastDays == d, onClick = { lastDays = if (lastDays == d) 0 else d })
+                }
+            }
             val list = messages
             when {
                 permissionDenied -> CenterNote("بدونِ اجازه‌ی خوندنِ پیامک نمی‌شه پیامک‌ها رو نشون داد. می‌تونی شماره رو دستی هم وارد کنی.")
@@ -169,8 +194,22 @@ fun SmsSenderPickerDialog(
                 list.isEmpty() -> CenterNote("پیامکی تو صندوقِ گوشیت پیدا نشد")
                 else -> {
                     val q = query.trim()
-                    val filtered = if (q.isEmpty()) list else list.filter { it.address.contains(q, true) || it.body.contains(q) }
-                    val shown = if (onPickMessage != null) filtered.sortedByDescending { it.parsed != null } else filtered
+                    val since = if (lastDays > 0) {
+                        val cal = java.util.Calendar.getInstance()
+                        cal.set(java.util.Calendar.HOUR_OF_DAY, 0); cal.set(java.util.Calendar.MINUTE, 0); cal.set(java.util.Calendar.SECOND, 0)
+                        cal.add(java.util.Calendar.DAY_OF_YEAR, -(lastDays - 1))
+                        cal.timeInMillis
+                    } else 0L
+                    val filtered = list.filter { m ->
+                        (q.isEmpty() || m.address.contains(q, true) || m.body.contains(q)) &&
+                            (!bankOnly || m.parsed != null || ir.sadteam.loancalc.core.looksLikeBankSms(m.body)) &&
+                            (typeFilter == null || m.parsed?.type == typeFilter) &&
+                            m.dateMs >= since
+                    }
+                    val shown = if (newestFirst) filtered.sortedByDescending { it.dateMs } else filtered.sortedBy { it.dateMs }
+                    if (shown.isEmpty()) {
+                        CenterNote(if (bankOnly) "پیامکِ بانکی با این فیلتر پیدا نشد. «فقط بانکی» را خاموش کن تا بقیه‌ی سرشماره‌ها هم بیایند." else "پیامکی با این فیلتر پیدا نشد.")
+                    }
                     LazyColumn(
                         contentPadding = PaddingValues(start = 10.dp, end = 14.dp, top = 4.dp, bottom = 28.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -269,9 +308,12 @@ suspend fun readSmsInbox(context: Context, limit: Int = 200): List<SmsInboxMessa
                 while (cursor.moveToNext()) {
                     val body = cursor.getString(bodyIndex)?.trim().orEmpty()
                     if (body.isEmpty()) continue
+                    val address = cursor.getString(addressIndex)?.trim().orEmpty()
+                    // 🔒 پیامکِ شخصی (شماره‌ی موبایل) اصلاً وارد برنامه نمی‌شود - ایرادِ داورِ مایکت.
+                    if (ir.sadteam.loancalc.core.isPersonalSmsSender(address)) continue
                     result += SmsInboxMessage(
                         id = cursor.getLong(idIndex),
-                        address = cursor.getString(addressIndex)?.trim().orEmpty(),
+                        address = address,
                         body = body,
                         dateMs = cursor.getLong(dateIndex),
                         parsed = BankSmsParser.parse(body),

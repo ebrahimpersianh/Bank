@@ -195,9 +195,9 @@ fun SmsImportScreen(
             // صفحه‌ی وام‌ها: ترتیب (تازه‌ترین / بیشترین پیام) و نمایش (همه / فقط بانکی).
             var filterOpen by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
             var sortByCount by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
-            var onlyBanky by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+            var onlyBanky by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(true) }
             val groups = messages.groupBy { it.address }.entries
-                .filter { !onlyBanky || it.value.any { m -> m.parsed != null } }
+                .filter { !onlyBanky || it.value.any { m -> m.parsed != null || ir.sadteam.loancalc.core.looksLikeBankSms(m.body) } }
                 .sortedByDescending { entry ->
                     if (sortByCount) entry.value.size.toLong() else entry.value.maxOf { it.dateMs }
                 }

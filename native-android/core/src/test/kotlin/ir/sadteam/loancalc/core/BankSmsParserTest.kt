@@ -9,6 +9,22 @@ import kotlin.test.assertTrue
 class BankSmsParserTest {
 
     @Test
+    fun personalMobileSendersAreNeverBank() {
+        assertTrue(isPersonalSmsSender("09121234567"))
+        assertTrue(isPersonalSmsSender("+989121234567"))
+        assertTrue(isPersonalSmsSender("۰۹۱۲۱۲۳۴۵۶۷"))
+        assertFalse(isPersonalSmsSender("+98700717"))
+        assertFalse(isPersonalSmsSender("9820001"))
+        assertFalse(isPersonalSmsSender("BankMelli"))
+    }
+
+    @Test
+    fun adIsNotBankLike() {
+        assertFalse(looksLikeBankSms("جایزه ویژه! با ارسال عدد ۱ عضو شوید ۵۰۰۰۰ تومان تخفیف"))
+        assertTrue(looksLikeBankSms("برداشت از حساب 1234 مبلغ 500,000 ریال مانده 2,000,000"))
+    }
+
+    @Test
     fun parsesWithdrawalSmsInRial() {
         val parsed = BankSmsParser.parse("برداشت 1,500,000 ریال از کارت منتهی به 4821")
         assertEquals(1_500_000.0, parsed?.amountRial)

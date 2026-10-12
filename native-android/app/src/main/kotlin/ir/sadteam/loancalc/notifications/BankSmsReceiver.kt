@@ -63,7 +63,12 @@ class BankSmsReceiver : BroadcastReceiver() {
                 // خوندنِ خودکار مالِ اشتراک است (۷ مهر)؛ بعدِ پایانش بی‌صدا متوقف می‌شود.
                 if (!authPrefs.subscribed.first()) return@launch
                 val accounts = accountRepository.observeAccounts().first()
-                val parsed = BankSmsParser.parse(body) ?: run {
+                // سرشماره‌ای که کاربر خودش به یک حساب وصل کرده = منبعِ مطمئن (مثلِ اپِ بانکِ انتخاب‌شده
+                // در مسیرِ اعلان)؛ پیامکِ کوتاهِ بی «مانده/کارت» هم پذیرفته می‌شود (۱۶ مهر).
+                val linkedSender = accounts.any { it.smsEnabled && !it.smsSender.isNullOrBlank() && smsSenderMatches(it.smsSender, sender) }
+                // 🔒 پیامکِ شخصی (شماره‌ی موبایل) هرگز خوانده نمی‌شود، مگر خودِ کاربر آن شماره را به حسابی وصل کرده باشد.
+                if (!linkedSender && ir.sadteam.loancalc.core.isPersonalSmsSender(sender)) return@launch
+                val parsed = BankSmsParser.parse(body, trustedSource = linkedSender) ?: run {
                     noteUnparsedBankSms(accounts, sender, body)
                     return@launch
                 }
@@ -89,7 +94,27 @@ class BankSmsReceiver : BroadcastReceiver() {
                         parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
                     }
                     ?: candidates.takeIf { list -> list.none { !it.smsSender.isNullOrBlank() } }?.firstOrNull()
-                    ?: return@launch
+                    // نامِ بانک در متنِ پیامک («بانک ملت») با نامِ بانکِ حساب - مثلِ تطبیقِ نامِ اپ در مسیرِ اعلان.
+                    ?: candidates.filter { acc ->
+                        val b = acc.bankName.replace("بانک", "").trim()
+                        b.length >= 2 && body.contains(b)
+                    }.singleOrNull()
+                    ?: run {
+                        // مثلِ مسیرِ اعلان: بی‌صدا دور نریز - یک بار در روز برای هر سرشماره بگو چه کند.
+                        val today = JalaliCalendar.today()
+                        if (!sender.isNullOrBlank() && candidates.isNotEmpty() &&
+                            uiPrefs.claimAutoImportKey("smsnoacc|$sender|${today.y}-${today.m}-${today.d}")
+                        ) {
+                            inboxRepository.post(
+                                kind = InboxMessageEntity.Kind.SYSTEM,
+                                title = "پیامکِ بانکی بی‌حساب ماند",
+                                body = "از «$sender» یک تراکنش آمد ولی به هیچ حسابی وصل نیست. در ویرایشِ حساب، «سرشماره‌ی پیامک» را همین شماره بگذار تا از این به بعد خودکار ثبت شود.",
+                                sourceLabel = "پیامک از $sender",
+                                sourceText = body,
+                            )
+                        }
+                        return@launch
+                    }
 
                 // هم‌الگو با BankNotificationListener: یک پیامک که دو بار تحویل شود (تکرارِ
                 // شبکه یا اجرای دوباره‌ی receiver) نباید دو تراکنش بسازد.

@@ -212,6 +212,25 @@ fun normalizeSmsSender(raw: String?): String {
     return s
 }
 
+/**
+ * 🔒 پیامکِ **آدم‌ها** (شماره‌ی موبایل: ۰۹… / +۹۸۹…) هرگز خوانده یا نشان داده نمی‌شود (ایرادِ داورِ
+ * مایکت، ۱۶ مهر: «پیامک‌های غیربانکی را هم می‌خواند»). بانک‌ها از سرشماره می‌فرستند، نه موبایل.
+ */
+fun isPersonalSmsSender(address: String?): Boolean {
+    val d = toEnDigits(address.orEmpty()).filter { it.isDigit() || it == '+' }.removePrefix("+").removePrefix("00")
+    if (d.isEmpty() || d.any { !it.isDigit() }) return false
+    return (d.length == 11 && d.startsWith("09")) || (d.length == 12 && d.startsWith("989")) || (d.length == 10 && d.startsWith("9"))
+}
+
+/** شبیهِ پیامکِ بانکی است؟ (خوانده شد، یا دستِ‌کم نشانه‌ی بانک + عدد دارد.) تبلیغ نه. */
+fun looksLikeBankSms(body: String): Boolean {
+    if (BankSmsParser.parse(body) != null) return true
+    val b = body.replace('ي', 'ی').replace('ك', 'ک')
+    val hints = listOf("مانده", "موجودی", "برداشت", "واریز", "حساب", "کارت", "بانک", "ریال")
+    val ads = listOf("لغو", "تخفیف", "جایزه", "قرعه", "عضویت", "ارسال عدد", "کد تایید", "رمز پویا", "رمز یکبار")
+    return b.count { it.isDigit() } >= 4 && hints.count { b.contains(it) } >= 2 && ads.none { b.contains(it) }
+}
+
 /** آیا فرستنده‌ی این پیامک همونیه که کاربر برای این حساب ثبت کرده؟ برای اینکه یه سرشماره‌ی
  * ۱۰-۱۴رقمی که اپراتورها گاهی با چند رقمِ اضافه تحویل می‌دن هم بگیره، تطبیقِ «یکی پسوندِ اون یکی
  * باشه» هم قبوله (با حداقلِ ۴ کاراکتر، تا دو سرشماره‌ی بی‌ربط تصادفی جور در نیان). */
