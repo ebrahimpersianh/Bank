@@ -30,6 +30,9 @@ import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,7 +78,8 @@ internal fun UsersCard(st: AdminStatsResponse) {
     val daily = st.daily.orEmpty()
     AppCard(label = "کاربرها · ۳۰ روزِ اخیر") {
         if (daily.isNotEmpty()) {
-            AdminLineChart(daily.map { it.active }, daily.map { it.new })
+            AdminLineChart(daily.map { it.active }, daily.map { it.new }, labels = daily.map { adminDay(it.day) })
+            AdminAxis(daily.map { adminDayShort(it.day) })
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.padding(top = 8.dp)) {
                 AdminLegend(AppPrimary, "کاربرِ فعال")
                 AdminLegend(AppInfo, "نصبِ تازه")
@@ -139,9 +143,11 @@ internal fun TimeCard(st: AdminStatsResponse) {
             val counts = (0..23).map { h -> hours.firstOrNull { it.name.toIntOrNull() == h }?.count ?: 0 }
             val peak = counts.indices.maxByOrNull { counts[it] }
             AdminSubTitle("ساعتِ باز کردنِ برنامه (به وقتِ ایران)")
-            AdminColumnChart(counts, height = 70.dp, highlight = peak)
-            Row(modifier = Modifier.fillMaxWidth().padding(top = 3.dp)) {
-                listOf("۰", "۶", "۱۲", "۱۸", "۲۳").forEach { Text(it, color = AppLabel, fontSize = 11.sp, modifier = Modifier.weight(1f)) }
+            AdminColumnChart(counts, height = 70.dp, highlight = peak, tapLabels = (0..23).map { "ساعتِ ${toFa(it)}" })
+            ir.sadteam.loancalc.ui.components.Ltr {
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 3.dp)) {
+                    listOf("۰", "۶", "۱۲", "۱۸", "۲۳").forEach { Text(it, color = AppLabel, fontSize = 11.sp, modifier = Modifier.weight(1f)) }
+                }
             }
             if (peak != null) AdminNote("پرکارترین ساعت: ${toFa(peak)}")
         }
@@ -476,7 +482,8 @@ internal fun SalesCard(st: AdminStatsResponse) {
         val daily = st.salesDaily.orEmpty()
         if (daily.any { it.count > 0 }) {
             AdminSubSection("فروشِ روزانه", "۳۰ روز · بیشترین ${toFa(daily.maxOf { it.count })} خرید در یک روز", gold = true) {
-                AdminLineChart(daily.map { it.count }, height = 90.dp, gold = true)
+                AdminLineChart(daily.map { it.count }, height = 90.dp, gold = true, labels = daily.map { adminDay(it.name) })
+                AdminAxis(daily.map { adminDayShort(it.name) })
             }
         }
         val steps = listOf(
@@ -547,14 +554,17 @@ internal fun LiveCard(st: AdminStatsResponse) {
                 val max = (values.maxOrNull() ?: 0).coerceAtLeast(4)
                 val top = ((max + 3) / 4) * 4
                 Row(Modifier.padding(top = 8.dp)) {
-                    AdminLineChart(values, height = 96.dp, maxValue = top, modifier = Modifier.weight(1f))
+                    AdminLineChart(values, height = 96.dp, maxValue = top, modifier = Modifier.weight(1f), labels = daily.map { adminDay(it.day) })
                     Column(Modifier.height(96.dp).padding(start = 6.dp, top = 6.dp), verticalArrangement = Arrangement.SpaceBetween) {
                         listOf(top, top * 3 / 4, top / 2, top / 4, 0).forEach { Text(toFa(it), color = AppLabel, fontSize = 9.sp) }
                     }
                 }
+                // امروز سمتِ راست (۱۶ مهر) - برچسب‌ها هم چپ‌به‌راست، هم‌جهتِ خط.
                 val idx = listOf(0, daily.size / 4, daily.size / 2, daily.size * 3 / 4, daily.size - 1).distinct()
-                Row(Modifier.fillMaxWidth().padding(top = 4.dp, end = 18.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    idx.forEach { Text(daily[it].day.faDigitsAscii(), color = AppLabel, fontSize = 9.5.sp) }
+                ir.sadteam.loancalc.ui.components.Ltr {
+                    Row(Modifier.fillMaxWidth().padding(top = 4.dp, start = 18.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        idx.forEach { Text(adminDayShort(daily[it].day), color = AppLabel, fontSize = 9.5.sp) }
+                    }
                 }
             }
         }
@@ -682,12 +692,15 @@ internal fun HealthCard(st: AdminStatsResponse) {
             else -> Triple(AppDangerPill, AppDangerInk, "${toFa(per100)} کرش در هر ۱۰۰ نفر")
         }
         Text(text, color = ink, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(pill).padding(12.dp))
+        // لمسِ هر کاشی = فهرستِ جزئیات (۱۶ مهر).
+        var detail by remember { mutableStateOf<Pair<String, String>?>(null) }
+        detail?.let { (kind, title) -> AdminHealthDetailPage(kind, title, onBack = { detail = null }) }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
-            KpiTile("کرش", adminNum(st.crashes30), Modifier.weight(1f), unit = "بار")
-            KpiTile("خطای همگام‌سازی", adminNum(st.nonFatal30), Modifier.weight(1f), unit = "بار")
-            KpiTile("گوشی با ۳+ حساب", adminNum(st.multiAccountDevices), Modifier.weight(1f), unit = "گوشی")
+            KpiTile("کرش", adminNum(st.crashes30), Modifier.weight(1f).clickable { detail = "crash" to "کرش‌های ۳۰ روز" }, unit = "بار")
+            KpiTile("خطای همگام‌سازی", adminNum(st.nonFatal30), Modifier.weight(1f).clickable { detail = "sync" to "خطای همگام‌سازی" }, unit = "بار")
+            KpiTile("گوشی با ۳+ حساب", adminNum(st.multiAccountDevices), Modifier.weight(1f).clickable { detail = "multi" to "گوشی با ۳+ حساب" }, unit = "گوشی")
         }
-        KpiTile("ماهِ رایگان نگرفت (گوشیِ تکراری)", adminNum(st.trialBlockedUsers), Modifier.fillMaxWidth().padding(top = 8.dp), unit = "حساب")
+        KpiTile("ماهِ رایگان نگرفت (گوشیِ تکراری)", adminNum(st.trialBlockedUsers), Modifier.fillMaxWidth().padding(top = 8.dp).clickable { detail = "trial" to "ماهِ رایگان نگرفت" }, unit = "حساب")
         val byVersion = st.crashesByVersion.orEmpty().take(6)
         if (byVersion.isNotEmpty()) {
             AdminSubTitle("کرش به‌تفکیکِ نسخه")

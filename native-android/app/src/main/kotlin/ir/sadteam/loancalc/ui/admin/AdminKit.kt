@@ -3,6 +3,9 @@ package ir.sadteam.loancalc.ui.admin
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import ir.sadteam.loancalc.ui.components.Ltr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -528,54 +531,101 @@ internal fun FunnelChart(steps: List<Pair<String, Int>>, unit: String = "نفر"
 
 // ── نمودار ──────────────────────────────────────────────────────────────────────
 /**
- * خط + ناحیه برای عددِ روزانه، با ستونِ اختیاریِ دوم. راست‌به‌چپ: قدیمی‌ترین راست، امروز چپ (نقطه).
+ * خط + ناحیه برای عددِ روزانه، با ستونِ اختیاریِ دوم. **امروز سمتِ راست** (۱۶ مهر، خواسته‌ی کاربر -
+ * مثلِ نمودارِ خانه)؛ لمس = روز و عددش بالای نمودار. [labels] برچسبِ هر نقطه (مثلاً «۱۶ مهر»).
  * ⚠️ رنگ‌ها `@Composable`اند، پس بیرونِ `Canvas` خوانده می‌شوند.
  */
 @Composable
-internal fun AdminLineChart(values: List<Int>, bars: List<Int> = emptyList(), height: Dp = 110.dp, gold: Boolean = false, maxValue: Int? = null, modifier: Modifier = Modifier.fillMaxWidth()) {
+internal fun AdminLineChart(values: List<Int>, bars: List<Int> = emptyList(), height: Dp = 110.dp, gold: Boolean = false, maxValue: Int? = null, modifier: Modifier = Modifier.fillMaxWidth(), labels: List<String> = emptyList()) {
     if (values.isEmpty()) return
     val line = if (gold) AppGoldInk else AppPrimary
     val barC = AppInfo
     val grid = AppChartGrid
     val max = maxValue ?: (values + bars).maxOrNull()?.coerceAtLeast(1) ?: 1
-    Canvas(modifier.height(height).padding(top = 6.dp)) {
-        val n = values.size
-        val step = if (n > 1) size.width / (n - 1) else 0f
-        fun x(i: Int) = size.width - i * step
-        fun y(v: Int) = size.height - 4f - (size.height - 8f) * v / max
-        drawLine(grid, Offset(0f, size.height - 1f), Offset(size.width, size.height - 1f), 2f)
-        val bw = (size.width / n.coerceAtLeast(1)) * 0.45f
-        bars.forEachIndexed { i, b ->
-            if (b > 0 && i < n) {
-                val h = (size.height - 8f) * b / max
-                drawRoundRect(barC, Offset((x(i) - bw / 2).coerceIn(0f, size.width - bw), size.height - h), Size(bw, h), CornerRadius(3f, 3f))
+    var sel by remember(values.size) { mutableStateOf<Int?>(null) }
+    Column(modifier) {
+        sel?.let { i ->
+            Row(
+                Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(10.dp)).background(line.copy(alpha = 0.10f))
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(labels.getOrElse(i) { "" }, color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+                Text(adminNum(values[i]), color = line, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+                bars.getOrNull(i)?.let { Text("  ·  ${adminNum(it)}", color = barC, fontSize = 12.sp, fontWeight = FontWeight.Black) }
             }
         }
-        val path = Path().apply { values.forEachIndexed { i, v -> if (i == 0) moveTo(x(i), y(v)) else lineTo(x(i), y(v)) } }
-        val area = Path().apply { addPath(path); lineTo(x(n - 1), size.height); lineTo(x(0), size.height); close() }
-        drawPath(area, line.copy(alpha = 0.14f))
-        drawPath(path, line, style = Stroke(width = 2.5.dp.toPx(), join = StrokeJoin.Round, cap = StrokeCap.Round))
-        drawCircle(line, 4.dp.toPx(), Offset(x(n - 1), y(values.last())))
+        Canvas(
+            Modifier.fillMaxWidth().height(height).padding(top = 6.dp).pointerInput(values.size) {
+                detectTapGestures { off ->
+                    val n = values.size
+                    val i = if (n > 1) Math.round(off.x / (size.width.toFloat() / (n - 1))) else 0
+                    sel = i.coerceIn(0, n - 1).takeIf { it != sel }
+                }
+            },
+        ) {
+            val n = values.size
+            val step = if (n > 1) size.width / (n - 1) else 0f
+            fun x(i: Int) = i * step
+            fun y(v: Int) = size.height - 4f - (size.height - 8f) * v / max
+            drawLine(grid, Offset(0f, size.height - 1f), Offset(size.width, size.height - 1f), 2f)
+            val bw = (size.width / n.coerceAtLeast(1)) * 0.45f
+            bars.forEachIndexed { i, b ->
+                if (b > 0 && i < n) {
+                    val h = (size.height - 8f) * b / max
+                    drawRoundRect(barC, Offset((x(i) - bw / 2).coerceIn(0f, size.width - bw), size.height - h), Size(bw, h), CornerRadius(3f, 3f))
+                }
+            }
+            val path = Path().apply { values.forEachIndexed { i, v -> if (i == 0) moveTo(x(i), y(v)) else lineTo(x(i), y(v)) } }
+            val area = Path().apply { addPath(path); lineTo(x(n - 1), size.height); lineTo(x(0), size.height); close() }
+            drawPath(area, line.copy(alpha = 0.14f))
+            drawPath(path, line, style = Stroke(width = 2.5.dp.toPx(), join = StrokeJoin.Round, cap = StrokeCap.Round))
+            val mark = sel ?: (n - 1)
+            if (sel != null) drawLine(line.copy(alpha = 0.5f), Offset(x(mark), 0f), Offset(x(mark), size.height), 2f)
+            drawCircle(line, 4.dp.toPx(), Offset(x(mark), y(values[mark])))
+        }
     }
 }
 
-/** ستون‌های هم‌عرض. در RTL اولین مقدار راست می‌نشیند (شنبه، ساعتِ ۰، قدیمی‌ترین روز). */
+/**
+ * ستون‌های هم‌عرض - **چپ‌به‌راست** (اولین مقدار چپ: شنبه، ساعتِ ۰، قدیمی‌ترین روز؛ ۱۶ مهر).
+ * لمسِ هر ستون عدد و برچسبش را نشان می‌دهد.
+ */
 @Composable
-internal fun AdminColumnChart(values: List<Int>, labels: List<String> = emptyList(), height: Dp = 80.dp, color: Color = AppPrimary, highlight: Int? = null, maxValue: Int? = null) {
+internal fun AdminColumnChart(values: List<Int>, labels: List<String> = emptyList(), height: Dp = 80.dp, color: Color = AppPrimary, highlight: Int? = null, maxValue: Int? = null, tapLabels: List<String> = labels, valueText: (Int) -> String = { adminNum(it) }) {
     if (values.isEmpty()) return
     val max = maxValue ?: values.maxOrNull()?.coerceAtLeast(1) ?: 1
     val track = AppSurface2
     val dim = AppMarkOff
-    Row(Modifier.fillMaxWidth().height(height).padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.Bottom) {
-        values.forEachIndexed { i, v ->
-            Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(track), contentAlignment = Alignment.BottomCenter) {
-                if (v > 0) Box(Modifier.fillMaxWidth().fillMaxHeight(v.toFloat() / max).background(if (highlight == null || highlight == i) color else dim))
-            }
+    var sel by remember(values.size) { mutableStateOf<Int?>(null) }
+    sel?.let { i ->
+        Row(
+            Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(10.dp)).background(color.copy(alpha = 0.10f))
+                .padding(horizontal = 10.dp, vertical = 5.dp),
+        ) {
+            Text(tapLabels.getOrElse(i) { toFa(i) }, color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+            Text(valueText(values[i]), color = color, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
         }
     }
-    if (labels.isNotEmpty()) {
-        Row(Modifier.fillMaxWidth().padding(top = 3.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            labels.forEach { Text(it, color = AppLabel, fontSize = 11.sp, textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.weight(1f)) }
+    Ltr {
+        Column {
+            Row(Modifier.fillMaxWidth().height(height).padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.Bottom) {
+                values.forEachIndexed { i, v ->
+                    val on = if (sel != null) sel == i else (highlight == null || highlight == i)
+                    Box(
+                        Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(track)
+                            .clickable { sel = if (sel == i) null else i },
+                        contentAlignment = Alignment.BottomCenter,
+                    ) {
+                        if (v > 0) Box(Modifier.fillMaxWidth().fillMaxHeight(v.toFloat() / max).background(if (on) color else dim))
+                    }
+                }
+            }
+            if (labels.isNotEmpty()) {
+                Row(Modifier.fillMaxWidth().padding(top = 3.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    labels.forEach { Text(it, color = AppLabel, fontSize = 11.sp, textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.weight(1f)) }
+                }
+            }
         }
     }
 }

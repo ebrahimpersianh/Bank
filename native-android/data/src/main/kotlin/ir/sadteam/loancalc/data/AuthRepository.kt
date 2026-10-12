@@ -93,6 +93,12 @@ class AuthRepository(
         return runCatching { apiService.adminMoney("Bearer $token") }.getOrNull()
     }
 
+    /** جزئیاتِ کاشی‌های سلامت (۱۶ مهر): crash / sync / multi / trial. */
+    suspend fun adminHealth(kind: String): ir.sadteam.loancalc.data.network.AdminHealthDetail? {
+        val token = authPrefs.authToken.first() ?: return null
+        return runCatching { apiService.adminHealth("Bearer $token", kind) }.getOrNull()
+    }
+
     suspend fun adminUsers(q: String): List<ir.sadteam.loancalc.data.network.AdminUserRow>? {
         val token = authPrefs.authToken.first() ?: return null
         return runCatching { apiService.adminUsers("Bearer $token", q).users }.getOrNull()

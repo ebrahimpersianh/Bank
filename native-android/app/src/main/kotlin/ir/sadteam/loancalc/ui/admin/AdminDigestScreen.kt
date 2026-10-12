@@ -239,8 +239,8 @@ private fun DigestBody(d: AdminDigestResponse) {
     if (trend.size > 1) {
         // ۱۶ مهر: «اصلاً معلوم نیست چیه» - خط و ستونِ روی هم جایشان را به دو نمودارِ ستونیِ ساده
         // دادند؛ عددِ هر روز بالای ستونش و تاریخ زیرش نوشته می‌شود.
-        TrendBars("هر روز چند نفر برنامه را باز کردند", Icons.Filled.Person, androidx.compose.ui.graphics.Color(0xFF00C389), trend.map { it.active })
-        TrendBars("هر روز چند نصبِ تازه", Icons.Filled.InstallMobile, androidx.compose.ui.graphics.Color(0xFF1478FF), trend.map { it.installs })
+        TrendBars("هر روز چند نفر برنامه را باز کردند", Icons.Filled.Person, androidx.compose.ui.graphics.Color(0xFF00C389), trend.map { it.active }, trend.map { it.day })
+        TrendBars("هر روز چند نصبِ تازه", Icons.Filled.InstallMobile, androidx.compose.ui.graphics.Color(0xFF1478FF), trend.map { it.installs }, trend.map { it.day })
     }
 
     val net = byKey["revenue_net"]
@@ -394,11 +394,11 @@ private fun restIcon(key: String): Pair<ImageVector, androidx.compose.ui.graphic
 }
 
 
-/** نمودارِ ستونیِ روزبه‌روز با عدد بالای هر ستون؛ قدیمی‌ترین سمتِ راست، «امروز» سمتِ چپ. */
+/** نمودارِ ستونیِ روزبه‌روز - امروز سمتِ راست، لمسِ هر ستون = روز و عددش (۱۶ مهر). */
 @Composable
-private fun TrendBars(title: String, icon: ImageVector, color: androidx.compose.ui.graphics.Color, values: List<Int>) {
+private fun TrendBars(title: String, icon: ImageVector, color: androidx.compose.ui.graphics.Color, values: List<Int>, days: List<String>) {
     val shown = values.takeLast(14)
-    val max = (shown.maxOrNull() ?: 0).coerceAtLeast(1)
+    val shownDays = days.takeLast(14)
     AppCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(color.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
@@ -407,32 +407,12 @@ private fun TrendBars(title: String, icon: ImageVector, color: androidx.compose.
             Text(title, color = AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 8.dp).weight(1f))
             Text("جمع ${adminNum(shown.sum().toLong())}", color = AppMuted, fontSize = 11.sp)
         }
-        Row(
-            Modifier.fillMaxWidth().padding(top = 12.dp).height(120.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            shown.forEachIndexed { i, v ->
-                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(if (v > 0) toFa(v) else "", color = AppText, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Box(
-                        Modifier.fillMaxWidth().height((96f * v / max).coerceAtLeast(3f).dp)
-                            .clip(RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
-                            .background(if (i == shown.lastIndex) color else color.copy(alpha = if (v > 0) 0.6f else 0.18f)),
-                    )
-                }
-            }
-        }
-        Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            shown.forEachIndexed { i, _ ->
-                val back = shown.lastIndex - i
-                Text(
-                    when { back == 0 -> "امروز"; back % 3 == 0 -> toFa(back); else -> "" },
-                    color = AppLabel, fontSize = 8.5.sp, maxLines = 1,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.weight(1f),
-                )
-            }
-        }
-        Text("عددِ زیرِ ستون = چند روز پیش", color = AppLabel, fontSize = 10.sp, modifier = Modifier.padding(top = 2.dp))
+        AdminTapBars(
+            values = shown,
+            labels = shownDays.map { adminDay(it) },
+            axis = shownDays.map { adminDayShort(it) },
+            color = color,
+            height = 110.dp,
+        )
     }
 }

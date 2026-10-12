@@ -33,7 +33,101 @@ data class MoneyResponse(
     val abA: AbGroup,
     val abB: AbGroup,
     val daily: List<MoneyDay> = emptyList(),
+    /** ۱۶ مهر: «چه کسی خرید» - ۵۰ خریدِ آخر، تازه‌ترین اول. */
+    val recent: List<RecentPurchase> = emptyList(),
+    /** فروشِ امروز / ۷ روز / ۳۰ روز به‌تفکیکِ استور. */
+    val periods: List<SalesPeriod> = emptyList(),
 )
+
+@Serializable
+data class RecentPurchase(val code: String, val phone: String, val product: String, val store: String, val price: Long, val at: String)
+
+@Serializable
+data class SalesPeriod(val label: String, val count: Int, val net: Long, val cafebazaar: Int, val myket: Int)
+
+/** جزئیاتِ کاشی‌های سلامت (کرش، خطای همگام‌سازی، گوشیِ چندحسابه، ماهِ رایگانِ ردشده). */
+@Serializable
+data class HealthRow(val title: String, val sub: String = "", val at: String = "")
+
+@Serializable
+data class HealthDetail(val kind: String, val rows: List<HealthRow>)
+
+/** «09121234567» → «0912•••4567». */
+private fun maskPhone(p: String?): String {
+    val d = p.orEmpty()
+    return if (d.length >= 8) d.take(4) + "•••" + d.takeLast(4) else d
+}
+
+private fun recentPurchases(conn: Connection): List<RecentPurchase> = buildList {
+    conn.list(
+        "SELECT p.user_id, u.phone, p.product_id, p.store, coalesce(p.price_toman, 0), p.created_at FROM subscription_purchases p " +
+            "LEFT JOIN users u ON u.id = p.user_id ORDER BY p.created_at DESC LIMIT 50",
+    ) {
+        val uid = it.getLong(1)
+        add(
+            RecentPurchase(
+                code = userCodeOf(conn, uid)?.removePrefix("Uid:") ?: uid.toString(),
+                phone = maskPhone(it.getString(2)),
+                product = it.getString(3).substringAfterLast('_'),
+                store = it.getString(4),
+                price = it.getLong(5),
+                at = it.getString(6),
+            ),
+        )
+    }
+}
+
+private fun salesPeriods(conn: Connection): List<SalesPeriod> {
+    val fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val nowUtc = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC)
+    // «امروز» = از نیمه‌شبِ ایران.
+    val todayStart = nowUtc.plusMinutes(210).toLocalDate().atStartOfDay().minusMinutes(210)
+    return listOf(
+        "امروز" to todayStart,
+        "۷ روز" to nowUtc.minusDays(7),
+        "۳۰ روز" to nowUtc.minusDays(30),
+    ).map { (label, from) ->
+        var count = 0; var net = 0L; var bazaar = 0; var myket = 0
+        conn.list(
+            "SELECT store, COUNT(*), coalesce(SUM(price_toman),0) FROM subscription_purchases WHERE created_at >= ? GROUP BY store",
+            from.format(fmt),
+        ) {
+            val store = it.getString(1); val c = it.getInt(2); val gross = it.getLong(3)
+            val r = STORE_PAYOUT[store]
+            count += c
+            net += if (r != null) gross * r.first / r.second else gross
+            if (store == "cafebazaar") bazaar += c else if (store == "myket") myket += c
+        }
+        SalesPeriod(label, count, net, bazaar, myket)
+    }
+}
+
+internal fun healthDetail(conn: Connection, kind: String): HealthDetail {
+    val d30 = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC).minusDays(30)
+        .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+    val rows = buildList {
+        when (kind) {
+            "crash", "sync" -> conn.list(
+                "SELECT message, coalesce(app_version, ''), created_at FROM crash_reports WHERE created_at >= ? AND " +
+                    (if (kind == "sync") "context = 'sync'" else "coalesce(context, '') NOT IN ('sync', 'slow')") +
+                    " ORDER BY created_at DESC LIMIT 60",
+                d30,
+            ) { add(HealthRow(it.getString(1).take(160), if (it.getString(2).isBlank()) "" else "نسخه‌ی ${it.getString(2)}", it.getString(3))) }
+            "multi" -> conn.list(
+                "SELECT device_hash, COUNT(*), GROUP_CONCAT(user_id), MAX(first_seen) FROM device_users " +
+                    "GROUP BY device_hash HAVING COUNT(*) >= 3 ORDER BY 2 DESC LIMIT 60",
+            ) {
+                val codes = it.getString(3).orEmpty().split(',').mapNotNull { s -> s.trim().toLongOrNull() }
+                    .joinToString("، ") { uid -> userCodeOf(conn, uid)?.removePrefix("Uid:") ?: uid.toString() }
+                add(HealthRow("گوشیِ ${it.getString(1).take(6)} · ${it.getInt(2)} حساب", codes, it.getString(4)))
+            }
+            "trial" -> conn.list(
+                "SELECT id, phone, created_at FROM users WHERE trial_blocked = 1 ORDER BY created_at DESC LIMIT 100",
+            ) { add(HealthRow(userCodeOf(conn, it.getLong(1))?.removePrefix("Uid:") ?: it.getLong(1).toString(), maskPhone(it.getString(2)), it.getString(3))) }
+        }
+    }
+    return HealthDetail(kind, rows)
+}
 
 /** فروشِ هر روزِ ۳۰ روزِ اخیر (روزِ ایران) برای نمودار. */
 @Serializable
@@ -157,6 +251,8 @@ internal fun buildMoney(conn: Connection): MoneyResponse {
         abA = conn.abGroup("a"),
         abB = conn.abGroup("b"),
         daily = moneyDaily(conn),
+        recent = runCatching { recentPurchases(conn) }.getOrDefault(emptyList()),
+        periods = runCatching { salesPeriods(conn) }.getOrDefault(emptyList()),
     )
 }
 
@@ -329,6 +425,12 @@ fun Route.adminProRoutes() {
         get("/money") {
             if (!call.adminOrNull()) return@get
             call.respond(Db.withConnection { buildMoney(it) })
+        }
+        get("/health") {
+            if (!call.adminOrNull()) return@get
+            val kind = call.request.queryParameters["kind"].orEmpty().takeIf { it in setOf("crash", "sync", "multi", "trial") }
+            if (kind == null) { call.respond(HttpStatusCode.BadRequest, mapOf("error" to "bad_kind")); return@get }
+            call.respond(Db.withConnection { healthDetail(it, kind) })
         }
         get("/user") {
             if (!call.adminOrNull()) return@get

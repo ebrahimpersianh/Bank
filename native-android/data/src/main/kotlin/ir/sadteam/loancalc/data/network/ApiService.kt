@@ -160,6 +160,9 @@ interface ApiService {
     @GET("api/admin/money")
     suspend fun adminMoney(@Header("Authorization") authHeader: String): AdminMoneyResponse
 
+    @GET("api/admin/health")
+    suspend fun adminHealth(@Header("Authorization") authHeader: String, @retrofit2.http.Query("kind") kind: String): AdminHealthDetail
+
     @GET("api/admin/users")
     suspend fun adminUsers(@Header("Authorization") authHeader: String, @retrofit2.http.Query("q") q: String): AdminUserList
 
@@ -569,7 +572,13 @@ data class AdminMoneyResponse(
     val renewed: Int = 0, val users: Int = 0, val grossTotal: Long = 0, val netTotal: Long = 0,
     val abA: AdminAbGroup = AdminAbGroup(), val abB: AdminAbGroup = AdminAbGroup(),
     val daily: List<AdminMoneyDay> = emptyList(),
+    val recent: List<AdminRecentPurchase> = emptyList(),
+    val periods: List<AdminSalesPeriod> = emptyList(),
 )
+data class AdminRecentPurchase(val code: String = "", val phone: String = "", val product: String = "", val store: String = "", val price: Long = 0, val at: String = "")
+data class AdminSalesPeriod(val label: String = "", val count: Int = 0, val net: Long = 0, val cafebazaar: Int = 0, val myket: Int = 0)
+data class AdminHealthRow(val title: String = "", val sub: String = "", val at: String = "")
+data class AdminHealthDetail(val kind: String = "", val rows: List<AdminHealthRow> = emptyList())
 data class AdminMoneyDay(val day: String = "", val purchases: Int = 0, val gross: Long = 0, val net: Long = 0)
 data class AdminTimelinePurchase(val product: String = "", val store: String = "", val at: String = "", val until: String = "")
 data class AdminTimelineInstall(val id: String = "", val firstDay: String = "", val lastDay: String = "", val activeDays: Int = 0, val version: Int? = null, val store: String? = null, val model: String? = null)

@@ -145,7 +145,13 @@ fun AdminMoneyScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel()
                         )
                     }
                     if (d.daily.any { it.net > 0 }) {
-                        AdminColumnChart(values = d.daily.map { (it.net / 1000).toInt() }, color = AppGoldInk, height = 64.dp)
+                        AdminTapBars(
+                            values = d.daily.map { it.net.toInt() },
+                            labels = d.daily.map { "${adminDay(it.day)} · ${toFa(it.purchases)} خرید" },
+                            axis = d.daily.map { adminDayShort(it.day) },
+                            color = AppGoldInk, height = 70.dp,
+                            valueText = { "${adminNum(it)} ت" },
+                        )
                     }
                     AdminNote("همه به تومان · خالص = بعد از کارمزدِ استور. ۳۰ روز = ۳۰ روزِ اخیرِ ایران.", gold = true)
                 }
@@ -158,6 +164,7 @@ fun AdminMoneyScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel()
                     KpiTile("درآمد به‌ازای هر کاربر", if (d.users > 0) adminNum((d.netTotal / d.users).toLong()) else "—", Modifier.weight(1f), unit = "تومان", prevText = "خالص · ${adminNum(d.users)} کاربر", standalone = true)
                     KpiTile("درآمد به‌ازای هر خریدار", if (d.payers > 0) adminNum((d.netTotal / d.payers).toLong()) else "—", Modifier.weight(1f), unit = "تومان", prevText = "خالص · ${adminNum(d.payers)} خریدار", standalone = true)
                 }
+                AdminSalesCard(d)
                 AbCard(d)
             }
         }
@@ -486,11 +493,8 @@ private fun UserResult(r: AdminUserTimeline, phone: String? = null, store: Strin
         InfoLine(androidx.compose.material.icons.Icons.Filled.Mail, androidx.compose.ui.graphics.Color(0xFFEF4444), "پیام‌های ارسالی", toFa(r.supportCount))
     }
     if (tab == 2 && r.days.isNotEmpty()) AppCard(label = "۱۴ روزِ آخر · صفحه‌های دیده‌شده") {
-        AdminColumnChart(r.days.map { it.screens }, height = 90.dp)
-        Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-            Text(adminDay(r.days.first().day), color = AppLabel, fontSize = 11.sp, modifier = Modifier.weight(1f))
-            Text(adminDay(r.days.last().day), color = AppLabel, fontSize = 11.sp)
-        }
+        val asc = r.days.sortedBy { it.day }
+        AdminTapBars(asc.map { it.screens }, asc.map { adminDay(it.day) }, asc.map { adminDayShort(it.day) }, height = 90.dp)
         AdminNote("جمعِ ${adminNum(r.days.sumOf { it.events })} رویداد در این ۱۴ روز.")
     }
     if (tab == 1 && r.purchases.isEmpty()) AdminNote("هنوز خریدی نکرده.")
