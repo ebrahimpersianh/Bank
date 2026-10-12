@@ -345,6 +345,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
 
     // همان صفحه‌ی «گزارشِ مشکل / تماس» که در تنظیمات هم هست - نسخه‌ی دوم ساخته نشد.
     if (showContact) {
+        androidx.activity.compose.BackHandler { showContact = false }
         Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
             BugReportScreen(onBack = { showContact = false })
         }

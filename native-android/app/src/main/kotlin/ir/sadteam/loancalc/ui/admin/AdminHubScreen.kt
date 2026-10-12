@@ -79,6 +79,11 @@ fun AdminHubScreen(
 ) {
     var page by remember { mutableStateOf<String?>(null) }
     var gift by remember { mutableStateOf<String?>(null) }
+    // برگشتِ گوشی از زیرصفحه‌ی ادمین = برگشت به هاب، نه بستنِ کلِ پنل.
+    androidx.activity.compose.BackHandler(enabled = page != null) {
+        if (page == "digest") digestVm.resetToToday()
+        page = null
+    }
     when (page) {
         "stats" -> { AdminStatsScreen(onBack = { page = null }); return }
         "support" -> { SupportInboxScreen(onBack = { page = null }, viewModel = supportVm); return }

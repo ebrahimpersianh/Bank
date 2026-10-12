@@ -177,6 +177,15 @@ fun DebtScreen(
         )
     }
 
+    // برگشتِ گوشی = یک صفحه عقب (۱۶ مهر): جزئیاتِ دنگ → فهرستِ دنگ → طلب و بدهی.
+    androidx.activity.compose.BackHandler(enabled = screenKey != "list" && !(startInDang && dangScreen == "list")) {
+        when (dangScreen) {
+            "detail" -> { dangScreen = "list"; openedDangEventId = null }
+            "create" -> dangScreen = "list"
+            "list" -> dangScreen = "none"
+            else -> openedCounterpartyId = null
+        }
+    }
     Box(modifier = Modifier.fillMaxSize()) {
     AnimatedContent(
         targetState = screenKey,
@@ -406,7 +415,8 @@ private fun DebtList(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                     DebtFilter.entries.forEach { f ->
-                        DebtTypeChip(label = f.label, selected = filter == f, modifier = Modifier.weight(1f)) { filter = f }
+                        // «تسویه‌شده» بلندتر است؛ سهمِ پهنای بیشتر تا مثلِ بقیه یک‌خطی بماند (گزارشِ کاربر، ۱۶ مهر).
+                        DebtTypeChip(label = f.label, selected = filter == f, modifier = Modifier.weight(if (f == DebtFilter.SETTLED) 1.45f else 1f)) { filter = f }
                     }
                 }
             }
@@ -948,6 +958,9 @@ private fun DebtTypeChip(label: String, selected: Boolean, modifier: Modifier = 
                 color = if (selected) AppPrimary else AppMuted,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                softWrap = false,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

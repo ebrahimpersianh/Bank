@@ -291,6 +291,17 @@ fun ChequeScreen(
         openedCheque != null -> "detail"
         else -> "list"
     }
+    // برگشتِ گوشی = یک صفحه عقب (۱۶ مهر)؛ قبلاً از هر زیرصفحه یک‌راست بیرون می‌رفت.
+    androidx.activity.compose.BackHandler(enabled = screenKey != "list") {
+        when (screenKey) {
+            "books" -> showChequeBooks = false
+            "add" -> { showAddForm = false; editingChequeId = null }
+            "sayad" -> showSayadInquiry = false
+            "report" -> showReport = false
+            "reminders" -> showReminderSettings = false
+            "detail" -> openedChequeId = null
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
     AnimatedContent(

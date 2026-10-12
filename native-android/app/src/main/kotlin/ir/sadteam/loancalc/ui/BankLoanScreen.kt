@@ -581,6 +581,7 @@ fun BankLoanScreen(
         // «امور چک» رو کاربر می‌خواست تو همین تب هم در دسترس باشه، نه فقط از تنظیمات -
         // رجوع کن به کارتِ «امور چک» تهِ همین LazyColumn.
         if (showCheque) {
+            androidx.activity.compose.BackHandler { showCheque = false }
             Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
                 ChequeScreen(onBack = { showCheque = false })
             }

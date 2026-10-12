@@ -144,6 +144,7 @@ internal fun NavGraphBuilder.appRoutes(
     navSlots: List<NavDestination>,
     navSuggestion: ir.sadteam.loancalc.core.NavSuggestion.Result?,
     navigateTo: (String) -> Unit,
+    goBack: () -> Unit,
     deepLinkLoanId: Long?,
     tabResetKeys: androidx.compose.runtime.snapshots.SnapshotStateMap<BottomTab, Int>,
     showSettingsState: MutableState<Boolean>,
@@ -178,17 +179,17 @@ internal fun NavGraphBuilder.appRoutes(
                     val openId = deepLinkViewModel.pendingChequeId.collectAsState().value
                     LaunchedEffect(openId) { if (openId != null) deepLinkViewModel.consumeCheque() }
                     ChequeScreen(
-                        onBack = { navigateTo(BottomTab.HOME.route) },
+                        onBack = goBack,
                         standalone = false,
                         initialChequeId = openId,
                     )
                 }
                 composable(LOAN_STATS_ROUTE) {
-                    StatsScreen(onBack = { navigateTo(BottomTab.REPORT.route) })
+                    StatsScreen(onBack = goBack)
                 }
                 composable(CHEQUE_REPORT_ROUTE) {
                     ChequeScreen(
-                        onBack = { navigateTo(BottomTab.REPORT.route) },
+                        onBack = goBack,
                         standalone = false,
                         initialReport = true,
                     )
@@ -199,16 +200,16 @@ internal fun NavGraphBuilder.appRoutes(
                         if (openCounterparty != null) deepLinkViewModel.consumeDebt()
                     }
                     DebtScreen(
-                        onBack = { navigateTo(BottomTab.DUE.route) },
+                        onBack = goBack,
                         initialCounterpartyId = openCounterparty,
                     )
                 }
                 composable(DANG_ROUTE) {
-                    DebtScreen(onBack = { navigateTo(BottomTab.HOME.route) }, startInDang = true)
+                    DebtScreen(onBack = goBack, startInDang = true)
                 }
                 composable(TOOLS_ROUTE) {
                     ToolsHubScreen(
-                        onBack = { navigateTo(BottomTab.HOME.route) },
+                        onBack = goBack,
                         onOpenArchive = { navigateTo(ANNUAL_ARCHIVE_ROUTE) },
                         onOpenDeng = { navigateTo(DANG_ROUTE) },
                         onOpenSayad = { navigateTo(SAYAD_INQUIRY_ROUTE) },
@@ -216,59 +217,59 @@ internal fun NavGraphBuilder.appRoutes(
                     )
                 }
                 composable(NOTES_ROUTE) {
-                    NoteScreen(onBack = { navController.popBackStack() })
+                    NoteScreen(onBack = goBack)
                 }
                 composable(BUG_REPORT_ROUTE) {
-                    BugReportScreen(onBack = { navigateTo(BottomTab.HOME.route) })
+                    BugReportScreen(onBack = goBack)
                 }
                 composable(SAVINGS_GOAL_ROUTE) {
-                    SavingsGoalScreen(onBack = { navigateTo(BottomTab.BUDGET.route) })
+                    SavingsGoalScreen(onBack = goBack)
                 }
                 composable(CATEGORIES_ROUTE) {
-                    CategoryManagementScreen(onBack = { navigateTo(BottomTab.REPORT.route) })
+                    CategoryManagementScreen(onBack = goBack)
                 }
                 composable(ACCOUNTS_ROUTE) {
-                    AccountsScreen(onBack = { navigateTo(BottomTab.ASSETS.route) })
+                    AccountsScreen(onBack = goBack)
                 }
                 composable(ADD_ACCOUNT_ROUTE) {
-                    AccountsScreen(onBack = { navigateTo(BottomTab.ASSETS.route) }, startInAddMode = true)
+                    AccountsScreen(onBack = goBack, startInAddMode = true)
                 }
                 composable(STATEMENT_ROUTE) {
-                    ir.sadteam.loancalc.ui.account.StatementImportScreen(onBack = { navigateTo(BottomTab.ASSETS.route) })
+                    ir.sadteam.loancalc.ui.account.StatementImportScreen(onBack = goBack)
                 }
                 composable(PAYOFF_ROUTE) {
-                    ir.sadteam.loancalc.ui.debt.DebtPayoffScreen(onBack = { navigateTo(LOAN_ROUTE) })
+                    ir.sadteam.loancalc.ui.debt.DebtPayoffScreen(onBack = goBack)
                 }
                 composable(BILLS_ROUTE) {
-                    ir.sadteam.loancalc.ui.extras.BillsScreen(onBack = { navigateTo(BottomTab.BUDGET.route) })
+                    ir.sadteam.loancalc.ui.extras.BillsScreen(onBack = goBack)
                 }
                 composable(SHOP_ROUTE) {
                     // همان صفحه‌ی «فروشگاه/کیف» که از تنظیمات باز می‌شود (خواسته‌ی کاربر، ۷ مهر).
                     val gamificationVm: ir.sadteam.loancalc.ui.profile.GamificationViewModel = hiltViewModel()
                     ir.sadteam.loancalc.ui.coin.CoinHubScreen(
-                        onBack = { navigateTo(BottomTab.HOME.route) },
+                        onBack = goBack,
                         todayHasEntry = gamificationVm.todayLogged.collectAsState().value,
                         viewModel = gamificationVm,
                     )
                 }
                 composable(INBOX_ROUTE) {
-                    InboxScreen(onBack = { navigateTo(BottomTab.HOME.route) }, onOpenShop = { navigateTo(SHOP_ROUTE) })
+                    InboxScreen(onBack = goBack, onOpenShop = { navigateTo(SHOP_ROUTE) })
                 }
                 composable(CALC_HISTORY_ROUTE) {
-                    CalculationHistoryScreen(onBack = { navigateTo(LOAN_ROUTE) })
+                    CalculationHistoryScreen(onBack = goBack)
                 }
                 composable(SAYAD_INQUIRY_ROUTE) {
                     SayadInquiryScreen(
                         sayadId = null,
-                        onBack = { navigateTo(TOOLS_ROUTE) },
+                        onBack = goBack,
                     )
                 }
                 composable(ANNUAL_ARCHIVE_ROUTE) {
-                    AnnualArchiveScreen(onBack = { navigateTo(TOOLS_ROUTE) })
+                    AnnualArchiveScreen(onBack = goBack)
                 }
                 composable(CALENDAR_ROUTE) {
                     FinancialCalendarScreen(
-                        onBack = { navigateTo(BottomTab.HOME.route) },
+                        onBack = goBack,
                         onOpenLoan = { loanId ->
                             deepLinkViewModel.openLoan(loanId)
                             navigateTo(LOAN_ROUTE)

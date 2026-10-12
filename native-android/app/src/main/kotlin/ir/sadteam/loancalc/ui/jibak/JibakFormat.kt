@@ -102,7 +102,14 @@ fun Int.toFaMoney(): String = toLong().toFaMoney()
  * می‌نشیند («−۱۰۰»، «+۸ میلیون»)، نه ته‌اش. تنها راهِ درستِ نوشتنِ مبلغِ علامت‌دار در برنامه (گزارشِ کاربر، ۱۶ مهر:
  * «منفی برعکس است» - بعضی جاها علامت را دستی جلوی رشته می‌چسباندند).
  */
-fun isoSigned(positive: Boolean, body: String): String = "\u2066${if (positive) "+" else "\u2212"}$body\u2069"
+fun isoSigned(positive: Boolean, body: String): String {
+    val sign = if (positive) "+" else "\u2212"
+    // فقط علامت + رقم‌ها جدا (LTR) می‌شوند؛ واژه‌ی واحد («میلیون»، «تومان») بیرون می‌ماند تا مثلِ
+    // بقیه‌ی برنامه سمتِ چپِ عدد بنشیند (گزارشِ کاربر، ۱۶ مهر: «میلیون باید سمتِ چپ باشد»).
+    val numEnd = body.indexOfFirst { !(it.isDigit() || it in "٬,.٫/") }.let { if (it < 0) body.length else it }
+    if (numEnd == 0) return "\u2066$sign$body\u2069"
+    return "\u2066$sign${body.substring(0, numEnd)}\u2069${body.substring(numEnd)}"
+}
 
 /** مبلغِ ردیفِ فهرست — با علامتِ + برای درآمد، − برای خرج. */
 fun Long.toFaSignedMoney(): String =
@@ -113,7 +120,7 @@ fun Long.toFaSignedMoney(): String =
  * دارایی. جدا از toFaSignedMoney چون آنجا جا برای عددِ کامل هست و اینجا نیست.
  */
 fun Long.toFaSignedCompact(): String =
-    if (this >= 0) "\u2066+${kotlin.math.abs(this).toFaCompact()}\u2069" else toFaCompact()
+    if (this >= 0) isoSigned(true, kotlin.math.abs(this).toFaCompact()) else toFaCompact()
 
 /** ۶۵ → «۶۵٪» */
 fun Int.toFaPercent(): String = "${toFa()}٪"
@@ -149,7 +156,7 @@ fun Long.toFaCompact(): String {
         // «هزار و هفتصد» نمی‌خواند و ممیز گیج می‌کرد؛ «۱٬۶۶۷» حداکثر هفت نویسه است و جا می‌شود.
         else -> faGrouped(v)
     }
-    return if (negative) "\u2066$FA_MINUS$body\u2069" else body
+    return if (negative) isoSigned(false, body) else body
 }
 
 /** عددِ کامل با ارقامِ فارسی و جداکننده‌ی هزارگانِ «٬». */
@@ -183,7 +190,7 @@ fun Double.rialToFaCompact(): String = rialToToman(toLong()).toFaCompact()
 /** همان، با علامت — برای سود و زیان. */
 fun Double.rialToFaSignedCompact(): String {
     val t = rialToToman(toLong())
-    return if (t >= 0) "\u2066+" + kotlin.math.abs(t).toFaCompact() + "\u2069" else t.toFaCompact()
+    return if (t >= 0) isoSigned(true, kotlin.math.abs(t).toFaCompact()) else t.toFaCompact()
 }
 
 /**

@@ -58,6 +58,7 @@ internal fun PersistentTabs(
     navSlots: List<NavDestination>,
     navSuggestion: ir.sadteam.loancalc.core.NavSuggestion.Result?,
     navigateTo: (String) -> Unit,
+    goBack: () -> Unit,
     tabResetKeys: androidx.compose.runtime.snapshots.SnapshotStateMap<BottomTab, Int>,
     showSettingsState: MutableState<Boolean>,
     showInboxState: MutableState<Boolean>,
@@ -197,7 +198,7 @@ internal fun PersistentTabs(
                     holder.SaveableStateProvider(LOAN_ROUTE) {
                         key(loanKey) {
                             LoanTab(
-                                onBack = { navigateTo(BottomTab.HOME.route) },
+                                onBack = goBack,
                                 requestedSubTab = requestedLoanSubTab,
                                 onManualAddFabPositioned = {},
                                 onBottomBarVisibilityChanged = { visible -> if (loanActive) bottomBarVisible = visible },

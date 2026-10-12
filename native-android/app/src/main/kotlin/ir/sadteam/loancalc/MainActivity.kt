@@ -538,17 +538,43 @@ internal fun LoanCalcApp(
     // برگشتن از «وام»/«چک»...) یه جا جمع شد. popUpTo+saveState+restoreState یعنی هر مقصد مثلِ یه
     // «تبِ هم‌سطح» رفتار می‌کنه - حتی «وام»/«چک» که دیگه عضوِ BottomTab نیستن (رجوع کن به کامنتِ
     // بالای BottomTab).
-    fun navigateTo(route: String) {
-        // **بخشِ ۴۱** - قاعده‌ی `41c`: «**رویدادِ ورودِ صفحه** شمرده می‌شود، نه بازگشتِ دکمه‌ی
-        // back». شمارش عمداً اینجاست و نه تو `onClick`ِ نوار: مقصدی که نامزدِ **آمدن** به نواره
-        // اصلاً از نوار باز نمی‌شه (از کشوی میان‌بُر و کاشی‌ها باز می‌شه)، پس شمارشِ نوارمحور
-        // هیچ‌وقت هیچ پیشنهادی نمی‌ساخت. `navigateTo` تنها قیفِ ناوبریِ **رو به جلو**ی اپه.
-        NavDestination.byRoute(route)?.let(navSlotsViewModel::recordOpen)
+    // تاریخچه‌ی صفحه‌ها (۱۶ مهر، خواسته‌ی کاربر: «هر جا یک‌بار عقب بزنم یک صفحه عقب برود»). قبلاً
+    // برگشت از هر صفحه‌ی پوش‌شده یک‌راست «خانه» یا یک تبِ ثابت بود. تب‌های نوار ریشه‌اند و
+    // تاریخچه را پاک می‌کنند؛ برگشت از تب = خانه، مثلِ قبل.
+    val routeHistory = remember { androidx.compose.runtime.mutableStateListOf<String>() }
+    fun navigateRaw(route: String) {
         navController.navigate(route) {
             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
             restoreState = true
         }
+    }
+    fun navigateTo(route: String) {
+        val from = navController.currentBackStackEntry?.destination?.route ?: BottomTab.HOME.route
+        if (BottomTab.entries.any { it.route == route }) {
+            routeHistory.clear()
+        } else if (from != route) {
+            val seen = routeHistory.lastIndexOf(route)
+            if (seen >= 0) {
+                // برگشت به صفحه‌ای که قبلاً در مسیر بود: حلقه نسازد.
+                while (routeHistory.size > seen) routeHistory.removeAt(routeHistory.lastIndex)
+            } else {
+                routeHistory.add(from)
+            }
+        }
+        // **بخشِ ۴۱** - قاعده‌ی `41c`: «**رویدادِ ورودِ صفحه** شمرده می‌شود، نه بازگشتِ دکمه‌ی
+        // back». شمارش عمداً اینجاست و نه تو `onClick`ِ نوار: مقصدی که نامزدِ **آمدن** به نواره
+        // اصلاً از نوار باز نمی‌شه (از کشوی میان‌بُر و کاشی‌ها باز می‌شه)، پس شمارشِ نوارمحور
+        // هیچ‌وقت هیچ پیشنهادی نمی‌ساخت. `navigateTo` تنها قیفِ ناوبریِ **رو به جلو**ی اپه.
+        NavDestination.byRoute(route)?.let(navSlotsViewModel::recordOpen)
+        navigateRaw(route)
+    }
+    /** یک صفحه عقب؛ اگر تاریخچه خالی بود (مثلاً از تبِ نوار) → خانه. */
+    fun goBack() {
+        val cur = navController.currentBackStackEntry?.destination?.route
+        var prev = routeHistory.removeLastOrNull()
+        while (prev != null && prev == cur) prev = routeHistory.removeLastOrNull()
+        navigateRaw(prev ?: BottomTab.HOME.route)
     }
 
     // **کشوی میان‌بُر** (بخشِ ۳۱ فایلِ طراحی). هشت میان‌برِ ثابت که کاربر فقط می‌تونه
@@ -747,7 +773,7 @@ internal fun LoanCalcApp(
                 showExitHint = true
             }
         } else {
-            navigateTo(BottomTab.HOME.route)
+            goBack()
         }
     }
 
@@ -853,6 +879,7 @@ internal fun LoanCalcApp(
                 navSlots = navSlots,
                 navSuggestion = navSuggestion,
                 navigateTo = ::navigateTo,
+                goBack = ::goBack,
                 tabResetKeys = tabResetKeys,
                 showSettingsState = showSettingsState,
                 showInboxState = showInboxState,
@@ -891,6 +918,7 @@ internal fun LoanCalcApp(
                     navSlots = navSlots,
                     navSuggestion = navSuggestion,
                     navigateTo = ::navigateTo,
+                    goBack = ::goBack,
                     deepLinkLoanId = deepLinkLoanId,
                     tabResetKeys = tabResetKeys,
                     showSettingsState = showSettingsState,
