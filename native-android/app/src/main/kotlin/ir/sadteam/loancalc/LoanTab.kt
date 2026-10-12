@@ -14,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.collectAsState
@@ -198,6 +199,10 @@ internal fun LoanTab(
 
     // سربرگِ واحد (۸ مهر): جزئیاتِ وام سربرگِ خودش را دارد؛ دو فلشِ برگشت پشتِ‌هم گیج‌کننده بود.
     var loanDetailOpen by remember { mutableStateOf(false) }
+    // ۲۰ مهر (خواسته‌ی کاربر): صفحه‌ی «افزودنِ وام» تب‌های بالا را ندارد (جای بیشتر برای فرم)،
+    // عنوانش «افزودنِ وام» است و «وامِ دستی» یک آیکونِ سربرگ شد.
+    val addMode = subTab == LoanSubTab.CALCULATOR && calcAddLoan
+    val leaveAddMode = { calcAddLoan = false; subTab = LoanSubTab.MY_LOANS }
     Column(modifier = Modifier.fillMaxSize()) {
       if (!(subTab == LoanSubTab.MY_LOANS && loanDetailOpen)) {
         // «وام» دیگه تبِ نوارِ پایین نیست (رجوع کن به کامنتِ بالای BottomTab تو این فایل) - چون از
@@ -209,12 +214,12 @@ internal fun LoanTab(
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) {
+            IconButton(onClick = { if (addMode) leaveAddMode() else onBack() }) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
             }
             // فریمِ `27a`: عنوانِ ۱۸ با وزنِ ۹۰۰، و دکمه‌ی افزودن سمتِ مقابل تو قابِ ۳۲ی سبز.
             Text(
-                "وام",
+                if (addMode) "افزودنِ وام" else "وام",
                 color = AppText,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Black,
@@ -237,6 +242,16 @@ internal fun LoanTab(
                     onClick = { searchOpen = !searchOpen },
                 )
             }
+            if (addMode) {
+                ir.sadteam.loancalc.ui.components.HeaderIconButton(
+                    icon = Icons.Filled.EditNote,
+                    description = "ثبتِ وامِ دستی (وامی که از قبل گرفته‌ای)",
+                    onClick = {
+                        openManualAdd = true
+                        leaveAddMode()
+                    },
+                )
+            }
             val loanPrivacyVm: ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel = hiltViewModel()
             ir.sadteam.loancalc.ui.components.PrivacyEyeHeaderButton(
                 privacyMode = ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current,
@@ -244,7 +259,7 @@ internal fun LoanTab(
             )
             // تنظیمات برگشت به بالا-چپِ صفحه‌ی وام (خواسته‌ی کاربر، ۱۶ مهر).
             val loanAdminUnread by ir.sadteam.loancalc.ui.admin.AdminSignals.unreadSupport.collectAsState()
-            ir.sadteam.loancalc.ui.components.HeaderIconButton(
+            if (!addMode) ir.sadteam.loancalc.ui.components.HeaderIconButton(
                 icon = Icons.Filled.Settings,
                 description = "تنظیمات",
                 onClick = onOpenSettings,
@@ -254,7 +269,7 @@ internal fun LoanTab(
             )
         }
         // حالتِ ساده: فقط «وام‌های من»، بی تب‌های سپرده/محاسبه‌گر.
-        if (!ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current) Row(
+        if (!ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current && !addMode) Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 8.dp),

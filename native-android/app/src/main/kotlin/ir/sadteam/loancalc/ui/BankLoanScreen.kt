@@ -29,7 +29,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -203,11 +202,12 @@ fun BankLoanScreen(
     val privacyMode = LocalPrivacyMode.current
 
     // state فقط رقم نگه می‌داره؛ کاما نمایشیه (ThousandsSeparatorTransformation) - رجوع کن به کامنتِ فیلد.
-    val amountTextState = rememberSaveable { mutableStateOf("250000000") }
+    // ۲۰ مهر (خواسته‌ی کاربر): فرم خالی شروع می‌شود و کارتِ سبز «۰» نشان می‌دهد، نه قسطِ یک وامِ فرضی.
+    val amountTextState = rememberSaveable { mutableStateOf("") }
     var amountText by amountTextState
     val amountSliderRangeState = remember { mutableStateOf(defaultAmountRangeToman) }
     var amountSliderRange by amountSliderRangeState
-    var amountSlider by rememberSaveable { mutableFloatStateOf(250_000_000f) }
+    var amountSlider by rememberSaveable { mutableFloatStateOf(defaultAmountRangeToman.start) }
 
     val rateTextState = rememberSaveable { mutableStateOf("23") }
     var rateText by rateTextState
@@ -259,36 +259,7 @@ fun BankLoanScreen(
         contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        // 🚨 **بالای صفحه، نه تهِ آن** (جوابِ طراح، دورِ ۸).
-        //
-        // «+»ِ فهرستِ وام‌ها این صفحه را باز می‌کند، پس کسی که «+» زده ممکن است **فرم**
-        // می‌خواسته نه ماشین‌حساب. اولین چیزی که می‌بیند باید راهِ رسیدن به فرم باشد، نه
-        // آخرین - نمادِ FAB به‌تنهایی این شکاف را پر نمی‌کند.
-        item {
-            AppCard(modifier = Modifier.padding(bottom = 4.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().pressScaleClickable { onAddManualLoan() },
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column {
-                        Text("افزودنِ وامِ دستی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            "وامی که از قبل گرفته‌ای رو ثبت کن تا قسط‌هاش پیگیری بشن",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowForwardIos,
-                        contentDescription = null,
-                        tint = AppMuted,
-                        modifier = Modifier.size(14.dp),
-                    )
-                }
-            }
-        }
+        // «افزودنِ وامِ دستی» از این‌جا به آیکونِ سربرگِ «افزودنِ وام» رفت (۲۰ مهر، خواسته‌ی کاربر).
 
         // فریمِ `69a`: هیروِ زنده - همان الگوی `67a`.
         //
@@ -343,11 +314,12 @@ fun BankLoanScreen(
 
         item {
             StaggerIn(1) {
-                AppCard(label = "نام وام‌گیرنده") {
+                // برچسبِ جدا برداشته شد (۲۰ مهر) - راهنمای داخلِ فیلد همان را می‌گوید.
+                AppCard {
                     OutlinedTextField(
                         value = borrowerName,
                         onValueChange = { borrowerName = it },
-                        placeholder = { Text("نام وام‌گیرنده") },
+                        placeholder = { Text("نام وام‌گیرنده (اختیاری)") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)

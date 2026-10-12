@@ -21,12 +21,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -116,7 +121,9 @@ internal fun BankLoanHeroSection(
             // فریمِ `70a`: میزبان قسطِ زنده را از همین‌جا می‌گیرد، نه از تپِ دکمه.
             // `LaunchedEffect` روی خودِ مقدار: فقط وقتی عوض شد خبر می‌رود، نه هر recomposition.
             LaunchedEffect(heroResult?.installment) { onLiveInstallment(heroResult?.installment) }
-            if (heroResult != null) {
+            // ۲۰ مهر (خواسته‌ی کاربر): کارت همیشه هست؛ تا مبلغ وارد نشده «۰» نشان می‌دهد.
+            val heroInstallment = heroResult?.installment ?: 0.0
+            run {
                 StaggerIn(0) {
                     AppHeroCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.fillMaxWidth()) {
@@ -129,7 +136,7 @@ internal fun BankLoanHeroSection(
                             Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 3.dp)) {
                                 PrivacyCrossfade(privacyMode) { masked ->
                                     AutoShrinkText(
-                                        text = maskIfPrivate(masked, amountToman(heroResult.installment)),
+                                        text = maskIfPrivate(masked, amountToman(heroInstallment)),
                                         color = Color.White,
                                         maxFontSize = 25.sp,
                                         fontWeight = FontWeight.Black,
@@ -156,8 +163,8 @@ internal fun BankLoanHeroSection(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                             ) {
-                                HeroResultCell("کلِ بازپرداخت", heroResult.totalPaid, privacyMode, Modifier.weight(1f))
-                                HeroResultCell("سودِ کل", heroResult.totalInterest, privacyMode, Modifier.weight(1f))
+                                HeroResultCell("کلِ بازپرداخت", heroResult?.totalPaid ?: 0.0, privacyMode, Modifier.weight(1f))
+                                HeroResultCell("سودِ کل", heroResult?.totalInterest ?: 0.0, privacyMode, Modifier.weight(1f))
                             }
                         }
                     }
@@ -364,7 +371,33 @@ internal fun BankLoanAdvancedSection(
     var intervalDays by intervalDaysState
     var graceOn by graceOnState
     var graceMonths by graceMonthsState
-            AppCard(label = "تنظیماتِ پیشرفته") {
+            // ۲۰ مهر (خواسته‌ی کاربر: اسکرولِ کمتر): بسته شروع می‌شود و فقط خلاصه‌اش دیده می‌شود؛
+            // بیشترِ کاربران فاصله/تنفس را دست نمی‌زنند. اگر قبلاً عوض شده باشد باز می‌ماند.
+            var open by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(graceOn || intervalDays != 30) }
+            AppCard {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 44.dp)
+                        .pressScaleClickable(scale = 0.99f) { open = !open },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("تنظیماتِ پیشرفته", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            (intervalChipOptions.firstOrNull { it.first == intervalDays }?.second ?: "هر ${toFa(intervalDays)} روز") +
+                                " · " + (if (graceOn) "${toFa(graceMonths.toInt())} ماه تنفس" else "بدونِ تنفس"),
+                            color = AppMuted, fontSize = 11.sp,
+                        )
+                    }
+                    Icon(
+                        if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = if (open) "بستن" else "باز کردن",
+                        tint = AppMuted,
+                    )
+                }
+                if (open) {
+                HorizontalDivider(color = AppLine, modifier = Modifier.padding(vertical = 10.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -419,6 +452,7 @@ internal fun BankLoanAdvancedSection(
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
                     )
+                }
                 }
             }
 }

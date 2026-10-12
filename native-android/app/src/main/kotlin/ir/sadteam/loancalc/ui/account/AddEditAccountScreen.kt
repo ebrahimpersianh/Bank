@@ -348,7 +348,18 @@ fun AddEditAccountScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(Icons.Filled.Sms, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(19.dp))
-                    Text("انتخاب از پیامک‌های گوشی", color = AppPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold)
+                    // ۲۰ مهر (خواسته‌ی کاربر): مثلِ دکمه‌ی اعلان، سرشماره‌ی انتخاب‌شده + ضربدر.
+                    Text(
+                        smsSenderText.takeIf { it.isNotBlank() }?.let { "پیامک: $it" } ?: "انتخاب از پیامک‌های گوشی",
+                        color = AppPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (smsSenderText.isNotBlank()) {
+                        Icon(
+                            Icons.Filled.Close, contentDescription = "برداشتن", tint = AppMuted,
+                            modifier = Modifier.size(18.dp).clickable { smsSenderText = "" },
+                        )
+                    }
                 }
                 // اپِ بانک برای بانک‌هایی که پیامک نمی‌دهند و فقط اعلان می‌دهند (مثلِ بلو).
                 Row(
