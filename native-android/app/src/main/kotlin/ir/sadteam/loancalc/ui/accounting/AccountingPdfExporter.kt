@@ -30,7 +30,7 @@ object AccountingPdfExporter {
      * فرمِ فشرده (`rialToFaCompact`) اینجا **به کار نمی‌آید**: سندِ رسمی عددِ گِرد نمی‌خواهد،
      * مبلغِ دقیق می‌خواهد.
      */
-    private fun money(rial: Double): String = "${rialToToman(rial.toLong()).toFaMoney()} تومان"
+    private fun money(rial: Double): String = "${rialToToman(rial.toLong()).toFaMoney()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"
 
     private fun drawRtlLine(canvas: Canvas, text: String, paint: TextPaint, y: Float): Float {
         val width = (PAGE_WIDTH - MARGIN * 2).toInt()

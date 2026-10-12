@@ -19,11 +19,13 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -98,6 +100,9 @@ internal fun LazyItemScope.MyLoanListItem(
     var orderedLoans by orderedLoansState
     var heroOrigin by heroOriginState
     var listBounds by listBoundsState
+    // ۲۰ مهر: شماره‌ها و جمعِ اقساطِ معوق (نه فقط مبلغِ یک قسط).
+    val overdueByLoan by viewModel.overdueByLoan.collectAsState()
+    val overdueInfo = overdueByLoan[loan.id]
                             // انیمیشنِ فلیپِ کارت (خواسته‌ی «انیمیشن‌های سفارشی») - آیکونِ اطلاعات، کارت رو
                             // مثل یه چکِ فیزیکی می‌چرخونه و خلاصه‌ی پرداخت رو پشتش نشون می‌ده؛ ضربه‌ی اصلیِ
                             // کارت هنوز باز کردنِ جزئیاتِ وامه، این فقط یه لایه‌ی جدا و مستقله.
@@ -295,7 +300,9 @@ internal fun LazyItemScope.MyLoanListItem(
                                                                 },
                                                             )
                                                             append(" · ")
-                                                            append(maskIfPrivate(masked, loan.installment.rialToFaCompact()))
+                                                            // معوق: جمعِ همه‌ی قسط‌های عقب‌افتاده (دو قسط = دو برابر).
+                                                            val shown = if (overdue && overdueInfo != null) overdueInfo.second else loan.installment
+                                                            append(maskIfPrivate(masked, shown.rialToFaCompact()))
                                                             append(" ${ir.sadteam.loancalc.ui.jibak.unitFa()}")
                                                         }
                                                     },
@@ -345,6 +352,30 @@ internal fun LazyItemScope.MyLoanListItem(
                                                         maxLines = 1,
                                                         overflow = TextOverflow.Ellipsis,
                                                     )
+                                                }
+                                                // ۲۰ مهر (خواسته‌ی کاربر): زیرِ «۲ از ۱۲»، کدام قسط‌ها معوق‌اند -
+                                                // همان آیکونِ تقویم، با ضربدر.
+                                                if (overdue && overdueInfo != null) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                        modifier = Modifier.padding(top = 2.dp),
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Outlined.EventBusy,
+                                                            contentDescription = null,
+                                                            tint = AppDangerInk,
+                                                            modifier = Modifier.size(13.dp),
+                                                        )
+                                                        Text(
+                                                            "قسطِ ${overdueNumbersFa(overdueInfo.first)} معوق",
+                                                            color = AppDangerInk,
+                                                            fontSize = 10.5.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis,
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -416,4 +447,13 @@ internal fun LazyItemScope.MyLoanListItem(
                                     }
                                 }
                             }
+}
+
+/** «۳، ۴» · «۳ تا ۸» (پشتِ‌هم) · «۳، ۵، ۷ و …» (بیش از چهار تا، پراکنده). */
+internal fun overdueNumbersFa(nums: List<Int>): String {
+    val sorted = nums.sorted()
+    if (sorted.size <= 4) return sorted.joinToString("، ") { toFa(it) }
+    val contiguous = sorted.zipWithNext().all { (a, b) -> b == a + 1 }
+    return if (contiguous) "${toFa(sorted.first())} تا ${toFa(sorted.last())}"
+    else sorted.take(3).joinToString("، ") { toFa(it) } + " و …"
 }

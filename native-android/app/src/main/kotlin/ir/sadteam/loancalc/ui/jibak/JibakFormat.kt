@@ -211,9 +211,9 @@ fun Double.rialToFaCompactParts(): Pair<String, String> {
     val toman = rialToToman(toLong())
     val v = kotlin.math.abs(toman)
     val (number, unit) = when {
-        v >= 1_000_000_000L -> faOneDecimal(v / 1_000_000_000.0) to "میلیارد تومان"
-        v >= 1_000_000L -> faOneDecimal(v / 1_000_000.0) to "میلیون تومان"
-        else -> faGrouped(v) to "تومان"
+        v >= 1_000_000_000L -> faOneDecimal(v / 1_000_000_000.0) to "میلیارد ${unitFa()}"
+        v >= 1_000_000L -> faOneDecimal(v / 1_000_000.0) to "میلیون ${unitFa()}"
+        else -> faGrouped(v) to unitFa()
     }
     return (if (toman < 0L) "$FA_MINUS$number" else number) to unit
 }

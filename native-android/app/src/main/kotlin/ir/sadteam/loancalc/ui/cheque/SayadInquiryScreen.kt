@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.cheque
 
+import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -131,7 +132,7 @@ fun SayadInquiryScreen(sayadId: String?, onBack: () -> Unit) {
                         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        SmsInfoStat(label = "هزینه", value = "۳۵۰ ${ir.sadteam.loancalc.ui.jibak.unitFa()}", modifier = Modifier.weight(1f))
+                        SmsInfoStat(label = "هزینه", value = "${ir.sadteam.loancalc.ui.jibak.rialToToman(3_500L).toFaMoney()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", modifier = Modifier.weight(1f))
                         SmsInfoStat(label = "سقف روزانه", value = "۴ استعلام", modifier = Modifier.weight(1f))
                         SmsInfoStat(label = "زمان پاسخ", value = "حداکثر ۱۵ دقیقه", modifier = Modifier.weight(1f))
                     }

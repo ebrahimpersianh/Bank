@@ -599,6 +599,26 @@ class LoanRepository(
         }
     }
 
+    /** شماره‌ها و جمعِ (ریال) اقساطِ معوقِ یک وام - کارتِ «وام‌های من» (۲۰ مهر، خواسته‌ی کاربر:
+     * «دو قسط عقبم، باید جمعِ هر دو را بزند و بگوید کدام‌ها»). */
+    suspend fun overdueInstallments(loan: LoanEntity): Pair<List<Int>, Double> {
+        val today = JalaliCalendar.today()
+        val todayCode = today.y * 10000 + today.m * 100 + today.d
+        val nums = mutableListOf<Int>()
+        var total = 0.0
+        getRows(loan).forEach { row ->
+            if (row["paid"] == true) return@forEach
+            val due = row["dueDate"] as? Map<*, *> ?: return@forEach
+            val y = (due["y"] as? Number)?.toInt() ?: return@forEach
+            val mo = (due["m"] as? Number)?.toInt() ?: return@forEach
+            val d = (due["d"] as? Number)?.toInt() ?: return@forEach
+            if (y * 10000 + mo * 100 + d >= todayCode) return@forEach
+            (row["m"] as? Number)?.toInt()?.let { nums += it }
+            total += (row["installment"] as? Number)?.toDouble() ?: 0.0
+        }
+        return nums to total
+    }
+
     private fun parseStartDate(data: Map<String, Any?>): PersianDate {
         val sd = data["startDate"] as? Map<*, *>
         val y = (sd?.get("y") as? Number)?.toInt() ?: 1404

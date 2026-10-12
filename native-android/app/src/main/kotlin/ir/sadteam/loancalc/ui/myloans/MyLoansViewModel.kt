@@ -159,6 +159,13 @@ class MyLoansViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
+    /** شماره‌ها و جمعِ اقساطِ معوقِ هر وام - رجوع کن به [LoanRepository.overdueInstallments]. */
+    val overdueByLoan: StateFlow<Map<Long, Pair<List<Int>, Double>>> = loans
+        .map { list ->
+            list.mapNotNull { loan -> loanRepository.overdueInstallments(loan).takeIf { it.first.isNotEmpty() }?.let { loan.id to it } }.toMap()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
     /** سررسیدِ اولین قسطِ پرداخت‌نشده - برای مرتب‌سازیِ «نزدیک‌ترین سررسید». تا پرشدنِ
      * [nextDueDates] به نسخه‌ی همگام برمی‌گردد تا لیست لحظه‌ی اول خالی/بی‌ترتیب نباشد. */
     fun getLoanNextDueDate(loan: LoanEntity): PersianDate? =

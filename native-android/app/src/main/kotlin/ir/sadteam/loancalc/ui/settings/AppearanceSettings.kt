@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.settings
 
+import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -158,7 +159,8 @@ internal fun AppearanceSettings(themeViewModel: ThemeViewModel, hapticsViewModel
         }
         // پیش‌نمایشِ زنده - اندازه‌ی انتخابی همین حالا روی کلِ برنامه نشسته، پس همین متن نمونه‌اش است.
         Text(
-            "نمونه: امروز ۲۵۰٬۰۰۰ ${ir.sadteam.loancalc.ui.jibak.unitFa()} خرجِ خوراک ثبت شد.",
+            // ۲۰ مهر: عدد هم با واحد عوض می‌شود (۲۵۰ هزار تومان = ۲٫۵ میلیون ریال)، نه فقط برچسب.
+            "نمونه: امروز ${ir.sadteam.loancalc.ui.jibak.rialToToman(2_500_000L).toFaMoney()} ${ir.sadteam.loancalc.ui.jibak.unitFa()} خرجِ خوراک ثبت شد.",
             color = AppText,
             fontSize = 12.5.sp,
             fontWeight = FontWeight.Bold,

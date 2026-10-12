@@ -53,9 +53,9 @@ object StatsPdfExporter {
 
         val lines = listOf(
             "تعداد وام‌ها: ${summary.loanCount}",
-            "مجموع مبلغ وام‌ها: ${fmt(rialToToman(summary.totalAmount.toLong()).toDouble())} تومان",
-            "مجموع پرداخت‌شده: ${fmt(rialToToman(summary.paidAmount.toLong()).toDouble())} تومان",
-            "مانده‌ی کل: ${fmt(rialToToman(summary.remainingAmount.toLong()).toDouble())} تومان",
+            "مجموع مبلغ وام‌ها: ${fmt(rialToToman(summary.totalAmount.toLong()).toDouble())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
+            "مجموع پرداخت‌شده: ${fmt(rialToToman(summary.paidAmount.toLong()).toDouble())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
+            "مانده‌ی کل: ${fmt(rialToToman(summary.remainingAmount.toLong()).toDouble())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
             "اقساط پرداخت‌شده: ${summary.paidInstallments} از ${summary.totalInstallments}",
             "درصد پیشرفت: ${(summary.progressRatio * 100).toInt()}٪",
         )
@@ -68,7 +68,7 @@ object StatsPdfExporter {
 
         for (loan in loans) {
             if (y > PAGE_HEIGHT - 60f) break
-            val line = "${loan.name} (${loan.bank}) — ${fmt(rialToToman(loan.installment.toLong()).toDouble())} تومان × ${loan.n} قسط، " +
+            val line = "${loan.name} (${loan.bank}) — ${fmt(rialToToman(loan.installment.toLong()).toDouble())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} × ${loan.n} قسط، " +
                 "${loan.paidCount} پرداخت‌شده"
             y += drawRtlLine(canvas, line, labelPaint, y) + 6f
         }

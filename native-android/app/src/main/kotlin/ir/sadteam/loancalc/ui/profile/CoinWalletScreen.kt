@@ -156,7 +156,7 @@ fun CoinWalletScreen(
                         // ⚠️ `fmt()` جداکننده‌ی **لاتین** می‌دهد و عددش **ریال** بود:
                         // ۱٬۲۴۰ سکه «124,000 ریال» چاپ می‌کرد. همان باگی که در هیرویِ
                         // بودجه و گزارش رفع شد.
-                        "معادلِ ${rialToToman(coinsToRial(coins).toLong()).toString().faDigits()} تومان تخفیف",
+                        "معادلِ ${rialToToman(coinsToRial(coins).toLong()).toString().faDigits()} ${ir.sadteam.loancalc.ui.jibak.unitFa()} تخفیف",
                         color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 8.dp),
