@@ -36,7 +36,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Receipt
@@ -112,24 +111,16 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
     }
     val accounts by viewModel.accounts.collectAsState()
 
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 24.dp),
+        contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 96.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText) }
                 Text("قبض‌ها", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
-                // ۲۰ مهر (خواسته‌ی کاربر): «افزودن» و «پرداخت شد» یک‌شکل بودند - افزودن به دکمه‌ی «+»ِ سربرگ رفت.
-                if (bills.isNotEmpty()) {
-                    ir.sadteam.loancalc.ui.components.HeaderIconButton(
-                        icon = Icons.Filled.Add,
-                        description = "افزودنِ قبض",
-                        primary = true,
-                        onClick = { adding = true },
-                    )
-                }
             }
         }
         if (bills.isEmpty()) {
@@ -168,6 +159,15 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                 onPay = { paying = bill },
                 onUnpay = { viewModel.unmarkBillPaid(bill, today.y, today.m) },
                 onDelete = { deleting = bill },
+            )
+        }
+    }
+        // ۲۰ مهر (خواسته‌ی کاربر): «افزودن» مثلِ بقیه‌ی صفحه‌ها دکمه‌ی «+» شناورِ پایین است.
+        if (bills.isNotEmpty()) {
+            ir.sadteam.loancalc.ui.components.AppFab(
+                onClick = { adding = true },
+                contentDescription = "افزودنِ قبض",
+                modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp, bottom = 16.dp),
             )
         }
     }
