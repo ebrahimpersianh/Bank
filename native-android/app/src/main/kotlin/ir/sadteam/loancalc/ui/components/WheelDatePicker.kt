@@ -107,16 +107,7 @@ fun WheelDatePickerScreen(
             Spacer(Modifier.weight(1f))
 
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
-                // نوار هایلایتِ ردیفِ وسط (ردیفِ انتخاب‌شده)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(WheelItemHeight)
-                        // شعاعِ ۱۰ - همان `GridCell`ِ تقویم و همان نوارِ نسخه‌ی اینلاین.
-                        // قبلاً ۱۴ بود و اینلاین ۱۰: یک نوار با دو شعاع.
-                        .background(AppPrimaryPill, RoundedCornerShape(10.dp))
-                        .border(1.dp, AppPrimary.copy(alpha = 0.45f), RoundedCornerShape(10.dp)),
-                )
+                // قابِ انتخاب حالا داخلِ هر ستون است (روز/ماه/سال هرکدام مستطیلِ خودش - ۱۶ مهر).
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     WheelColumn(
                         items = days.map { toFa(it) },
@@ -216,10 +207,22 @@ internal fun WheelColumn(
         }
     }
 
+    // مستطیلِ روشن دورِ ردیفِ انتخاب‌شده‌ی **همین ستون** (خواسته‌ی کاربر، ۱۶ مهر: «روی روز، ماه و
+    // سال هرکدام یک مستطیل باشد») - قبلاً یک نوارِ کم‌رنگِ سراسری بود و انتخاب دیده نمی‌شد.
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp)
+            .height(itemHeight)
+            .background(AppPrimaryPill, RoundedCornerShape(10.dp))
+            .border(1.5.dp, AppPrimary.copy(alpha = 0.7f), RoundedCornerShape(10.dp)),
+    )
     LazyColumn(
         state = listState,
         flingBehavior = fling,
-        modifier = modifier
+        modifier = Modifier
+            .fillMaxWidth()
             .height(itemHeight * visibleRows)
             .nestedScroll(blockOverscrollLeak),
         contentPadding = PaddingValues(vertical = itemHeight * (visibleRows / 2)),
@@ -238,7 +241,7 @@ internal fun WheelColumn(
             ) {
                 Text(
                     text = label,
-                    color = AppText,
+                    color = if (distance == 0) AppPrimary else AppText,
                     fontSize = if (distance == 0) 17.sp else 13.sp,
                     fontWeight = if (distance == 0) FontWeight.Bold else FontWeight.Normal,
                     textAlign = TextAlign.Center,
@@ -247,4 +250,5 @@ internal fun WheelColumn(
             }
         }
     }
+}
 }

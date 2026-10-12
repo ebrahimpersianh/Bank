@@ -458,6 +458,13 @@ class AccountRepository(
         }
     }
 
+    /** ویرایشِ دنگ: مبلغِ واریزِ سهمی که قبلاً تسویه شده بود با سهمِ تازه یکی می‌شود. */
+    suspend fun updateLinkedAmountByPrefix(sourceType: String, prefix: String, amount: Double) {
+        observeTransactions().first()
+            .filter { it.sourceType == sourceType && it.sourceId?.startsWith(prefix) == true }
+            .forEach { transactionDao.upsert(it.copy(amount = amount)) }
+    }
+
     /** همه‌ی تراکنش‌های وصل به یک منبع که `sourceId`شان با [prefix] شروع می‌شود (حذفِ دارایی). */
     suspend fun removeLinkedPaymentsByPrefix(sourceType: String, prefix: String) {
         observeTransactions().first()

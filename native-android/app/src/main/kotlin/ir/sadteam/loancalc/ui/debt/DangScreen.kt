@@ -24,6 +24,18 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Celebration
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.height
+import ir.sadteam.loancalc.ui.components.dashedBorder
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -108,203 +120,6 @@ private data class DangItemDraft(
     var sharedByIndices: Set<Int> = emptySet(),
 )
 
-/** لیستِ رویدادهای دنگ - فریمِ `22c`. */
-@Composable
-fun DangListScreen(
-    events: List<DangEventEntity>,
-    onBack: () -> Unit,
-    onOpen: (DangEventEntity) -> Unit,
-    onAddNew: () -> Unit,
-) {
-    val privacyMode = LocalPrivacyMode.current
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        item {
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
-                }
-                Text("دنگ‌ها", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
-            }
-        }
-        if (events.isNotEmpty()) {
-            item {
-                GradientButton(onClick = onAddNew, modifier = Modifier.fillMaxWidth()) {
-                    Text("+ دنگِ جدید")
-                }
-            }
-        }
-        if (events.isEmpty()) {
-            item {
-                EmptyState(
-                    icon = Icons.Filled.Celebration,
-                    title = "هنوز دنگی ثبت نشده",
-                    description = "هزینه‌ی یه مهمونی یا خریدِ گروهی رو اینجا بینِ چند نفر تقسیم کن.",
-                    actionLabel = "+ دنگِ جدید",
-                    onAction = onAddNew,
-                )
-            }
-        } else {
-            items(events, key = { it.id }) { event ->
-                AppCard(modifier = Modifier.pressScaleClickable { onOpen(event) }) {
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        // کاشیِ آیکونِ بنفش (هم‌سبکِ Claude Design).
-                        Box(
-                            Modifier.size(42.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
-                                .background(DangPurple.copy(alpha = if (event.settled) 0.08f else 0.14f)),
-                            contentAlignment = Alignment.Center,
-                        ) { Icon(Icons.Filled.Celebration, contentDescription = null, tint = if (event.settled) AppMuted else DangPurple, modifier = Modifier.size(22.dp)) }
-                        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-                            Text(event.title, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
-                            Text(
-                                DangMethod.valueOf(event.method).label +
-                                    (if (event.isEventMode) " · مهمانی" else "") +
-                                    (if (event.settled) " · تسویه‌شده" else ""),
-                                color = AppMuted,
-                                fontSize = 11.5.sp,
-                            )
-                        }
-                        Text(
-                            maskIfPrivate(privacyMode, "${fmt((event.totalAmount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
-                            color = if (event.settled) AppMuted else AppPrimary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/** جزئیاتِ یه رویدادِ دنگ - سهمِ هرکس + تسویه‌ی تکی/کلی. */
-@Composable
-fun DangDetailScreen(
-    event: DangEventEntity,
-    participants: List<DangParticipantEntity>,
-    counterpartyNameFor: (Long?) -> String,
-    onBack: () -> Unit,
-    onDelete: () -> Unit,
-    onToggleEventSettled: (Boolean) -> Unit,
-    onToggleParticipantSettled: (DangParticipantEntity, Boolean) -> Unit,
-) {
-    val privacyMode = LocalPrivacyMode.current
-    var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
-
-    // صورت‌حسابِ عکسی - جوابِ سوالِ ۹: تکنیکِ استانداردِ پروژه (rememberGraphicsLayer، رجوع کن
-    // به ThemeReveal.kt) رو یه کارتِ ساده‌ی هم‌رنگِ اپ ضبط می‌کنه و با SAF (هم‌الگو با خروجیِ
-    // PDF/اکسلِ چک) ذخیره می‌شه - طرحِ دقیقِ ظاهری لازم نبود (تاییدِ صریحِ طراح).
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val receiptLayer = rememberGraphicsLayer()
-    // رو یا پشتِ رسید (`81e`). عکسِ خروجی همان رویی است که دیده می‌شود.
-    var receiptBack by rememberSaveable { mutableStateOf(false) }
-    var pendingReceiptBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    val saveReceiptLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { uri ->
-        val bitmap = pendingReceiptBitmap
-        if (uri != null && bitmap != null) {
-            runCatching {
-                context.contentResolver.openOutputStream(uri)?.use { out ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-                }
-            }
-        }
-        pendingReceiptBitmap = null
-    }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        item {
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
-                }
-                Text(event.title, color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            pendingReceiptBitmap = receiptLayer.toImageBitmap().asAndroidBitmap()
-                            saveReceiptLauncher.launch("dang-${event.title}.png")
-                        }
-                    },
-                ) {
-                    Icon(Icons.Filled.Share, contentDescription = "ذخیره‌ی رسیدِ عکسی")
-                }
-                IconButton(onClick = { showDeleteConfirm = true }) {
-                    Icon(Icons.Filled.Delete, contentDescription = "حذفِ دنگ", tint = AppDanger)
-                }
-            }
-        }
-        item {
-            AppCard {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Column {
-                        Text(
-                            maskIfPrivate(privacyMode, "${fmt((event.totalAmount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
-                            color = AppText,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Black,
-                        )
-                        Text(
-                            "${DangMethod.valueOf(event.method).label} · ${toFa(event.day)}/${toFa(event.month)}/${toFa(event.year)}" +
-                                if (event.isEventMode) " · حالتِ مهمانی (خارج از میانگینِ گزارش)" else "",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 3.dp),
-                        )
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("تسویه‌شده", color = AppMuted, fontSize = 11.sp)
-                        Switch(checked = event.settled, onCheckedChange = onToggleEventSettled, modifier = Modifier.padding(start = 6.dp))
-                    }
-                }
-            }
-        }
-        items(participants, key = { it.id }) { participant ->
-            AppCard {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(counterpartyNameFor(participant.counterpartyId), color = AppText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            maskIfPrivate(privacyMode, "${fmt((participant.shareAmount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
-                            color = AppMuted,
-                            fontSize = 12.sp,
-                        )
-                    }
-                    Checkbox(checked = participant.settled, onCheckedChange = { onToggleParticipantSettled(participant, it) })
-                }
-            }
-        }
-        item {
-            DangReceiptCard(
-                event = event,
-                participants = participants,
-                counterpartyNameFor = counterpartyNameFor,
-                showBack = receiptBack,
-                onFlip = { receiptBack = !receiptBack },
-                modifier = Modifier.drawWithContent {
-                    receiptLayer.record { this@drawWithContent.drawContent() }
-                    drawLayer(receiptLayer)
-                },
-            )
-        }
-    }
-    if (showDeleteConfirm) {
-        ConfirmDeleteDialog(
-            title = "حذفِ دنگ",
-            text = "دنگِ «${event.title}» و سهمِ همه‌ی شرکت‌کننده‌ها حذف بشه؟",
-            onConfirm = onDelete,
-            onDismiss = { showDeleteConfirm = false },
-        )
-    }
-}
-
 /**
  * صورت‌حسابِ عکسیِ دنگ — **رو و پشت** (فریمِ `81e`).
  *
@@ -319,7 +134,7 @@ fun DangDetailScreen(
  * است که کاربر می‌خواهد بفرستد.
  */
 @Composable
-private fun DangReceiptCard(
+internal fun DangReceiptCard(
     event: DangEventEntity,
     participants: List<DangParticipantEntity>,
     counterpartyNameFor: (Long?) -> String,
@@ -449,6 +264,9 @@ fun DangCreateScreen(
     initialExpenseId: Long = 0L,
     onCancel: () -> Unit,
     onCreateCounterparty: (name: String, onCreated: (Long) -> Unit) -> Unit,
+    /** ویرایش (۱۶ مهر): دنگِ موجود + بارگذاریِ سهم‌ها/قلم‌هایش. */
+    existing: DangEventEntity? = null,
+    loadExisting: (suspend (Long) -> Triple<List<DangParticipantEntity>, List<ir.sadteam.loancalc.data.db.DangItemEntity>, List<ir.sadteam.loancalc.data.db.DangItemShareEntity>>)? = null,
     onSave: (
         title: String,
         method: DangMethod,
@@ -476,6 +294,7 @@ fun DangCreateScreen(
     var showAdvanced by rememberSaveable { mutableStateOf(false) }
     var pickForIndex by remember { mutableStateOf(-1) }
     var pickedExpenseId by rememberSaveable { mutableStateOf(0L) }
+    var showCalc by remember { mutableStateOf(false) }
     // آمدن از «تقسیمِ دنگ» روی یک خرج: همان خرج از اول انتخاب شده است.
     LaunchedEffect(initialExpenseId, expenses.size) {
         if (initialExpenseId > 0 && pickedExpenseId == 0L) {
@@ -522,6 +341,39 @@ fun DangCreateScreen(
 
     val participants = remember { mutableStateOf(listOf(DangParticipantDraft(counterpartyId = null, name = ME_NAME), DangParticipantDraft(counterpartyId = -2L, name = "دوستِ ${toFa(2)}"))) }
     val items = remember { mutableStateOf(listOf<DangItemDraft>()) }
+
+    // ویرایش: فرم با همان دنگ پر می‌شود (یک بار).
+    var loadedExisting by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(existing?.id) {
+        val ev = existing ?: return@LaunchedEffect
+        if (loadedExisting || loadExisting == null) return@LaunchedEffect
+        val (ps, its, shares) = loadExisting(ev.id)
+        val div = ir.sadteam.loancalc.ui.jibak.unitDivD
+        title = ev.title
+        totalText = Math.round(ev.totalAmount / div).toString()
+        method = runCatching { DangMethod.valueOf(ev.method) }.getOrDefault(DangMethod.EQUAL)
+        isEventMode = ev.isEventMode
+        year = ev.year; month = ev.month; day = ev.day
+        showAdvanced = method != DangMethod.EQUAL || ev.isEventMode
+        val ordered = ps.sortedBy { if (it.counterpartyId == null) 0 else 1 }
+        participants.value = ordered.map { p ->
+            DangParticipantDraft(
+                counterpartyId = p.counterpartyId,
+                name = if (p.counterpartyId == null) ME_NAME else counterparties.firstOrNull { it.id == p.counterpartyId }?.name ?: "دوست",
+                percentageText = p.percentage?.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() } ?: "",
+                customAmountText = Math.round(p.shareAmount / div).toString(),
+            )
+        }
+        val indexOfPid = ordered.mapIndexed { i, p -> p.id to i }.toMap()
+        items.value = its.map { item ->
+            DangItemDraft(
+                description = item.description,
+                amountText = Math.round(item.amount / div).toString(),
+                sharedByIndices = shares.filter { it.itemId == item.id }.mapNotNull { indexOfPid[it.participantId] }.toSet(),
+            )
+        }
+        loadedExisting = true
+    }
 
     val totalAmount = totalText.toDoubleOrNull() ?: 0.0
 
@@ -620,128 +472,99 @@ fun DangCreateScreen(
                 IconButton(onClick = onCancel) {
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
-                Text("دنگِ جدید", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(if (existing != null) "ویرایشِ دنگ" else "دنگِ جدید", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
             }
         }
-        if (expenses.isNotEmpty()) {
+        if (expenses.isNotEmpty() && existing == null) {
             item {
-                AppCard(label = "این دنگ مالِ کدام خرج است؟") {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                DangFormCard(icon = Icons.Filled.ReceiptLong, title = "از یک خرجِ ثبت‌شده") {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "خرجی که قبلاً ثبت کرده‌ای را انتخاب کن تا مبلغ و تاریخ خودکار پر شود و در گزارش فقط سهمِ خودت حساب شود.",
-                            color = AppMuted, fontSize = 11.sp,
+                            if (pickedExpenseId == 0L) "مبلغ و تاریخ خودکار پر می‌شود و در گزارش فقط سهمِ خودت حساب می‌شود."
+                            else "✓ خرج انتخاب شد",
+                            color = if (pickedExpenseId == 0L) AppMuted else AppPrimary, fontSize = 11.5.sp,
+                            modifier = Modifier.weight(1f),
                         )
-                        OutlinedButton(onClick = { showExpensePicker = true }, modifier = Modifier.fillMaxWidth()) {
-                            Text(if (pickedExpenseId == 0L) "انتخابِ خرج" else "✓ خرج انتخاب شد · تغییر")
+                        TextButton(onClick = { showExpensePicker = true }) {
+                            Text(if (pickedExpenseId == 0L) "انتخاب" else "تغییر")
                         }
                     }
                 }
             }
         }
+        // عنوان + برچسب‌های سریع (طرحِ کاربر).
         item {
-            AppCard(label = "چند نفر بودید؟") {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    OutlinedButton(
-                        onClick = {
-                            val list = participants.value
-                            if (list.size > 2) {
-                                // اول «نفرِ …»های ساختگی، بعد دوستِ واقعیِ آخر؛ «خودم» همیشه می‌ماند.
-                                val idx = list.indexOfLast { (it.counterpartyId ?: 0L) < 0L }.takeIf { it >= 0 }
-                                    ?: list.indexOfLast { it.counterpartyId != null }
-                                if (idx > 0) participants.value = list.toMutableList().also { it.removeAt(idx) }
-                            }
-                        },
-                    ) { Text("−") }
-                    Text(
-                        toFa(participants.value.size) + " نفر",
-                        color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Bold,
-                    )
-                    OutlinedButton(
-                        onClick = {
-                            val list = participants.value
-                            if (list.size < 20) {
-                                val n = list.size + 1
-                                participants.value = list + DangParticipantDraft(-n.toLong(), "دوستِ ${toFa(n)}")
-                            }
-                        },
-                    ) { Text("+") }
-                }
-                Text(
-                    "سهمِ همه مساوی حساب می‌شود. اسمِ دوست‌ها را اگر خواستی پایین‌تر بزن و عوض کن.",
-                    color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp),
-                )
-            }
-        }
-        item {
-            AppCard(label = "عنوان (اختیاری)") {
+            DangFormCard(icon = Icons.Filled.Edit, title = "عنوان") {
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = { title = it.take(40) },
                     placeholder = { Text("مثلاً: شامِ جمعه") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-            }
-        }
-        item {
-            AppCard(label = "مبلغِ کل") {
-                OutlinedTextField(
-                    value = totalText,
-                    onValueChange = { totalText = cleanNum(it) },
-                    visualTransformation = ThousandsSeparatorTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                    trailingIcon = if (title.isNotEmpty()) ({
+                        IconButton(onClick = { title = "" }) {
+                            Icon(Icons.Filled.Close, contentDescription = "پاک کردن", tint = AppMuted, modifier = Modifier.size(18.dp))
+                        }
+                    }) else null,
+                    colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    listOf("رستوران", "کافه", "خرید", "تفریح", "سفر", "سایر").forEach { tag ->
+                        AppChip(label = tag, selected = title == tag, onClick = { title = tag })
+                    }
+                }
             }
         }
         item {
-            AppCard(label = "تاریخ") {
+            DangFormCard(icon = Icons.Filled.Payments, title = "مبلغِ کل") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = totalText,
+                        onValueChange = { totalText = cleanNum(it) },
+                        visualTransformation = ThousandsSeparatorTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        suffix = { Text(ir.sadteam.loancalc.ui.jibak.unitFa(), color = AppMuted, fontSize = 13.sp) },
+                        colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                    )
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .size(52.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(AppPrimaryPill)
+                            .pressScaleClickable { showCalc = true },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(Icons.Filled.Calculate, contentDescription = "ماشین‌حساب", tint = AppPrimary) }
+                }
+                if (totalAmount > 0) {
+                    Text(
+                        ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(totalAmount) + " تومان",
+                        color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+            }
+        }
+        item {
+            DangFormCard(icon = Icons.Filled.Event, title = "تاریخ") {
                 InlineJalaliDateRow(year = year, month = month, day = day, onDateChange = { y, m, d -> year = y; month = m; day = d })
             }
         }
+        // شرکت‌کننده‌ها - آواتار، سهمِ هرکس، و دکمه‌ی خط‌چینِ «افزودن».
         item {
-            if (!(showAdvanced || method != DangMethod.EQUAL || isEventMode)) {
-                TextButton(onClick = { showAdvanced = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text("تقسیمِ پیشرفته (درصدی، مبلغِ دلخواه، قلم‌به‌قلم، مهمانی)")
-                }
-            }
-        }
-        if (showAdvanced || method != DangMethod.EQUAL || isEventMode) item {
-            AppCard(label = "روش تقسیم") {
+            DangFormCard(icon = Icons.Filled.Groups, title = "شرکت‌کننده‌ها · ${toFa(participants.value.size)} نفر") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        DangMethod.entries.forEach { m ->
-                            AppChip(label = m.label, selected = method == m, onClick = { method = m })
-                        }
-                    }
-                }
-            }
-        }
-        if (showAdvanced || method != DangMethod.EQUAL || isEventMode) item {
-            AppCard(label = "حالتِ مهمانی/مناسبت") {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "پاکتِ موقت تا تسویه‌شدن - از میانگینِ ماهانه‌ی گزارش حذف می‌شه",
-                        color = AppMuted,
-                        fontSize = 11.sp,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Switch(checked = isEventMode, onCheckedChange = { isEventMode = it })
-                }
-            }
-        }
-        item {
-            AppCard(label = "شرکت‌کننده‌ها") {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val equalShares = if (method == DangMethod.EQUAL && totalAmount > 0) equalDangShares(totalAmount, participants.value.size) else null
                     participants.value.forEachIndexed { index, draft ->
                         DangParticipantRow(
                             draft = draft,
                             method = method,
-                            removable = draft.counterpartyId != null,
+                            equalShare = equalShares?.getOrNull(index),
+                            removable = draft.counterpartyId != null && participants.value.size > 2,
                             onPickFriend = if ((draft.counterpartyId ?: 0L) < 0L) ({ pickForIndex = index }) else null,
                             onPercentageChange = { text ->
                                 participants.value = participants.value.toMutableList().also {
@@ -760,12 +583,16 @@ fun DangCreateScreen(
                             },
                         )
                     }
-                    if (showAddParticipant) {
-                        // خودِ دیالوگ پایینِ کامپوزبل رندر می‌شه (نه اینجا) چون AlertDialog باید
-                        // بیرونِ Column بشینه؛ این فقط پرچمِ نمایششه.
-                    }
-                    OutlinedButton(onClick = { showAddParticipant = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("+ افزودنِ شرکت‌کننده")
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .dashedBorder(14.dp, AppPrimary.copy(alpha = 0.6f))
+                            .pressScaleClickable { if (participants.value.size < 20) showAddParticipant = true },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("+ افزودنِ شرکت‌کننده", color = AppPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
                     }
                     if (method == DangMethod.PERCENTAGE) {
                         val sum = participants.value.sumOf { it.percentageText.toDoubleOrNull() ?: 0.0 }
@@ -786,9 +613,32 @@ fun DangCreateScreen(
                 }
             }
         }
+        item {
+            if (!(showAdvanced || method != DangMethod.EQUAL || isEventMode)) {
+                TextButton(onClick = { showAdvanced = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("تقسیمِ پیشرفته (درصدی، مبلغِ دلخواه، قلم‌به‌قلم، مهمانی)")
+                }
+            }
+        }
+        if (showAdvanced || method != DangMethod.EQUAL || isEventMode) item {
+            DangFormCard(icon = Icons.Filled.Tune, title = "روشِ تقسیم") {
+                Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    DangMethod.entries.forEach { m ->
+                        AppChip(label = m.label, selected = method == m, onClick = { method = m })
+                    }
+                }
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("حالتِ مهمانی/مناسبت", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text("از میانگینِ ماهانه‌ی گزارش حذف می‌شه", color = AppMuted, fontSize = 11.sp)
+                    }
+                    Switch(checked = isEventMode, onCheckedChange = { isEventMode = it })
+                }
+            }
+        }
         if (method == DangMethod.ITEMIZED) {
             item {
-                AppCard(label = "قلم‌های فاکتور") {
+                DangFormCard(icon = Icons.Filled.ReceiptLong, title = "قلم‌های فاکتور") {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         items.value.forEachIndexed { itemIndex, item ->
                             DangItemRow(
@@ -835,9 +685,16 @@ fun DangCreateScreen(
                 onClick = { saveRequest++ },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("ثبتِ دنگ")
+                Text(if (existing != null) "ذخیره‌ی تغییرات" else "ثبتِ دنگ")
             }
         }
+    }
+    if (showCalc) {
+        ir.sadteam.loancalc.ui.components.MiniCalculatorDialog(
+            initial = totalText,
+            onResult = { totalText = it.toString() },
+            onDismiss = { showCalc = false },
+        )
     }
     if (pickForIndex >= 0) {
         CounterpartyPickerDialog(
@@ -888,16 +745,36 @@ private fun DangParticipantRow(
     onCustomAmountChange: (String) -> Unit,
     onRemove: () -> Unit,
     onPickFriend: (() -> Unit)? = null,
+    equalShare: Double? = null,
 ) {
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        if (onPickFriend != null) {
-            // نفرِ ساختگی: لمس = انتخابِ دوستِ واقعی از فهرست.
+    val me = draft.counterpartyId == null
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(ir.sadteam.loancalc.ui.theme.AppSurface2)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        DangAvatar(draft.name, size = 36, me = me)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 10.dp)
+                .then(if (onPickFriend != null) Modifier.clickable { onPickFriend() } else Modifier)
+                .padding(vertical = 6.dp),
+        ) {
             Text(
-                draft.name + "  ✎", color = AppPrimary, fontSize = 13.5.sp,
-                modifier = Modifier.weight(1f).clickable { onPickFriend() }.padding(vertical = 10.dp),
+                if (me) "من" else draft.name,
+                color = if (onPickFriend != null) AppPrimary else AppText,
+                fontSize = 13.5.sp, fontWeight = FontWeight.Bold, maxLines = 1,
             )
-        } else {
-            Text(draft.name, color = AppText, fontSize = 13.5.sp, modifier = Modifier.weight(1f))
+            if (onPickFriend != null) {
+                // نفرِ ساختگی: لمس = انتخابِ دوستِ واقعی از فهرست.
+                Text("لمس کن و اسمِ دوست را انتخاب کن", color = AppMuted, fontSize = 10.5.sp)
+            } else if (equalShare != null) {
+                Text("سهم: ${fmt(equalShare)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 11.sp)
+            }
         }
         when (method) {
             DangMethod.PERCENTAGE -> {
@@ -916,8 +793,9 @@ private fun DangParticipantRow(
                     OutlinedTextField(
                         value = draft.customAmountText,
                         onValueChange = { onCustomAmountChange(cleanNum(it)) },
+                        visualTransformation = ThousandsSeparatorTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.size(width = 110.dp, height = 52.dp),
+                        modifier = Modifier.size(width = 120.dp, height = 52.dp),
                         singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
             }
@@ -925,8 +803,25 @@ private fun DangParticipantRow(
         }
         if (removable) {
             IconButton(onClick = onRemove) {
-                Icon(Icons.Filled.Delete, contentDescription = "حذف", tint = AppDanger, modifier = Modifier.size(18.dp))
+                Icon(Icons.Filled.Close, contentDescription = "حذف", tint = AppMuted, modifier = Modifier.size(18.dp))
             }
+        }
+    }
+}
+
+/** کارتِ فرم با سرآیندِ آیکون‌دار (طرحِ «دنگِ جدید»). */
+@Composable
+private fun DangFormCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, content: @Composable () -> Unit) {
+    AppCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 10.dp)) {
+                Box(
+                    modifier = Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(AppPrimaryPill),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(17.dp)) }
+                Text(title, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
+            }
+            content()
         }
     }
 }
@@ -979,4 +874,3 @@ private fun DangItemRow(
     }
 }
 
-private val DangPurple = androidx.compose.ui.graphics.Color(0xFF7C4DDB)

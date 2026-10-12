@@ -42,6 +42,13 @@ interface DangParticipantDao {
     @Query("SELECT * FROM dang_participants")
     suspend fun getAll(): List<DangParticipantEntity>
 
+    /** همه‌ی سهم‌ها - برای طلبِ دنگ در «طلب و بدهی». */
+    @Query("SELECT * FROM dang_participants")
+    fun observeAll(): Flow<List<DangParticipantEntity>>
+
+    @Query("SELECT * FROM dang_participants WHERE eventId = :eventId")
+    suspend fun getForEvent(eventId: Long): List<DangParticipantEntity>
+
     @Upsert
     suspend fun upsert(participant: DangParticipantEntity)
 
@@ -69,6 +76,9 @@ interface DangItemDao {
     @Query("SELECT * FROM dang_items")
     suspend fun getAll(): List<DangItemEntity>
 
+    @Query("SELECT * FROM dang_items WHERE eventId = :eventId")
+    suspend fun getForEvent(eventId: Long): List<DangItemEntity>
+
     @Upsert
     suspend fun upsert(item: DangItemEntity)
 
@@ -95,6 +105,9 @@ interface DangItemShareDao {
 
     @Query("SELECT * FROM dang_item_shares")
     suspend fun getAll(): List<DangItemShareEntity>
+
+    @Query("SELECT * FROM dang_item_shares WHERE itemId IN (SELECT id FROM dang_items WHERE eventId = :eventId)")
+    suspend fun getForEvent(eventId: Long): List<DangItemShareEntity>
 
     @Upsert
     suspend fun upsert(share: DangItemShareEntity)

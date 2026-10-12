@@ -68,14 +68,6 @@ fun InlineJalaliDateRow(
         }
     }
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        // نوار هایلایتِ ردیفِ وسط - عینِ چرخونه‌ی تمام‌صفحه، فقط جمع‌وجورتر.
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(InlineWheelItemHeight)
-                .background(AppPrimaryPill, RoundedCornerShape(12.dp))
-                .border(1.dp, AppPrimary.copy(alpha = 0.45f), RoundedCornerShape(12.dp)),
-        )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             WheelColumn(
                 items = days.map { toFa(it) },

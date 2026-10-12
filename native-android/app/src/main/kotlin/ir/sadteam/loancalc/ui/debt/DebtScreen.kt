@@ -130,16 +130,18 @@ fun DebtScreen(
     val accounts by viewModel.accounts.collectAsState()
     // «این پول از/به کدام حساب رفت؟» - بعد از تسویه یا پرداختِ بخشی. رد کردن = ثبت نشود.
     data class MoneyPrompt(val sourceId: String, val amount: Double, val deposit: Boolean, val description: String, val dangTotal: Double = 0.0, val dangY: Int = 0, val dangM: Int = 0, val dangD: Int = 0)
-    var moneyPrompt by remember { mutableStateOf<MoneyPrompt?>(null) }
+    // صف: «همه دادند» ممکن است چند سهم را با هم ببندد و هرکدام حساب بخواهد.
+    val promptQueue = remember { androidx.compose.runtime.mutableStateListOf<MoneyPrompt>() }
+    val moneyPrompt = promptQueue.firstOrNull()
+    fun askMoney(p: MoneyPrompt) { promptQueue.add(p) }
+    fun closePrompt() { if (promptQueue.isNotEmpty()) promptQueue.removeAt(0) }
     val toastCtx = androidx.compose.ui.platform.LocalContext.current
     moneyPrompt?.let { p ->
         ir.sadteam.loancalc.ui.components.AccountPickerDialog(
             accounts = accounts,
             title = if (p.deposit) "این پول به کدام حساب آمد؟" else "این پول از کدام حساب رفت؟",
-            onSelect = { acc -> viewModel.recordMoney(acc.id, p.sourceId, p.amount, p.deposit, p.description, p.dangTotal, p.dangY, p.dangM, p.dangD, onNoExpense = {
-                android.widget.Toast.makeText(toastCtx, "خرجِ این شام (همین مبلغ و همین روز) پیدا نشد؛ واریز ثبت شد ولی در گزارش از خرجِ شام کم نمی‌شود.", android.widget.Toast.LENGTH_LONG).show()
-            }); moneyPrompt = null },
-            onDismiss = { moneyPrompt = null },
+            onSelect = { acc -> viewModel.recordMoney(acc.id, p.sourceId, p.amount, p.deposit, p.description, p.dangTotal, p.dangY, p.dangM, p.dangD); closePrompt() },
+            onDismiss = { closePrompt() },
             dismissHint = "حساب را انتخاب نکردی؛ این پول در موجودی و گزارش ثبت نشد.",
         )
     }
@@ -153,6 +155,59 @@ fun DebtScreen(
     val dangEvents by dangViewModel.events.collectAsState()
     var dangScreen by rememberSaveable { mutableStateOf(if (startInDang) "list" else "none") } // none | list | create | detail
     var openedDangEventId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var editingDangId by rememberSaveable { mutableStateOf<Long?>(null) }
+    // از جزئیاتِ دنگ به صفحه‌ی یک دوست رفتیم؛ برگشت = همان دنگ (یک صفحه عقب).
+    var returnToDangId by rememberSaveable { mutableStateOf<Long?>(null) }
+    // و برعکس: از صفحه‌ی یک دوست به دنگ رفتیم؛ برگشت = همان دوست.
+    var dangFromCounterparty by rememberSaveable { mutableStateOf(false) }
+    fun closeDangDetail() {
+        openedDangEventId = null
+        if (dangFromCounterparty) { dangFromCounterparty = false; dangScreen = "none" } else dangScreen = "list"
+    }
+    val allDangParticipants by dangViewModel.allParticipants.collectAsState()
+    // طلبِ دنگ (۱۶ مهر): سهمِ پرداخت‌نشده‌ی هر دوست جزوِ طلبِ تو از اوست - یک منبع، بی ردیفِ کپی.
+    val dangOwed = remember(allDangParticipants, dangEvents) {
+        val closed = dangEvents.filter { it.settled }.map { it.id }.toSet()
+        allDangParticipants
+            .filter { it.counterpartyId != null && !it.settled && it.eventId !in closed }
+            .groupBy { it.counterpartyId!! }
+            .mapValues { (_, list) -> list.sumOf { it.shareAmount } }
+    }
+    fun closeDangForm() {
+        val id = editingDangId
+        editingDangId = null
+        if (id != null) { openedDangEventId = id; dangScreen = "detail" } else dangScreen = "list"
+    }
+    fun recordDangShare(event: ir.sadteam.loancalc.data.db.DangEventEntity, participant: ir.sadteam.loancalc.data.db.DangParticipantEntity) {
+        if (accounts.isEmpty()) return
+        val friend = counterparties.firstOrNull { it.id == participant.counterpartyId }?.name ?: "دوست"
+        val desc = "دنگ «${event.title}» - $friend"
+        viewModel.settleDangShare(
+            "dang-${participant.id}", participant.shareAmount, desc,
+            event.totalAmount, event.year, event.month, event.day,
+            onNeedPicker = {
+                askMoney(
+                    MoneyPrompt(
+                        "dang-${participant.id}", participant.shareAmount, deposit = true, description = desc,
+                        dangTotal = event.totalAmount, dangY = event.year, dangM = event.month, dangD = event.day,
+                    ),
+                )
+            },
+            onAuto = { accName ->
+                // متنِ روشن (گزارشِ کاربر، ۱۶ مهر): قبلاً «حسابِ خرجِ شام» ثابت نوشته می‌شد و گیج می‌کرد.
+                android.widget.Toast.makeText(
+                    toastCtx,
+                    "سهمِ $friend به حسابِ «$accName» برگشت؛ همان حسابی که پولِ «${event.title}» از آن رفته بود.",
+                    android.widget.Toast.LENGTH_LONG,
+                ).show()
+            },
+        )
+    }
+    fun toggleDangShare(event: ir.sadteam.loancalc.data.db.DangEventEntity, participant: ir.sadteam.loancalc.data.db.DangParticipantEntity, settled: Boolean) {
+        dangViewModel.setParticipantSettled(participant, settled)
+        // تیک = سهمش به حسابِ تو آمد؛ برداشتنِ تیک = همان پس گرفته می‌شود.
+        if (settled) recordDangShare(event, participant) else viewModel.unrecordMoney("dang-${participant.id}")
+    }
     val openedDangEvent = openedDangEventId?.let { id -> dangEvents.firstOrNull { it.id == id } }
     // جشنِ کوچیکِ «تسویه شد» (بستهٔ ارتقاهای گرافیکی، خواسته‌ی صریحِ کاربر). عمداً فقط وقتی
     // **آخرین** ردیفِ بازِ یه طرف‌حساب تسویه می‌شه اجرا می‌شه، نه هر تسویه‌ی تکی - یه اتفاقِ نادر و
@@ -180,10 +235,13 @@ fun DebtScreen(
     // برگشتِ گوشی = یک صفحه عقب (۱۶ مهر): جزئیاتِ دنگ → فهرستِ دنگ → طلب و بدهی.
     androidx.activity.compose.BackHandler(enabled = screenKey != "list" && !(startInDang && dangScreen == "list")) {
         when (dangScreen) {
-            "detail" -> { dangScreen = "list"; openedDangEventId = null }
-            "create" -> dangScreen = "list"
+            "detail" -> closeDangDetail()
+            "create" -> closeDangForm()
             "list" -> dangScreen = "none"
-            else -> openedCounterpartyId = null
+            else -> {
+                openedCounterpartyId = null
+                returnToDangId?.let { openedDangEventId = it; dangScreen = "detail"; returnToDangId = null }
+            }
         }
     }
     Box(modifier = Modifier.fillMaxSize()) {
@@ -195,63 +253,74 @@ fun DebtScreen(
         when (key) {
             "dang-list" -> DangListScreen(
                 events = dangEvents,
+                participants = allDangParticipants,
                 onBack = { if (startInDang) onBack() else dangScreen = "none" },
                 onOpen = { openedDangEventId = it.id; dangScreen = "detail" },
-                onAddNew = { dangScreen = "create" },
+                onAddNew = { editingDangId = null; dangScreen = "create" },
             )
-            "dang-create" -> DangCreateScreen(
-                counterparties = counterparties,
-                expenses = viewModel.recentExpenses.collectAsState().value,
-                onCancel = { dangScreen = "list" },
-                onCreateCounterparty = { name, onCreated -> viewModel.addCounterparty(name, onResult = onCreated) },
-                onSave = { title, method, total, y, m, d, eventMode, participants, items ->
-                    dangViewModel.createEvent(title, method, total, y, m, d, eventMode, participants, items) {
-                        dangScreen = "list"
-                    }
-                },
-            )
+            "dang-create" -> {
+                val editing = editingDangId?.let { id -> dangEvents.firstOrNull { it.id == id } }
+                DangCreateScreen(
+                    counterparties = counterparties,
+                    expenses = viewModel.recentExpenses.collectAsState().value,
+                    onCancel = { closeDangForm() },
+                    onCreateCounterparty = { name, onCreated -> viewModel.addCounterparty(name, onResult = onCreated) },
+                    existing = editing,
+                    loadExisting = { id -> dangViewModel.loadForEdit(id) },
+                    onSave = { title, method, total, y, m, d, eventMode, participants, items ->
+                        if (editing != null) {
+                            dangViewModel.updateEvent(editing, title, method, total, y, m, d, eventMode, participants, items) {
+                                closeDangForm()
+                            }
+                        } else {
+                            dangViewModel.createEvent(title, method, total, y, m, d, eventMode, participants, items) {
+                                dangScreen = "list"
+                            }
+                        }
+                    },
+                )
+            }
             "dang-detail" -> openedDangEvent?.let { event ->
                 val participants by dangViewModel.participants(event.id).collectAsState(initial = emptyList())
                 DangDetailScreen(
                     event = event,
                     participants = participants,
                     counterpartyNameFor = ::counterpartyNameFor,
-                    onBack = { dangScreen = "list"; openedDangEventId = null },
+                    onBack = { closeDangDetail() },
+                    onEdit = { editingDangId = event.id; dangScreen = "create" },
                     onDelete = {
                         // پولی که از دوست‌ها گرفته و در حساب ثبت شده بود، با حذفِ دنگ برمی‌گردد.
                         participants.forEach { viewModel.unrecordMoney("dang-${it.id}") }
                         dangViewModel.deleteEvent(event); dangScreen = "list"; openedDangEventId = null
                     },
-                    onToggleEventSettled = { dangViewModel.setEventSettled(event, it) },
-                    onToggleParticipantSettled = { participant, settled ->
-                        dangViewModel.setParticipantSettled(participant, settled)
-                        // تسویه‌ی یک دوست = سهمش به حسابِ تو آمده؛ برداشتنِ تیک = همان پس گرفته می‌شود.
-                        if (settled && accounts.isNotEmpty()) {
-                            val desc = "دنگ «${event.title}» - ${counterpartyNameFor(participant.counterpartyId)}"
-                            viewModel.settleDangShare(
-                                "dang-${participant.id}", participant.shareAmount, desc,
-                                event.totalAmount, event.year, event.month, event.day,
-                                onNeedPicker = {
-                                    moneyPrompt = MoneyPrompt(
-                                        "dang-${participant.id}", participant.shareAmount, deposit = true, description = desc,
-                                        dangTotal = event.totalAmount, dangY = event.year, dangM = event.month, dangD = event.day,
-                                    )
-                                },
-                                onAuto = { accName ->
-                                    android.widget.Toast.makeText(toastCtx, "سهمش به «$accName» (حسابِ خرجِ شام) اضافه شد.", android.widget.Toast.LENGTH_SHORT).show()
-                                },
-                            )
-                        } else if (!settled) {
-                            viewModel.unrecordMoney("dang-${participant.id}")
-                        }
+                    onSettleAll = {
+                        dangViewModel.settleAll(event) { newly -> newly.forEach { recordDangShare(event, it) } }
                     },
+                    onOpenCounterparty = { id ->
+                        if (dangFromCounterparty && openedCounterpartyId == id) { closeDangDetail(); return@DangDetailScreen }
+                        dangFromCounterparty = false
+                        returnToDangId = event.id
+                        openedCounterpartyId = id
+                        dangScreen = "none"
+                    },
+                    onToggleParticipantSettled = { participant, settled -> toggleDangShare(event, participant, settled) },
                 )
             }
             "detail" -> opened?.let { counterparty ->
                 CounterpartyDetail(
                     counterparty = counterparty,
                     debts = debts.filter { it.counterpartyId == counterparty.id },
-                    onBack = { openedCounterpartyId = null },
+                    onBack = {
+                        openedCounterpartyId = null
+                        returnToDangId?.let { openedDangEventId = it; dangScreen = "detail"; returnToDangId = null }
+                    },
+                    dangShares = allDangParticipants
+                        .filter { it.counterpartyId == counterparty.id }
+                        .mapNotNull { p -> dangEvents.firstOrNull { it.id == p.eventId }?.let { it to p } },
+                    onOpenDang = { id -> openedDangEventId = id; dangScreen = "detail"; returnToDangId = null; dangFromCounterparty = true },
+                    onToggleDangShare = { share, settled ->
+                        dangEvents.firstOrNull { it.id == share.eventId }?.let { ev -> toggleDangShare(ev, share, settled) }
+                    },
                     onDelete = { pendingDelete = counterparty },
                     onUpdate = { viewModel.updateCounterparty(it) },
                     onAddDebt = { amount, type, description, y, m, d ->
@@ -264,24 +333,24 @@ fun DebtScreen(
                         viewModel.addDebt(counterparty.id, amount, type, description, y, m, d) { newId ->
                         // پرداخت/دریافتِ بخشی یعنی پول واقعاً جابه‌جا شد. شناسه = همان ردیف تا حذفش پول را برگرداند.
                         if (partial) {
-                            moneyPrompt = MoneyPrompt(
+                            askMoney(MoneyPrompt(
                                 newId.toString(),
                                 amount,
                                 deposit = description.startsWith("دریافتِ بخشی"),
                                 description = "$description - ${counterparty.name}",
-                            )
+                            ))
                         }
                         }
                     },
                     onToggleSettled = { debt, settled ->
                         viewModel.setSettled(debt, settled)
                         if (settled && accounts.isNotEmpty()) {
-                            moneyPrompt = MoneyPrompt(
+                            askMoney(MoneyPrompt(
                                 debt.id.toString(),
                                 debt.amount,
                                 deposit = debt.type == DebtType.OWED_TO_ME.name,
                                 description = "تسویه با ${counterparty.name}",
-                            )
+                            ))
                         } else if (!settled) {
                             viewModel.unrecordMoney(debt.id.toString())
                         }
@@ -313,7 +382,8 @@ fun DebtScreen(
                         }
                     }
                 },
-                netBalance = { id -> viewModel.netBalance(id, debts) },
+                netBalance = { id -> viewModel.netBalance(id, debts) + (dangOwed[id] ?: 0.0) },
+                dangOwed = dangOwed,
                 onOpenDang = { dangScreen = "list" },
             )
         }
@@ -348,11 +418,12 @@ private fun DebtList(
     onAddCounterparty: (NewCounterparty) -> Unit,
     netBalance: (Long) -> Double,
     onOpenDang: () -> Unit,
+    dangOwed: Map<Long, Double> = emptyMap(),
 ) {
     val privacyMode = LocalPrivacyMode.current
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var filter by rememberSaveable { mutableStateOf(DebtFilter.ALL) }
-    val balances = remember(counterparties, debts) { counterparties.associate { it.id to netBalance(it.id) } }
+    val balances = remember(counterparties, debts, dangOwed) { counterparties.associate { it.id to netBalance(it.id) } }
     val totalOwed = balances.values.filter { it > 0 }.sum()
     val totalOwe = -balances.values.filter { it < 0 }.sum()
     val visibleCounterparties = remember(counterparties, searchQuery, filter, balances) {
@@ -676,6 +747,10 @@ private fun CounterpartyDetail(
     onAddDebt: (amount: Double, type: DebtType, description: String, y: Int, m: Int, d: Int) -> Unit,
     onToggleSettled: (DebtEntity, Boolean) -> Unit,
     onDeleteDebt: (DebtEntity) -> Unit,
+    /** سهم‌های این شخص در دنگ‌ها (۱۶ مهر) - بخشی از طلبِ او، با تیکِ همان سهم. */
+    dangShares: List<Pair<ir.sadteam.loancalc.data.db.DangEventEntity, ir.sadteam.loancalc.data.db.DangParticipantEntity>> = emptyList(),
+    onOpenDang: (Long) -> Unit = {},
+    onToggleDangShare: (ir.sadteam.loancalc.data.db.DangParticipantEntity, Boolean) -> Unit = { _, _ -> },
 ) {
     val privacyMode = LocalPrivacyMode.current
     var showAddDebt by rememberSaveable { mutableStateOf(false) }
@@ -803,7 +878,37 @@ private fun CounterpartyDetail(
                 }
             }
         }
-        if (debts.isEmpty()) {
+        if (dangShares.isNotEmpty()) {
+            item {
+                Text("از دنگ‌ها", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
+            }
+            items(dangShares, key = { "dang-${it.second.id}" }) { (event, share) ->
+                AppCard(
+                    variant = if (share.settled) ir.sadteam.loancalc.ui.components.AppCardVariant.DONE else ir.sadteam.loancalc.ui.components.AppCardVariant.DEFAULT,
+                    dimContent = false,
+                    modifier = Modifier.pressScaleClickable { onOpenDang(event.id) },
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                maskIfPrivate(privacyMode, "${fmt(share.shareAmount / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
+                                color = if (share.settled) AppMuted else AppPrimary,
+                                fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                            )
+                            Text("سهمش از دنگِ «${event.title}»", color = AppMuted, fontSize = 12.sp)
+                            Text(
+                                "${toFa(event.year)}/${toFa(event.month)}/${toFa(event.day)}" + if (share.settled) " - داد ✓" else "",
+                                color = AppMuted, fontSize = 11.sp,
+                            )
+                        }
+                        IconButton(onClick = { onToggleDangShare(share, !share.settled) }) {
+                            Text(if (share.settled) "↺" else "✓", color = if (share.settled) AppMuted else AppPrimary)
+                        }
+                    }
+                }
+            }
+        }
+        if (debts.isEmpty() && dangShares.isEmpty()) {
             item {
                 EmptyState(
                     icon = Icons.Filled.Handshake,
@@ -811,7 +916,7 @@ private fun CounterpartyDetail(
                     description = "اولین طلب یا بدهیت با «${counterparty.name}» رو ثبت کن.",
                 )
             }
-        } else {
+        } else if (debts.isNotEmpty()) {
             items(debts, key = { it.id }) { debt ->
                 Column {
                     AppCard {

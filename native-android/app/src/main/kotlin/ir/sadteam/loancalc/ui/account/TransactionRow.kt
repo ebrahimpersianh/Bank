@@ -13,6 +13,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.animateFloat
+import ir.sadteam.loancalc.ui.theme.AppPurple
+import ir.sadteam.loancalc.ui.theme.AppPurplePill
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -63,6 +68,8 @@ fun CompactTransactionRow(
     /** `71d`: در شیتِ «خرجِ امروز» نامِ حساب پیشِ منبع می‌آید - چند حساب با هم قاطی‌اند. */
     accountName: String? = null,
     onClick: (() -> Unit)? = null,
+    /** دکمه‌ی کوچکِ «دنگ» کنارِ آیکونِ منبع (۱۶ مهر) - فقط برای خرج‌هایی که دنگ‌پذیرند. */
+    onDang: (() -> Unit)? = null,
 ) {
     val isIn = tx.type == TransactionType.DEPOSIT.name
     val ink = if (isIn) AppTxIn else AppTxOut
@@ -97,6 +104,7 @@ fun CompactTransactionRow(
             ) {
                 Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(15.dp))
             }
+            if (onDang != null) DangWiggleButton(onDang)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     tx.description.ifBlank { if (isIn) "واریز" else "برداشت" },
@@ -126,6 +134,52 @@ fun CompactTransactionRow(
                     fontWeight = FontWeight.Black,
                 )
             }
+        }
+    }
+}
+
+/**
+ * دکمه‌ی دنگ با لرزشِ ریز (خواسته‌ی کاربر): هر چند ثانیه یک تکانِ کوتاه تا دیده شود، نه مدام.
+ * هدفِ لمسی ۳۶×۴۴ ولی نمای ۳۰ - همان اندازه‌ی آیکونِ منبع کنارش.
+ */
+@Composable
+private fun DangWiggleButton(onClick: () -> Unit) {
+    val reduced = ir.sadteam.loancalc.ui.components.LocalReducedMotion.current
+    val angle = if (reduced) 0f else {
+        val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "dangWiggle")
+        t.animateFloat(
+            initialValue = 0f,
+            targetValue = 0f,
+            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                androidx.compose.animation.core.keyframes {
+                    durationMillis = 3200
+                    0f at 0
+                    -9f at 90
+                    9f at 180
+                    -6f at 270
+                    4f at 360
+                    0f at 450
+                    0f at 3200
+                },
+            ),
+            label = "dangAngle",
+        ).value
+    }
+    Box(
+        modifier = Modifier
+            .size(width = 36.dp, height = 44.dp)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .graphicsLayer { rotationZ = angle }
+                .clip(RoundedCornerShape(AppRadius.icon))
+                .background(AppPurplePill),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.Groups, contentDescription = "تقسیمِ دنگ", tint = AppPurple, modifier = Modifier.size(16.dp))
         }
     }
 }

@@ -335,7 +335,13 @@ fun AccountDetailScreen(
                         confirmDismiss = false,
                         modifier = Modifier.animateItem(),
                     ) {
-                        CompactTransactionRow(tx = tx, onClick = { editingTx = tx })
+                        CompactTransactionRow(
+                            tx = tx,
+                            onClick = { editingTx = tx },
+                            onDang = if (tx.type == "WITHDRAWAL" && tx.confirmed && ir.sadteam.loancalc.data.countsInReports(tx)) {
+                                { splitTx = tx }
+                            } else null,
+                        )
                     }
                 }
             }
