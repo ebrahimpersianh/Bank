@@ -23,6 +23,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
  * خیلی بزرگ‌اند». همان رنگ‌ها ([appFieldColors]) و متن ([appFieldTextStyle])، فقط فاصله‌ی داخلیِ کمتر و
  * گوشه‌ی ۱۶. برای فیلدهای تک‌خطیِ فرم‌های بلند (صفحه‌ی «افزودنِ وام»).
  */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun CompactField(
     value: String,
