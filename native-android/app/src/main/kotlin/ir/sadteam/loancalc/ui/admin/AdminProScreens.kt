@@ -443,7 +443,12 @@ private fun UserResult(r: AdminUserTimeline, phone: String? = null, store: Strin
                     Ltr { Text(toFa(phone), color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 6.dp)) }
                     Text(" · ${if (store == "myket") "مایکت" else "کافه‌بازار"}", color = AppMuted, fontSize = 11.sp)
                 }
-                Text("ثبت‌نام ${adminDay(r.createdAt)}", color = AppMuted, fontSize = 11.5.sp, modifier = Modifier.padding(top = 4.dp))
+                // ۲۱ مهر (خواسته‌ی کاربر): نسخه‌ی نصب‌شده (از آخرین گوشیِ فعال) کنارِ تاریخِ ثبت‌نام.
+                val installedVersion = r.installs.maxByOrNull { it.lastDay }?.version
+                Text(
+                    "ثبت‌نام ${adminDay(r.createdAt)}" + (installedVersion?.let { " · نسخه‌ی ${toFa(it)}" } ?: ""),
+                    color = AppMuted, fontSize = 11.5.sp, modifier = Modifier.padding(top = 4.dp),
+                )
             }
             Row(
                 Modifier.clip(RoundedCornerShape(999.dp))
@@ -495,6 +500,7 @@ private fun UserResult(r: AdminUserTimeline, phone: String? = null, store: Strin
     if (tab == 0) AppCard(label = "اطلاعاتِ کلی") {
         val lastDay = r.installs.mapNotNull { it.lastDay }.maxOrNull()
         InfoLine(androidx.compose.material.icons.Icons.Filled.Person, androidx.compose.ui.graphics.Color(0xFF22C55E), "آخرین حضور", lastDay?.let { adminDay(it) } ?: "—")
+        InfoLine(androidx.compose.material.icons.Icons.Filled.PhoneAndroid, androidx.compose.ui.graphics.Color(0xFF14B8A6), "نسخه‌ی نصب‌شده", r.installs.maxByOrNull { it.lastDay }?.version?.let { toFa(it) } ?: "—")
         InfoLine(androidx.compose.material.icons.Icons.Filled.ShoppingCart, androidx.compose.ui.graphics.Color(0xFFF59E0B), "خریدِ اشتراک", toFa(r.purchases.size))
         InfoLine(androidx.compose.material.icons.Icons.Filled.CalendarMonth, androidx.compose.ui.graphics.Color(0xFF3B82F6), "آخرین تاریخِ خرید", r.purchases.maxByOrNull { it.at }?.let { adminDay(it.at) } ?: "—")
         InfoLine(androidx.compose.material.icons.Icons.Filled.Event, androidx.compose.ui.graphics.Color(0xFFA855F7), "روزهای فعال", toFa(r.installs.sumOf { it.activeDays }))
