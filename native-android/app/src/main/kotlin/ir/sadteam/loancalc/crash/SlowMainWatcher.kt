@@ -88,7 +88,9 @@ object SlowMainWatcher {
                     }
                 }
                 val total = ack.get() - sent
-                if (total >= STALL_MS && sample != null && enabled) {
+                // ۲۰ مهر: نمونه‌ای که رشته‌ی اصلی در آن **بیکار** بود (nativePollOnce و پایشِ شیائومی) گیر نیست -
+                // گوشی پروسه را در پس‌زمینه کند کرده بود. گزارش‌های ۸۴۸ پر از همین نمونه‌های بی‌معنا بود.
+                if (total >= STALL_MS && sample != null && enabled && !isIdleNoise(sample!!)) {
                     val line = "[${route}] ${total}ms: $sample"
                     synchronized(events) {
                         events.addLast(line)
@@ -100,6 +102,15 @@ object SlowMainWatcher {
             }
             threadRunning = false
         }, "slow-main-watch").apply { isDaemon = true }.start()
+    }
+
+    private val idleTops = listOf(
+        "MessageQueue.nativePollOnce", "MessageQueue.next", "MessageMonitorImpl.", "PerfDebugMonitorImpl.",
+        "Binder.flushPendingCommands", "HardwareRenderer.nSetStopped",
+    )
+
+    private fun isIdleNoise(sample: String): Boolean = sample.split(" || ").all { part ->
+        part.endsWith("ours=-") && idleTops.any { part.startsWith("top=$it") }
     }
 
     private fun summarize(trace: Array<StackTraceElement>): String {

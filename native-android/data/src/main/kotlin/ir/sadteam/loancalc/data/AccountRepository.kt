@@ -717,7 +717,17 @@ class AccountRepository(
         val parsed: Map<String, Any?> = gson.fromJson(json, type) ?: error("empty json")
         val accountsJson = gson.toJson(parsed["accounts"] ?: error("no accounts key"))
         val transactionsJson = gson.toJson(parsed["transactions"] ?: error("no transactions key"))
-        val accounts: List<AccountEntity> = gson.fromJson(accountsJson, object : TypeToken<List<AccountEntity>>() {}.type)
+        // 🐞 (۲۰ مهر، از گزارشِ خطای همگام‌سازی) پشتیبانِ قدیمی ستونِ «type» نداشت و Gson پیش‌فرضِ کاتلین را
+        // نمی‌گذارد → null → «NOT NULL constraint failed: accounts.type» و کلِ بازیابیِ حساب‌ها شکست می‌خورد.
+        val accounts: List<AccountEntity> = gson.fromJson<List<AccountEntity>>(accountsJson, object : TypeToken<List<AccountEntity>>() {}.type)
+            .map { a ->
+                a.copy(
+                    name = orDefault(a.name, "حساب"),
+                    bankName = orDefault(a.bankName, ""),
+                    createdAt = orDefault(a.createdAt, ""),
+                    type = orDefault(a.type, ACCOUNT_TYPE_BANK),
+                )
+            }
         val transactions: List<AccountTransactionEntity> =
             gson.fromJson(transactionsJson, object : TypeToken<List<AccountTransactionEntity>>() {}.type)
         // حساب‌ها و تراکنش‌هایشان یک کارند؛ نیمه‌کاره یعنی تراکنشِ بی‌حساب.
@@ -740,6 +750,9 @@ class AccountRepository(
      * `inbox_messages` (مالِ همین گوشی) و جدول‌های ماژول‌های دیگر این‌جا نیستند.
      * عکس‌ها فایل‌اند و این‌جا نمی‌آیند - فقط مسیرشان.
      */
+    /** Gson فیلدِ غیرنال را هم می‌تواند null بگذارد؛ این‌جا واقعاً بررسی می‌شود (کامپایلر `?:` را روی نوعِ غیرنال حذف می‌کند). */
+    private fun <T> orDefault(v: T?, d: T): T = v ?: d
+
     private val extraTables = listOf(
         "budgets", "recurring_payments", "counterparties", "debts", "notes",
         "custom_categories", "category_order", "assets", "asset_trades", "savings_goals",
