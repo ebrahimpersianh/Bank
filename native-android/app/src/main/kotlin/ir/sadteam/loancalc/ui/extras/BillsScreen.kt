@@ -36,6 +36,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Receipt
@@ -119,7 +120,16 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText) }
-                Text("قبض‌ها", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                Text("قبض‌ها", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+                // ۲۰ مهر (خواسته‌ی کاربر): «افزودن» و «پرداخت شد» یک‌شکل بودند - افزودن به دکمه‌ی «+»ِ سربرگ رفت.
+                if (bills.isNotEmpty()) {
+                    ir.sadteam.loancalc.ui.components.HeaderIconButton(
+                        icon = Icons.Filled.Add,
+                        description = "افزودنِ قبض",
+                        primary = true,
+                        onClick = { adding = true },
+                    )
+                }
             }
         }
         if (bills.isEmpty()) {
@@ -147,10 +157,6 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                     )
                     GradientButton(onClick = { adding = true }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) { Text("+ افزودنِ قبض") }
                 }
-            }
-        } else {
-            item {
-                GradientButton(onClick = { adding = true }, modifier = Modifier.fillMaxWidth()) { Text("+ افزودنِ قبض") }
             }
         }
         items(bills, key = { it.id }) { bill ->

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -34,7 +35,6 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.BillEntity
 import ir.sadteam.loancalc.ui.components.AppCard
-import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
@@ -137,7 +137,22 @@ internal fun BillCard(
                 )
             }
             if (due && !paid) {
-                GradientButton(onClick = onPay, modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) { Text("پرداخت شد") }
+                // ۲۰ مهر: دکمه‌ی کم‌رنگِ تیک‌دار، نه دکمه‌ی پررنگِ هم‌شکلِ «افزودن».
+                val payInk = if (overdue) AppDanger else AppTxIn
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(payInk.copy(alpha = 0.12f))
+                        .pressScaleClickable { onPay() },
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = payInk, modifier = Modifier.size(18.dp))
+                    Text("پرداخت شد", color = payInk, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
