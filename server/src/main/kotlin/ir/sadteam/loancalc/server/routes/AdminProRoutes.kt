@@ -9,6 +9,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import ir.sadteam.loancalc.server.trialEndsAtMs
 import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.execute
 import ir.sadteam.loancalc.server.queryOne
@@ -343,7 +344,13 @@ internal fun broadcast(conn: Connection, b: BroadcastBody): BroadcastResult? {
         if (b.days > 0) {
             val cur = conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", uid) { it.getString(1) }
                 ?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
-            val expiry = java.time.Instant.ofEpochMilli(maxOf(cur, now) + b.days * 24L * 60 * 60 * 1000).toString()
+            // ۲۰ مهر (خواسته‌ی کاربر): کسی که هنوز در ماهِ رایگان است، هدیه را **بعد از پایانِ** آن می‌گیرد،
+            // نه از امروز (وگرنه روزهای هدیه با روزهای رایگانِ باقی‌مانده روی هم می‌افتادند).
+            val trialEnd = conn.queryOne("SELECT created_at, trial_days, trial_blocked FROM users WHERE id = ?", uid) { r ->
+                if (r.getInt(3) != 0) 0L
+                else trialEndsAtMs(r.getString(1), r.getInt(2).takeIf { !r.wasNull() }) ?: 0L
+            } ?: 0L
+            val expiry = java.time.Instant.ofEpochMilli(maxOf(cur, now, trialEnd) + b.days * 24L * 60 * 60 * 1000).toString()
             conn.execute("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, uid)
         }
         conn.execute(
