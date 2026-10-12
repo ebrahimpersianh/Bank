@@ -41,7 +41,7 @@ import net.sqlcipher.database.SupportFactory
         TxTemplateEntity::class,
         BillEntity::class,
     ],
-    version = 35,
+    version = 36,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -521,6 +521,16 @@ abstract class AppDatabase : RoomDatabase() {
          * شماره‌حساب و شبای هر حساب (خواسته‌ی کاربر، ۶ مهر) - تا انتقال به حسابِ **خودِ کاربر**
          * از روی شماره‌ی مقصد در پیامک شناخته شود. فقط دو ستونِ nullable، بی ایندکس.
          */
+        /**
+         * شماره‌ی موبایلِ قبضِ موبایل (خواسته‌ی کاربر، ۱۶ مهر) - اولین مهاجرت بعد از انتشارِ ۷۲۱.
+         * فقط یک ستونِ nullable، بی ایندکس؛ ردیف‌های قبلی `NULL` می‌گیرند و چیزی پاک نمی‌شود.
+         */
+        internal val MIGRATION_35_36 = object : Migration(35, 36) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE bills ADD COLUMN phone TEXT")
+            }
+        }
+
         /** عکسِ یادداشت (۱۰ مهر) - فقط یک ستونِ nullable، بی ایندکس. */
         internal val MIGRATION_34_35 = object : Migration(34, 35) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -723,6 +733,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_32_33,
                             MIGRATION_33_34,
                             MIGRATION_34_35,
+                            MIGRATION_35_36,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

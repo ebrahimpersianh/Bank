@@ -154,37 +154,15 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
             }
         }
         items(bills, key = { it.id }) { bill ->
-            val due = bill.isDueSoon(today.y, today.m, today.d)
-            AppCard(modifier = Modifier.clickable { editing = bill }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val (kIcon, kColor) = billKindIcon(bill.kind)
-                    Box(
-                        Modifier.size(40.dp).clip(RoundedCornerShape(AppRadius.icon)).background(kColor.copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center,
-                    ) { Icon(kIcon, contentDescription = null, tint = kColor, modifier = Modifier.size(22.dp)) }
-                    Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-                        Text("${billKindLabel(bill.kind)} · ${bill.name}", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            buildString {
-                                append("موعد: ${toFa(bill.dueDay)}ِ ")
-                                append(if (bill.periodMonths > 1) "هر ${toFa(bill.periodMonths)} ماه" else "هر ماه")
-                                if (bill.lastPaidKey == "${today.y}-${today.m}") append(" · این دوره پرداخت شد ✓")
-                            },
-                            color = if (due) AppDanger else AppMuted,
-                            fontSize = 11.sp,
-                        )
-                    }
-                    if (due) {
-                        TextButton(onClick = { paying = bill }) {
-                            Text("پرداخت شد", color = AppPrimary, fontWeight = FontWeight.Bold)
-                        }
-                    } else if (bill.lastPaidKey == "${today.y}-${today.m}") {
-                        TextButton(onClick = { viewModel.unmarkBillPaid(bill, today.y, today.m) }) {
-                            Text("برگرداندن", color = AppMuted, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
+            val (kIcon, kColor) = billKindIcon(bill.kind)
+            BillCard(
+                bill = bill, icon = kIcon, tint = kColor,
+                todayY = today.y, todayM = today.m, todayD = today.d,
+                onEdit = { editing = bill },
+                onPay = { paying = bill },
+                onUnpay = { viewModel.unmarkBillPaid(bill, today.y, today.m) },
+                onDelete = { deleting = bill },
+            )
         }
     }
 
@@ -246,6 +224,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
         var billId by remember(base) { mutableStateOf(base?.billId ?: "") }
         var dayText by remember(base) { mutableStateOf(base?.dueDay?.toString() ?: "") }
         var period by remember(base) { mutableStateOf(base?.periodMonths ?: 1) }
+        var phone by remember(base) { mutableStateOf(base?.phone ?: "") }
         val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
         var pasteNote by remember(base) { mutableStateOf<String?>(null) }
         var dayError by remember(base) { mutableStateOf(false) }
@@ -342,6 +321,25 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
+                    // 📱 قبضِ موبایل: شماره‌ی همان خط (خواسته‌ی کاربر، ۱۶ مهر).
+                    if (kind == "mobile") {
+                        Ltr {
+                            OutlinedTextField(
+                                textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
+                                value = phone,
+                                onValueChange = { phone = cleanNum(it).take(11) },
+                                singleLine = true,
+                                label = { Text("شماره‌ی موبایل") },
+                                placeholder = { Text("09121234567") },
+                                isError = phone.isNotEmpty() && !(phone.length == 11 && phone.startsWith("09")),
+                                leadingIcon = { Icon(Icons.Filled.Smartphone, contentDescription = null, tint = AppMuted) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                                shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                                colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
                     if (billId.length >= 6) {
                         val k = ir.sadteam.loancalc.core.BillCodes.billIdKind(billId)
                         Text(
@@ -393,6 +391,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                                 billId = billId.ifBlank { null },
                                 dueDay = day,
                                 periodMonths = period,
+                                phone = if (kind == "mobile") phone.ifBlank { null } else null,
                             ),
                         )
                         close()

@@ -63,6 +63,22 @@ class MigrationTest {
         helper.runMigrationsAndValidate(TEST_DB, 34, true, AppDatabase.MIGRATION_33_34)
     }
 
+    /**
+     * شماره‌ی موبایلِ قبض (۳۵→۳۶). ⚠️ `35.json` باید از بیلدِ نسخه‌ی ۳۵ (۷۲۱) در `data/schemas`
+     * باشد؛ اگر نیست، اول آن را از همان کامیت بساز.
+     */
+    @Test
+    fun migrate35To36() {
+        helper.createDatabase(TEST_DB, 35).apply {
+            execSQL("INSERT INTO bills (id, name, kind, billId, dueDay, periodMonths, lastAmount, lastPaidKey) VALUES (1, 'خانه', 'power', NULL, 5, 1, 0.0, NULL)")
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(TEST_DB, 36, true, AppDatabase.MIGRATION_35_36)
+        db.query("SELECT name, phone FROM bills WHERE id = 1").use { c ->
+            check(c.moveToFirst() && c.getString(0) == "خانه" && c.isNull(1))
+        }
+    }
+
     /** تاییدِ اینکه SQLCipher رو یه محیطِ واقعیِ اندروید (نه JVMِ خام) درست کار می‌کنه - دقیقاً همون
      * راه‌اندازیِ تولیدی (AppDatabase.getInstance) رو یه فایلِ موقتِ جدا امتحان می‌کنه. */
     @Test

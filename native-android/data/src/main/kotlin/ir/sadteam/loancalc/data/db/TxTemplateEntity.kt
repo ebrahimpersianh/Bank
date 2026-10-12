@@ -46,6 +46,8 @@ data class BillEntity(
     val periodMonths: Int = 1,
     val lastAmount: Double = 0.0,
     val lastPaidKey: String? = null,
+    /** شماره‌ی موبایلِ قبضِ موبایل (DB نسخه‌ی ۳۶). */
+    val phone: String? = null,
 )
 
 @Dao
