@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -176,7 +177,7 @@ internal fun AppearanceSettings(themeViewModel: ThemeViewModel, hapticsViewModel
         val unitContext = androidx.compose.ui.platform.LocalContext.current
         SettingsRowItem(
             title = "نمایشِ مبلغ‌ها",
-            icon = androidx.compose.material.icons.Icons.Filled.Paid,
+            icon = Icons.Filled.Paid,
             tone = SettingsTone.GREEN,
             status = if (ir.sadteam.loancalc.ui.jibak.MoneyUnit.rial) "ریال (دقیقِ بانک)" else "تومان",
             onClick = null,
