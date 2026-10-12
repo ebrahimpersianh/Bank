@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import ir.sadteam.loancalc.data.netDangShares
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDueNextBorder
@@ -123,25 +125,25 @@ internal fun PeriodSpendHero(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                 )
-                PrivacyCrossfade(privacyMode) { masked ->
+                // ۲۰ مهر (خواسته‌ی کاربر): واحد کنارِ عدد، نه خطِ زیرش.
+                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 3.dp)) {
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            maskIfPrivate(masked, spend.rialToFaCompact()),
+                            color = Color.White,
+                            fontSize = 27.sp,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                        )
+                    }
                     Text(
-                        // fmt() جداکننده‌ی لاتین می‌داد و عدد ریال بود: خرجِ ۱۰۲ میلیون
-                        // تومان «1,026,600,000» چاپ می‌شد.
-                        maskIfPrivate(masked, spend.rialToFaCompact()),
-                        color = Color.White,
-                        fontSize = 27.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(top = 3.dp),
+                        ir.sadteam.loancalc.ui.jibak.unitFa(),
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 5.dp, bottom = 5.dp),
                     )
                 }
-                // واحد یک‌بار زیرِ عدد می‌آید، طبقِ قاعده‌ی عددِ سیستمِ طراحی.
-                Text(
-                    "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
-                    color = Color.White.copy(alpha = 0.8f),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
             }
             if (deltaPercent != null) {
                 Text(
@@ -275,15 +277,11 @@ private fun PeriodStatCard(
                 Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(12.dp))
             }
         }
-        Text(
-            value,
-            color = AppText,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Black,
-            maxLines = 1,
-            modifier = Modifier.padding(top = 6.dp),
-        )
-        Text(unit, color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+        // ۲۰ مهر: واحد کنارِ عدد (کوچک‌تر)، نه خطِ دوم.
+        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 6.dp)) {
+            AutoShrinkText(value, color = AppText, maxFontSize = 14.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f, fill = false))
+            Text(unit, color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.padding(start = 3.dp, bottom = 2.dp))
+        }
         Text(
             footer,
             color = footerTint,
@@ -449,7 +447,7 @@ internal fun CategoryDonutCard(
                     )
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            maskIfPrivate(masked, entry.value.rialToFaCompact()),
+                            maskIfPrivate(masked, entry.value.rialToFaCompactUnit()),
                             color = AppText,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.ExtraBold,
@@ -607,7 +605,7 @@ internal fun MonthCompareCard(all: List<ir.sadteam.loancalc.data.db.AccountTrans
                     Text(cat, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            maskIfPrivate(masked, kotlin.math.abs(diff).rialToFaCompact()) +
+                            maskIfPrivate(masked, kotlin.math.abs(diff).rialToFaCompactUnit()) +
                                 (if (up) "  ↑ بیشتر" else if (diff < 0) "  ↓ کمتر" else ""),
                             color = ink,
                             fontSize = 12.sp,

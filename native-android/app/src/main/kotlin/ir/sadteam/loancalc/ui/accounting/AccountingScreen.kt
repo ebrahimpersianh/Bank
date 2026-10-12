@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.animation.AnimatedContent
@@ -336,7 +337,7 @@ private fun MainSection(
                         }
                     }
                     Row(modifier = Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                        HeroSmallPill("درآمد ${if (privacyMode) "•••" else toFa(fmt(income / ir.sadteam.loancalc.ui.jibak.unitDiv))}")
+                        HeroSmallPill("درآمد ${if (privacyMode) "•••" else toFa(fmt(income / ir.sadteam.loancalc.ui.jibak.unitDiv))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}")
                         HeroSmallPill("${toFa(allTransactions.count { it.year == today.y && it.month == today.m })} تراکنش این ماه")
                     }
                 }
@@ -538,13 +539,14 @@ private fun AccountingTransactionRow(
             // ⚠️ مبلغ قبلاً **ریال** و بی‌واحد بود و در دو خط می‌شکست.
             PrivacyCrossfade(privacyMode) { masked ->
                 Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp)) {
+                    // ۲۰ مهر (خواسته‌ی کاربر): واحد کنارِ عدد، نه خطِ دوم؛ جا نشد متن کوچک می‌شود، کادر بزرگ نه.
                     AutoShrinkText(
-                        ir.sadteam.loancalc.ui.jibak.isoSigned(isIncome, maskIfPrivate(masked, fmt(tx.amount / ir.sadteam.loancalc.ui.jibak.unitDiv))),
+                        ir.sadteam.loancalc.ui.jibak.isoSigned(isIncome, maskIfPrivate(masked, fmt(tx.amount / ir.sadteam.loancalc.ui.jibak.unitDiv))) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                         color = if (isIncome) AppPrimary else AppDanger,
                         maxFontSize = 14.sp,
                         fontWeight = FontWeight.Black,
+                        modifier = Modifier.widthIn(max = 150.dp),
                     )
-                    Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 10.sp)
                 }
             }
         }

@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.asset
 
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -76,7 +77,7 @@ internal fun WealthHistoryCard(snapshots: List<WealthSnapshotEntity>, privacyMod
             Spacer(Modifier.weight(1f))
             if (!privacyMode) {
                 Text(
-                    (if (up) "▲ " else "▼ ") + kotlin.math.abs(change).rialToFaCompact() + (pct?.let { " (${toFa(kotlin.math.abs(it))}٪)" } ?: ""),
+                    (if (up) "▲ " else "▼ ") + kotlin.math.abs(change).rialToFaCompactUnit() + (pct?.let { " (${toFa(kotlin.math.abs(it))}٪)" } ?: ""),
                     color = if (up) AppPrimary else AppDangerInk, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold,
                 )
             }

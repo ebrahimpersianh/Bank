@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import ir.sadteam.loancalc.data.netDangShares
 import androidx.compose.material.icons.filled.ReceiptLong
 import ir.sadteam.loancalc.ui.extras.isDueSoon
@@ -299,7 +300,7 @@ fun BudgetTabScreen(
                     ) {
                         Icon(Icons.Filled.Warning, contentDescription = null, tint = ir.sadteam.loancalc.ui.theme.AppWarningInk, modifier = Modifier.size(16.dp))
                         Text(
-                            "بودجه‌ات (${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(warnCtx, totalCap.rialToFaCompact())}) از درآمدِ ثبت‌شده‌ی این ماهت (${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(warnCtx, monthIncome.rialToFaCompact())}) بیشتر است؛ مطمئن شو بودجه را درست گذاشته‌ای.",
+                            "بودجه‌ات (${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(warnCtx, totalCap.rialToFaCompactUnit())}) از درآمدِ ثبت‌شده‌ی این ماهت (${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(warnCtx, monthIncome.rialToFaCompact())}) بیشتر است؛ مطمئن شو بودجه را درست گذاشته‌ای.",
                             color = ir.sadteam.loancalc.ui.theme.AppWarningInk,
                             fontSize = 10.5.sp,
                             lineHeight = 17.sp,

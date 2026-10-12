@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.asset
 
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import androidx.compose.foundation.layout.height
 import ir.sadteam.loancalc.ui.components.AppCard
@@ -209,7 +210,7 @@ private fun HeroPill(
     ) {
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                "$label ${maskIfPrivate(masked, value.rialToFaCompact())}",
+                "$label ${maskIfPrivate(masked, value.rialToFaCompactUnit())}",
                 color = Color.White,
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Black,
@@ -229,9 +230,9 @@ private fun NetWorthCard(total: Double, liabilities: Double, loans: Double, owe:
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         buildString {
-                            if (loans > 0) append("اقساطِ مانده ").append(maskIfPrivate(masked, loans.rialToFaCompact()))
+                            if (loans > 0) append("اقساطِ مانده ").append(maskIfPrivate(masked, loans.rialToFaCompactUnit()))
                             if (loans > 0 && owe > 0) append(" · ")
-                            if (owe > 0) append("بدهی ").append(maskIfPrivate(masked, owe.rialToFaCompact()))
+                            if (owe > 0) append("بدهی ").append(maskIfPrivate(masked, owe.rialToFaCompactUnit()))
                         },
                         color = AppMuted,
                         fontSize = 10.sp,

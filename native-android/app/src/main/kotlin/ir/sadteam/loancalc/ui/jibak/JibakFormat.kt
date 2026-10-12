@@ -187,6 +187,9 @@ private fun faScaled(v: Long, unit: Double, word: String): String {
  */
 fun Double.rialToFaCompact(): String = rialToToman(toLong()).toFaCompact()
 
+/** همان، **با واحد** کنارش («۳۲٫۶ میلیون تومان») - ۲۰ مهر، خواسته‌ی کاربر: هر مبلغی واحدش کنارش باشد. */
+fun Double.rialToFaCompactUnit(): String = "${rialToFaCompact()} ${unitFa()}"
+
 /** همان، با علامت — برای سود و زیان. */
 fun Double.rialToFaSignedCompact(): String {
     val t = rialToToman(toLong())

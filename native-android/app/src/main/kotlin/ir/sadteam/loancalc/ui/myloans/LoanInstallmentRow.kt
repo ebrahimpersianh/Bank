@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -290,13 +291,13 @@ internal fun InstallmentRow(
         Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 6.dp)) {
             PrivacyCrossfade(privacyMode) { masked ->
                 AutoShrinkText(
-                    maskIfPrivate(masked, amountToman(installment)),
+                    maskIfPrivate(masked, amountToman(installment)) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                     color = if (overdue) AppDangerInk else AppText,
                     maxFontSize = 14.sp,
                     fontWeight = FontWeight.Black,
+                    modifier = Modifier.widthIn(max = 140.dp),
                 )
             }
-            Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

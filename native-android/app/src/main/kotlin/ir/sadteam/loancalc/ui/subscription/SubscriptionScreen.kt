@@ -636,17 +636,17 @@ private fun PlanCard(
                 }
             }
             Text(
-                if (rial != null) groupedFa(rial / 10) else (priceText ?: "…"),
+                // ۲۰ مهر: «تومان» کنارِ قیمت، نه خطِ زیرش.
+                if (rial != null) "${groupedFa(rial / 10)} تومان" else (priceText ?: "…"),
                 color = AppText,
-                fontSize = 13.sp,
+                fontSize = 12.5.sp,
                 fontWeight = FontWeight.Black,
                 maxLines = 1,
                 modifier = Modifier.padding(top = 6.dp),
             )
             if (rial != null) {
-                Text("تومان", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "ماهی ${groupedFa(rial / 10 / months)}",
+                    "ماهی ${groupedFa(rial / 10 / months)} تومان",
                     color = AppMuted,
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,

@@ -383,8 +383,7 @@ fun GlobalSearchScreen(
                             }
                             hit.amountRial?.let { rial ->
                                 Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp)) {
-                                    Text(maskIfPrivate(privacy, toFa(fmt(ir.sadteam.loancalc.ui.jibak.rialToToman(rial.toLong()).toDouble()))), color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
-                                    Text(ir.sadteam.loancalc.ui.jibak.unitFa(), color = AppMuted, fontSize = 10.sp)
+                                    Text(maskIfPrivate(privacy, toFa(fmt(ir.sadteam.loancalc.ui.jibak.rialToToman(rial.toLong()).toDouble()))) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(), maxLines = 1, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
                                 }
                             }
                         }

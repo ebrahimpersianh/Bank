@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
@@ -186,7 +187,7 @@ internal fun StarterSuggestions(
                 }
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        maskIfPrivate(masked, (starter.cap).rialToFaCompact()),
+                        maskIfPrivate(masked, (starter.cap).rialToFaCompactUnit()),
                         color = BudgetGreenDeep,
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Black,
@@ -304,7 +305,7 @@ internal fun DailyAllowanceHero(
                     modifier = Modifier.size(13.dp),
                 )
                 Text(
-                    "${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, saved.rialToFaCompact())} کمتر از سهمِ روزانه خرج کردی",
+                    "${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, saved.rialToFaCompactUnit())} کمتر از سهمِ روزانه خرج کردی",
                     color = Color.White,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
@@ -343,7 +344,7 @@ private fun HeroMiniStat(up: Boolean, label: String, value: Double, privacyMode:
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 1.dp)) {
             PrivacyCrossfade(privacyMode) { masked ->
                 AutoShrinkText(
-                    ir.sadteam.loancalc.ui.jibak.isoSigned(up, maskIfPrivate(masked, value.rialToFaCompact())),
+                    ir.sadteam.loancalc.ui.jibak.isoSigned(up, maskIfPrivate(masked, value.rialToFaCompact())) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                     color = ink,
                     maxFontSize = 11.5.sp,
                     fontWeight = FontWeight.Black,
@@ -422,13 +423,13 @@ internal fun MonthTotalCard(
         Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
             Column(modifier = Modifier.weight(1f)) {
                 PrivacyCrossfade(privacyMode) { masked ->
-                    Text(maskIfPrivate(masked, cap.rialToFaCompact()), color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                    Text(maskIfPrivate(masked, cap.rialToFaCompactUnit()), color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
                 }
                 Text("بودجه‌ی ماهانه", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
             Column(horizontalAlignment = Alignment.End) {
                 PrivacyCrossfade(privacyMode) { masked ->
-                    Text(maskIfPrivate(masked, spent.rialToFaCompact()), color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                    Text(maskIfPrivate(masked, spent.rialToFaCompactUnit()), color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
                 }
                 Text("خرج شده", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }

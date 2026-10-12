@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -310,7 +311,7 @@ internal fun LoansHeroCard(
                     )
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            maskIfPrivate(masked, animatedDebt.rialToFaCompact()),
+                            maskIfPrivate(masked, animatedDebt.rialToFaCompactUnit()),
                             color = Color.White,
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Black,
@@ -346,7 +347,7 @@ internal fun LoansHeroCard(
                         )
                         PrivacyCrossfade(privacyMode) { masked ->
                             Text(
-                                maskIfPrivate(masked, totalOverdue.rialToFaCompact()),
+                                maskIfPrivate(masked, totalOverdue.rialToFaCompactUnit()),
                                 color = Color.White,
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Black,

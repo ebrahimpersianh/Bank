@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.asset
 
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.Canvas
@@ -334,7 +335,7 @@ private fun AssetSummaryCard(
                 }
                 Text(
                     if (quantity > 0 && netCost > 0) {
-                        "میانگینِ خرید ${(netCost / quantity).rialToFaCompact()} هر واحد"
+                        "میانگینِ خرید ${(netCost / quantity).rialToFaCompactUnit()} هر واحد"
                     } else {
                         assetCategoryLabel(asset.category)
                     },
@@ -392,7 +393,7 @@ private fun AssetSummaryCard(
                 }
                 asset.unitPriceRial?.let { unit ->
                     Text(
-                        "قیمتِ هر واحد ${unit.rialToFaCompact()}",
+                        "قیمتِ هر واحد ${unit.rialToFaCompactUnit()}",
                         color = p.subInk,
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold,
@@ -415,7 +416,7 @@ private fun AssetSummaryCard(
                     AutoShrinkText(
                         // ⚠️ «+» و «۰» در دو خط می‌شکستند؛ سودِ صفر هم بی‌علامت.
                         // بازبینیِ ۹ مهر: سود به ریال است - بی تبدیل، ده برابر نشان داده می‌شد.
-                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, if (rialToToman(profit.toLong()) == 0L) "بدونِ تغییر" else profit.rialToFaSignedCompact()),
+                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, if (rialToToman(profit.toLong()) == 0L) "بدونِ تغییر" else profit.rialToFaSignedCompact() + " " + ir.sadteam.loancalc.ui.jibak.unitFa()),
                         color = if (profit >= 0) AppPrimaryInk else AppDangerInk,
                         maxFontSize = 15.sp,
                         fontWeight = FontWeight.Black,
@@ -576,7 +577,7 @@ private fun TradeRow(trade: AssetTradeEntity, assetName: String) {
         }
         // ردیفِ فهرست بی‌واحده - قاعده‌ی عددِ TOKENS.md.
         Text(
-            ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, trade.totalRial.rialToFaCompact()),
+            ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, trade.totalRial.rialToFaCompactUnit()),
             color = AppText,
             fontSize = 12.sp,
             fontWeight = FontWeight.Black,

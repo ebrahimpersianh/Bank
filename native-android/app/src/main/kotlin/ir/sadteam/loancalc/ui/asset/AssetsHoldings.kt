@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.asset
 
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import androidx.compose.foundation.layout.height
 import ir.sadteam.loancalc.ui.components.AppCard
@@ -243,7 +244,7 @@ private fun GroupHeader(title: String, total: Double?, profit: Double?, privacyM
         Text(title, color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                maskIfPrivate(masked, total?.rialToFaCompact() ?: "—"),
+                maskIfPrivate(masked, total?.rialToFaCompactUnit() ?: "—"),
                 color = if (total == null) AppMuted else AppText,
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Black,
@@ -252,7 +253,7 @@ private fun GroupHeader(title: String, total: Double?, profit: Double?, privacyM
         }
         if (profit != null) {
             Text(
-                profit.rialToFaSignedCompact(),
+                profit.rialToFaSignedCompact() + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                 color = if (profit < 0) AppDangerInk else AppPrimaryInk,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Black,
@@ -339,7 +340,7 @@ private fun HoldingRow(
         Column(horizontalAlignment = Alignment.Start) {
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    maskIfPrivate(masked, holding.value?.rialToFaCompact() ?: "—"),
+                    maskIfPrivate(masked, holding.value?.rialToFaCompactUnit() ?: "—"),
                     color = p.ink,
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Black,
@@ -347,7 +348,7 @@ private fun HoldingRow(
             }
             holding.profit?.let { profit ->
                 Text(
-                    profit.rialToFaSignedCompact(),
+                    profit.rialToFaSignedCompact() + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                     color = if (profit >= 0) AppPrimaryInk else AppDangerInk,
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Black,
@@ -434,13 +435,13 @@ internal fun MyAssetsSection(
                     Column(horizontalAlignment = Alignment.End) {
                         PrivacyCrossfade(privacyMode) { masked ->
                             Text(
-                                maskIfPrivate(masked, h.value?.rialToFaCompact() ?: "—"),
+                                maskIfPrivate(masked, h.value?.rialToFaCompactUnit() ?: "—"),
                                 color = AppText,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Black,
+                                maxLines = 1,
                             )
                         }
-                        Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                         change?.let { PriceChangeBadge(it, modifier = Modifier.padding(top = 2.dp)) }
                     }
                     Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.padding(start = 4.dp).size(18.dp))

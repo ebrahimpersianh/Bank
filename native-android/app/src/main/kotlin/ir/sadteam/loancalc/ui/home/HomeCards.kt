@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.home
 
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -123,7 +124,7 @@ internal fun UrgentDueCard(
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         (if (daysOverdue == 0) "امروز سررسید" else "${(daysOverdue).toFa()} روز عقب") +
-                            " — " + maskIfPrivate(masked, amount.rialToFaCompact()),
+                            " — " + maskIfPrivate(masked, amount.rialToFaCompactUnit()),
                         color = AppDangerInk,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -192,7 +193,7 @@ internal fun ShortfallForecastCard(
                 if (overspent) PrivacyCrossfade(privacyMode) { masked ->
                     Column {
                         Text(
-                            "${maskIfPrivate(masked, (-balance).rialToFaCompact())} بیشتر از بودجه خرج کرده‌ای.",
+                            "${maskIfPrivate(masked, (-balance).rialToFaCompactUnit())} بیشتر از بودجه خرج کرده‌ای.",
                             color = AppWarningInk,
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
@@ -209,15 +210,15 @@ internal fun ShortfallForecastCard(
                 } else PrivacyCrossfade(privacyMode) { masked ->
                     Column {
                         Text(
-                            "روزی ${maskIfPrivate(masked, perDaySpend.rialToFaCompact())} خرج کرده‌ای و " +
-                                "${maskIfPrivate(masked, balance.rialToFaCompact())} مانده برای ${daysLeft.toFa()} روز.",
+                            "روزی ${maskIfPrivate(masked, perDaySpend.rialToFaCompactUnit())} خرج کرده‌ای و " +
+                                "${maskIfPrivate(masked, balance.rialToFaCompactUnit())} مانده برای ${daysLeft.toFa()} روز.",
                             color = AppWarningInk,
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 2.dp),
                         )
                         Text(
-                            "روزی ${maskIfPrivate(masked, safePerDay.rialToFaCompact())} تا آخرِ ماه می‌رسانَد.",
+                            "روزی ${maskIfPrivate(masked, safePerDay.rialToFaCompactUnit())} تا آخرِ ماه می‌رسانَد.",
                             color = AppText,
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.ExtraBold,
@@ -330,7 +331,7 @@ internal fun CategoryBreakdownCard(
                 )
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        maskIfPrivate(masked, entry.value.rialToFaCompact()),
+                        maskIfPrivate(masked, entry.value.rialToFaCompactUnit()),
                         color = AppText,
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.ExtraBold,
@@ -534,7 +535,7 @@ internal fun RecentTransactionsCard(
                 }
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        ir.sadteam.loancalc.ui.jibak.isoSigned(income, maskIfPrivate(masked, tx.amount.rialToFaCompact())),
+                        ir.sadteam.loancalc.ui.jibak.isoSigned(income, maskIfPrivate(masked, tx.amount.rialToFaCompact())) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                         color = if (income) AppPrimaryInk else AppDangerInk,
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Black,
@@ -580,8 +581,8 @@ private fun WeekReviewCard(
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                WeekCell("جمعِ هفته", weekTotal.rialToFaCompact(), AppText, privacyMode)
-                WeekCell("هفته‌ی قبل", prevWeekTotal.rialToFaCompact(), AppText, privacyMode)
+                WeekCell("جمعِ هفته", weekTotal.rialToFaCompactUnit(), AppText, privacyMode)
+                WeekCell("هفته‌ی قبل", prevWeekTotal.rialToFaCompactUnit(), AppText, privacyMode)
                 // ⚠️ مثلثِ ▲/▼ رو **با کاراکتر ننویس** - Vazirmatn رندرش نمی‌کنه و مربعِ
                 // خالی می‌شه (تذکرِ صریحِ طراح). آیکونِ ۹ پیکسلی جاشه.
                 WeekCell(

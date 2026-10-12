@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
@@ -125,46 +126,38 @@ internal fun BankLoanHeroSection(
             val heroInstallment = heroResult?.installment ?: 0.0
             run {
                 StaggerIn(0) {
+                    // ۲۰ مهر (خواسته‌ی کاربر: «کادرِ سبز کوچک‌تر»): یک ردیف - قسط سمتِ راست، بازپرداخت و
+                    // سود ریز سمتِ چپ، بی خانه‌های جدا (حدودِ نصفِ ارتفاعِ قبل).
                     AppHeroCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            Text(
-                                "قسطِ ماهانه",
-                                color = HeroMuted,
-                                fontSize = 9.5.sp,
-                                fontWeight = FontWeight.Black,
-                            )
-                            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 3.dp)) {
-                                PrivacyCrossfade(privacyMode) { masked ->
-                                    AutoShrinkText(
-                                        text = maskIfPrivate(masked, amountToman(heroInstallment)),
-                                        color = Color.White,
-                                        maxFontSize = 25.sp,
-                                        fontWeight = FontWeight.Black,
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("قسطِ ماهانه", color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
+                                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
+                                    PrivacyCrossfade(privacyMode) { masked ->
+                                        AutoShrinkText(
+                                            text = maskIfPrivate(masked, amountToman(heroInstallment)),
+                                            color = Color.White,
+                                            maxFontSize = 21.sp,
+                                            fontWeight = FontWeight.Black,
+                                        )
+                                    }
+                                    Text(
+                                        ir.sadteam.loancalc.ui.jibak.unitFa(),
+                                        color = HeroMuted,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
                                     )
                                 }
-                                Text(
-                                    "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
-                                    color = HeroMuted,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(start = 5.dp, bottom = 2.dp),
-                                )
+                                Text("${toFa(heroN)} قسط", color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                             }
-                            Text(
-                                "${toFa(heroN)} قسط",
-                                color = HeroMuted,
-                                fontSize = 9.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 2.dp),
+                            Box(
+                                Modifier.padding(horizontal = 10.dp).width(1.dp).height(48.dp)
+                                    .background(Color.White.copy(alpha = 0.18f)),
                             )
-                            // کارتِ نتیجه‌ی برجسته (فریمِ `35`): کلِ بازپرداخت و سود هر کدام خانه‌ی خودشان را
-                            // دارند، نه یک خطِ ریزِ زیرِ قسط.
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                            ) {
-                                HeroResultCell("کلِ بازپرداخت", heroResult?.totalPaid ?: 0.0, privacyMode, Modifier.weight(1f))
-                                HeroResultCell("سودِ کل", heroResult?.totalInterest ?: 0.0, privacyMode, Modifier.weight(1f))
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                HeroMiniStat("کلِ بازپرداخت", heroResult?.totalPaid ?: 0.0, privacyMode)
+                                HeroMiniStat("سودِ کل", heroResult?.totalInterest ?: 0.0, privacyMode)
                             }
                         }
                     }
@@ -564,4 +557,18 @@ internal fun BankLoanActionsSection(
 
             // «امور چک» از تهِ محاسبه‌گر برداشته شد (۱۰ مهر، خواسته‌ی کاربر) - از خانه/سررسید در دسترس است.
             footer()
+}
+
+/** خانه‌ی ریزِ سمتِ چپِ کادرِ سبز (۲۰ مهر) - برچسب و مبلغ با واحد، کنارِ هم. */
+@Composable
+private fun HeroMiniStat(label: String, rial: Double, privacyMode: Boolean) {
+    Column {
+        Text(label, color = HeroMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                "${maskIfPrivate(masked, amountToman(rial))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
+                color = Color.White, fontSize = 11.5.sp, fontWeight = FontWeight.Black, maxLines = 1,
+            )
+        }
+    }
 }

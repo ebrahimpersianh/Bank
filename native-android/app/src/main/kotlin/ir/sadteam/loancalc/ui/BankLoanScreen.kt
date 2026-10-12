@@ -256,7 +256,7 @@ fun BankLoanScreen(
         modifier = Modifier
             .fillMaxWidth()
             .lazyColumnScrollbar(listState, scrollbarColor),
-        contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
+        contentPadding = PaddingValues(12.dp, 10.dp, 12.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         // «افزودنِ وامِ دستی» از این‌جا به آیکونِ سربرگِ «افزودنِ وام» رفت (۲۰ مهر، خواسته‌ی کاربر).
@@ -304,6 +304,16 @@ fun BankLoanScreen(
                                     customMonthsText = ""
                                     graceOn = p.graceMonths > 0
                                     if (p.graceMonths > 0) graceMonths = p.graceMonths.toFloat()
+                                    // ۲۰ مهر (خواسته‌ی کاربر): وامِ پرتکرار یعنی وامِ بانکی - پایین هم خودش
+                                    // «وامِ بانکی» و نوعِ همان وام انتخاب شود (نرخ همان نرخِ پیش‌تنظیم می‌ماند).
+                                    rateSource = RateSource.BANK_LOAN
+                                    selectedLoanType = when (p.key) {
+                                        "marriage" -> "ازدواج"
+                                        "housing" -> "مسکن"
+                                        "qarz" -> "قرض‌الحسنه"
+                                        else -> "سایر"
+                                    }
+                                    if (creditServices.any { it.name == selectedBankName }) selectedBankName = null
                                 },
                             )
                         }
@@ -314,15 +324,40 @@ fun BankLoanScreen(
 
         item {
             StaggerIn(1) {
-                // برچسبِ جدا برداشته شد (۲۰ مهر) - راهنمای داخلِ فیلد همان را می‌گوید.
+                // ۲۰ مهر (خواسته‌ی کاربر: «صفحه کشیده است»): نام و تاریخ یک کارت شدند و کادرِ نام کوتاه.
+                val dateLabel = if (graceOn && graceMonths.toInt() > 0) {
+                    "تاریخ دریافت وام (قسطِ اول ${toFa(graceMonths.toInt())} ماه بعد، به‌خاطرِ دوره‌ی تنفس)"
+                } else {
+                    "تاریخ دریافت وام (سررسیدِ قسطِ اول)"
+                }
                 AppCard {
-                    OutlinedTextField(
+                    ir.sadteam.loancalc.ui.components.CompactField(
                         value = borrowerName,
                         onValueChange = { borrowerName = it },
-                        placeholder = { Text("نام وام‌گیرنده (اختیاری)") },
+                        placeholder = "نام وام‌گیرنده (اختیاری)",
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                    )
+                    Text(
+                        dateLabel, color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 10.dp, bottom = 2.dp),
+                    )
+                    // تاریخ اینلاینِ چرخونه‌ای (خواسته‌ی کاربر، چندبار تکرار شد) + آیکونِ تقویمِ کامل.
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        InlineJalaliDateRow(
+                            year = startYear,
+                            month = startMonth,
+                            day = startDay,
+                            onDateChange = { y, m, d -> startYear = y; startMonth = m; startDay = d },
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = { showCalendarPicker = true }) {
+                            Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
+                        }
+                    }
                 }
             }
         }
@@ -345,43 +380,9 @@ fun BankLoanScreen(
         }
 
         item {
-            StaggerIn(4) {
-                // برچسب + توضیحِ دینامیک قبلاً دو تیکه‌ی جدا بودن (لیبلِ کارت + یه خطِ راهنمای زیرش) -
-                // خواسته‌ی صریحِ کاربر (مورد ۳) یکی‌شدنشون تو یه جمله‌ی تمیزه، پس الان خودِ لیبلِ
-                // کارت این توضیح رو داره، بدونِ نیازِ خط/متنِ جدا زیرِ تاریخ.
-                val dateLabel = if (graceOn && graceMonths.toInt() > 0) {
-                    "تاریخ دریافت وام (قسطِ اول ${toFa(graceMonths.toInt())} ماه بعد، به‌خاطرِ دوره‌ی تنفس)"
-                } else {
-                    "تاریخ دریافت وام (سررسیدِ قسطِ اول)"
-                }
-                AppCard(label = dateLabel) {
-                    // تاریخ اینلاینِ چرخونه‌ای (روی روز/ماه/سال اسکرول می‌کنی) - همینجا عوض می‌شه بدون
-                    // رفتن به یه صفحه‌ی جدا (خواسته‌ی کاربر، چندبار تکرار شد). آیکون تقویم کنارش، برای
-                    // کسی که تقویم گریدیِ کامل رو بخواد.
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        InlineJalaliDateRow(
-                            year = startYear,
-                            month = startMonth,
-                            day = startDay,
-                            onDateChange = { y, m, d -> startYear = y; startMonth = m; startDay = d },
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconButton(onClick = { showCalendarPicker = true }) {
-                            Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
-                        }
-                    }
-                }
-            }
-        }
-
-        item {
             StaggerIn(5) {
                 AppCard(label = "مبلغ وام") {
-                    OutlinedTextField(
+                    ir.sadteam.loancalc.ui.components.CompactField(
                         value = amountText,
                         onValueChange = { raw ->
                             // فقط رقم تو state می‌مونه؛ فرمتِ هزارگان نمایشیه (ThousandsSeparatorTransformation) -
@@ -397,9 +398,9 @@ fun BankLoanScreen(
                         visualTransformation = ThousandsSeparatorTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        colors = appFieldColors(),
-                        suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                        placeholder = "مبلغ",
+                        suffix = ir.sadteam.loancalc.ui.jibak.unitFa(),
+                    )
                     // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد - تقسیمِ
                     // دستیِ «/ ۱۰» رفت؛ تنها مرجعِ تبدیل tomanToRial/rialToToman ئه.
                     val tomanVal = cleanNum(amountText).toLongOrNull() ?: 0L
@@ -431,32 +432,50 @@ fun BankLoanScreen(
 
         item {
             StaggerIn(6) {
-                // تو حالتِ سرویسِ اعتباری نرخ **خواندنی**ه (از سرور میاد)؛ تو وامِ بانکی دستیه و
-                // قرص‌های نوعِ وام فقط پرش می‌کنن - «تصمیمِ ۱٫۵».
+                // ۲۰ مهر (خواسته‌ی کاربر: «صفحه کشیده است»): نرخ و تعدادِ اقساط کنارِ هم در یک کارت.
+                // تو حالتِ سرویسِ اعتباری نرخ **خواندنی**ه (از سرور میاد)؛ تو وامِ بانکی دستیه - «تصمیمِ ۱٫۵».
                 val rateReadOnly = rateSource == RateSource.CREDIT_SERVICE
-                AppCard(
-                    label = if (rateReadOnly) "نرخ سود سالانه (از سرور)" else "نرخ سود سالانه (قابلِ تغییر)",
-                ) {
-                    OutlinedTextField(
-                        value = rateText,
-                        readOnly = rateReadOnly,
-                        onValueChange = { raw ->
-                            val filtered = cleanNumDecimal(raw)
-                            rateText = filtered
-                            // اسلایدر فقط تا ۵۰ می‌ره، ولی خودِ فیلد بالاتر از ۵۰ رو هم دستی قبول
-                            // می‌کنه (خواسته‌ی صریحِ کاربر) - رجوع کن به مورد ۱ تو CLAUDE.md.
-                            val num = filtered.toDoubleOrNull()
-                            if (num != null && num in 0.0..50.0) rateSlider = num.toFloat()
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        colors = appFieldColors(),
-                        suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                    // فریمِ `69b` بندِ ۱: اسلایدر در حالتِ خواندنی **نمی‌آید**، نه این‌که
-                    // بی‌اثر باشد. قبلاً رندر می‌شد و `onValueChange` با `if (!rateReadOnly)`
-                    // بی‌صدا دورش می‌انداخت - کاربر دستگیره را می‌کشید و هیچ اتفاقی نمی‌افتاد.
-                    // کنترلِ بی‌اثر از نبودنِ کنترل بدتر است.
+                AppCard {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                if (rateReadOnly) "نرخ سود (از سرور)" else "نرخ سود سالانه",
+                                color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                                modifier = Modifier.padding(bottom = 5.dp),
+                            )
+                            ir.sadteam.loancalc.ui.components.CompactField(
+                                value = rateText,
+                                readOnly = rateReadOnly,
+                                onValueChange = { raw ->
+                                    val filtered = cleanNumDecimal(raw)
+                                    rateText = filtered
+                                    // اسلایدر فقط تا ۵۰ می‌ره، ولی خودِ فیلد بالاتر از ۵۰ رو هم دستی قبول
+                                    // می‌کنه (خواسته‌ی صریحِ کاربر) - رجوع کن به مورد ۱ تو CLAUDE.md.
+                                    val num = filtered.toDoubleOrNull()
+                                    if (num != null && num in 0.0..50.0) rateSlider = num.toFloat()
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.fillMaxWidth(),
+                                suffix = "درصد",
+                            )
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                "تعداد اقساط (ماه)",
+                                color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                                modifier = Modifier.padding(bottom = 5.dp),
+                            )
+                            ir.sadteam.loancalc.ui.components.CompactField(
+                                value = customMonthsText,
+                                onValueChange = { formError = null; customMonthsText = cleanNum(it).take(3) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = "دلخواه",
+                                suffix = "ماه",
+                            )
+                        }
+                    }
+                    // فریمِ `69b` بندِ ۱: اسلایدر در حالتِ خواندنی **نمی‌آید** - کنترلِ بی‌اثر از نبودنش بدتر است.
                     if (!rateReadOnly) {
                         SlimSlider(
                             value = rateSlider,
@@ -469,35 +488,19 @@ fun BankLoanScreen(
                             steps = 99,
                         )
                     }
-                }
-            }
-        }
-
-        item {
-            AppCard(label = "تعداد اقساط (ماه)") {
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    monthChipValues.forEach { v ->
-                        AppChip(
-                            label = toFa(v),
-                            selected = customMonthsText.isEmpty() && selectedMonths == v,
-                            onClick = { selectedMonths = v; customMonthsText = "" },
-                        )
+                    Row(
+                        modifier = Modifier.padding(top = 8.dp).horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                    ) {
+                        monthChipValues.forEach { v ->
+                            AppChip(
+                                label = toFa(v),
+                                selected = customMonthsText.isEmpty() && selectedMonths == v,
+                                onClick = { selectedMonths = v; customMonthsText = "" },
+                            )
+                        }
                     }
                 }
-                OutlinedTextField(
-                    value = customMonthsText,
-                    onValueChange = { formError = null; customMonthsText = cleanNum(it).take(3) },
-                    placeholder = { Text("تعداد دلخواه") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                    suffix = { Text("ماه", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
         }
 

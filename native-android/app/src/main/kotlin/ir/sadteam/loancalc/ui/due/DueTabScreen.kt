@@ -231,16 +231,18 @@ private fun DueHero(
 ) {
     AppHeroCard(tone = if (overdueCount > 0) HeroTone.RED else HeroTone.GREEN) {
         Text("تا آخرِ ماه باید بدهی", color = HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        PrivacyCrossfade(privacyMode) { masked ->
-            Text(
-                maskIfPrivate(masked, amountToman(total)),
-                color = Color.White,
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(top = 8.dp),
-            )
+        // ۲۰ مهر: واحد کنارِ عدد، نه خطِ زیرش.
+        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 8.dp)) {
+            PrivacyCrossfade(privacyMode) { masked ->
+                Text(
+                    maskIfPrivate(masked, amountToman(total)),
+                    color = Color.White,
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Black,
+                )
+            }
+            Text(ir.sadteam.loancalc.ui.jibak.unitFa(), color = HeroMuted, fontSize = 11.sp, modifier = Modifier.padding(start = 5.dp, bottom = 6.dp))
         }
-        Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = HeroMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 1.dp))
         Row(
             modifier = Modifier.padding(top = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

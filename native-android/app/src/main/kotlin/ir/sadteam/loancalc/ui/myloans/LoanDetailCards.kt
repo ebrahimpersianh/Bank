@@ -430,16 +430,14 @@ private fun KeyStat(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 6.dp),
         )
+        // ۲۰ مهر (خواسته‌ی کاربر): واحد کنارِ عدد در همان خط؛ جا نشد متن کوچک می‌شود.
         AutoShrinkText(
-            value,
+            if (unit.isNotBlank()) "$value $unit" else value,
             color = AppText,
             maxFontSize = 14.sp,
             fontWeight = FontWeight.Black,
             modifier = Modifier.padding(top = 2.dp),
         )
-        if (unit.isNotBlank()) {
-            Text(unit, color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-        }
         extra()
     }
 }
@@ -483,15 +481,12 @@ private fun LoanIdentityStat(label: String, value: String, unit: String, modifie
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, color = HeroMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
         AutoShrinkText(
-            value,
+            if (unit.isNotBlank()) "$value $unit" else value,
             color = Color.White,
             maxFontSize = 12.5.sp,
             fontWeight = FontWeight.Black,
             modifier = Modifier.padding(top = 2.dp),
         )
-        if (unit.isNotBlank()) {
-            Text(unit, color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-        }
     }
 }
 /**

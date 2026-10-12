@@ -574,13 +574,12 @@ private fun SummaryTile(label: String, rial: Double, ink: androidx.compose.ui.gr
         Text(label, color = ink, fontSize = 11.sp)
         val toman = rialToToman(rial.toLong())
         AutoShrinkText(
-            maskIfPrivate(privacyMode, (if (signed) toman.toFaSignedMoney() else toman.toFaMoney())),
+            maskIfPrivate(privacyMode, (if (signed) toman.toFaSignedMoney() else toman.toFaMoney())) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
             color = ink,
             maxFontSize = 13.sp,
             fontWeight = FontWeight.Black,
             modifier = Modifier.padding(top = 3.dp),
         )
-        Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 9.5.sp)
     }
 }
 

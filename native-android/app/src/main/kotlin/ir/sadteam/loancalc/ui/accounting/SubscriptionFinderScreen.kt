@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -160,7 +161,7 @@ fun SubscriptionFinderScreen(
                                         // ستونِ چپ **مبلغِ ماهانه** است نه جمعِ پرداختی -
                                         // عددی که کاربر برای تصمیمِ «قطع کنم یا نه» لازم دارد.
                                         // واحد در ردیف نمی‌آید (قاعده‌ی عدد) - یک‌بار در هیرو آمد.
-                                        maskIfPrivate(privacyMode, sub.typicalAmountRial.rialToFaCompact()),
+                                        maskIfPrivate(privacyMode, sub.typicalAmountRial.rialToFaCompactUnit()),
                                         color = AppText,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Black,

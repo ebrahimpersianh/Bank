@@ -605,13 +605,13 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                                     )
                                     PrivacyCrossfade(privacyMode) { masked ->
                                         Text(
-                                            maskIfPrivate(masked, fmt(breakdownTotal / ir.sadteam.loancalc.ui.jibak.unitDiv)),
+                                            maskIfPrivate(masked, fmt(breakdownTotal / ir.sadteam.loancalc.ui.jibak.unitDiv)) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                                             color = AppText,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
                                         )
                                     }
-                                    Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 9.sp)
                                 }
                             }
                         }

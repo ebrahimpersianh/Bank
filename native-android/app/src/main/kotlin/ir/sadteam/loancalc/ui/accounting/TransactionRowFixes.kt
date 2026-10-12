@@ -45,15 +45,15 @@ fun AmountWithUnit(
     unit: String = "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
     modifier: Modifier = Modifier,
 ) {
+    // ۲۰ مهر (خواسته‌ی کاربر): واحد کنارِ عدد، نه خطِ دوم.
     Column(modifier = modifier, horizontalAlignment = Alignment.End) {
         Text(
-            formattedAmount,
+            "$formattedAmount $unit",
             color = if (isExpense) AppDangerInk else AppMuted,
             fontSize = 12.5.sp,
             fontWeight = FontWeight.Black,
+            maxLines = 1,
         )
-        Text(unit, color = AppMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 2.dp))
     }
 }
 
