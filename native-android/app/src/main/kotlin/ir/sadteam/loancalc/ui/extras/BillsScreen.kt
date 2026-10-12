@@ -196,8 +196,17 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         onValueChange = { amountText = cleanNum(it).take(12) },
                         singleLine = true,
                         placeholder = { Text("مبلغ (${ir.sadteam.loancalc.ui.jibak.unitFa()})") },
+                        // ۲۰ مهر (خواسته‌ی کاربر): واحد کنارِ عدد و حروفش زیرِ کادر، مثلِ بقیه‌ی فیلدهای مبلغ.
+                        suffix = { Text(ir.sadteam.loancalc.ui.jibak.unitFa(), color = AppMuted, fontSize = 13.sp) },
                         visualTransformation = ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                    val payDisplay = amountText.toLongOrNull() ?: 0L
+                    if (payDisplay > 0) {
+                        Text(
+                            "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(payDisplay.toDouble())} تومان",
+                            color = AppMuted, fontSize = 11.sp,
+                        )
+                    }
                     if (accounts.size > 1) {
                         Text("از کدام حساب؟", color = AppMuted, fontSize = 12.sp)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
