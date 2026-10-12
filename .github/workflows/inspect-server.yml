@@ -18,7 +18,13 @@ jobs:
           envs: OWNER_PHONE
           script: |
             DB=~/VameMan/data.sqlite
-            echo "=== crashes last 14 days by message+version ==="
-            sqlite3 -header $DB "SELECT substr(message,1,90) m, app_version v, COUNT(*) n, MAX(created_at) last FROM crash_reports WHERE created_at >= datetime('now','-14 days') GROUP BY m, v ORDER BY n DESC LIMIT 30;"
-            echo "=== one stack per message ==="
-            sqlite3 $DB "SELECT '#### ' || app_version || ' | ' || substr(message,1,90) || char(10) || substr(stack,1,1500) || char(10) || coalesce(substr(context,1,200),'') FROM crash_reports WHERE id IN (SELECT MAX(id) FROM crash_reports WHERE created_at >= datetime('now','-14 days') GROUP BY substr(message,1,40));"
+            echo "=== crashes last 7 days by message+version (not slow/sync) ==="
+            sqlite3 -header $DB "SELECT substr(message,1,90) m, app_version v, COUNT(*) n, MAX(created_at) last FROM crash_reports WHERE created_at >= datetime('now','-7 days') AND coalesce(context,'') NOT IN ('slow','sync') GROUP BY m, v ORDER BY n DESC LIMIT 30;"
+            echo "=== one stack per message (7 days) ==="
+            sqlite3 $DB "SELECT '#### ' || app_version || ' | ' || created_at || ' | ' || substr(message,1,90) || char(10) || substr(stack,1,1500) || char(10) || coalesce(substr(context,1,200),'') FROM crash_reports WHERE id IN (SELECT MAX(id) FROM crash_reports WHERE created_at >= datetime('now','-7 days') AND coalesce(context,'') NOT IN ('slow','sync') GROUP BY substr(message,1,40));"
+            echo "=== sync errors 7 days ==="
+            sqlite3 -header $DB "SELECT substr(message,1,120) m, app_version v, COUNT(*) n FROM crash_reports WHERE created_at >= datetime('now','-7 days') AND context = 'sync' GROUP BY m, v ORDER BY n DESC LIMIT 15;"
+            echo "=== slow-main reports (all kept) ==="
+            sqlite3 $DB "SELECT '#### ' || coalesce(app_version,'') || ' | ' || created_at || char(10) || substr(coalesce(stack,message),1,2500) FROM crash_reports WHERE context = 'slow' ORDER BY id DESC LIMIT 12;"
+            echo "=== last 5 myket purchases ==="
+            sqlite3 -header $DB "SELECT id, user_id, product_id, store, price_toman, created_at, subscribed_until FROM subscription_purchases WHERE store = 'myket' ORDER BY id DESC LIMIT 5;"
