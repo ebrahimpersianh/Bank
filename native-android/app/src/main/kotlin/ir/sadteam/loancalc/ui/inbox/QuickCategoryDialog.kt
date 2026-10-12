@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.inbox
 
+import kotlinx.coroutines.flow.map
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.draw.clip
@@ -69,6 +72,24 @@ class QuickCategoryViewModel @Inject constructor(
         else categories.orderedCategories(if (t.type == TransactionType.DEPOSIT.name) TransactionType.DEPOSIT else TransactionType.WITHDRAWAL)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** حساب‌های دیگرِ کاربر - برای «جابه‌جایی بینِ حساب‌های خودم». */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val otherAccounts: StateFlow<List<ir.sadteam.loancalc.data.db.AccountEntity>> = _tx.flatMapLatest { t ->
+        if (t == null) flowOf(emptyList())
+        else accounts.observeAccounts().map { list -> list.filter { it.id != t.accountId } }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** ۱۶ مهر (خواسته‌ی کاربر): این تراکنش جابه‌جاییِ پول بینِ دو حسابِ خودم بود - نه خرج، نه درآمد. */
+    fun markTransfer(txId: Long, otherAccountId: Long, done: () -> Unit) {
+        viewModelScope.launch {
+            val t = accounts.transactionById(txId) ?: return@launch
+            if (!t.confirmed) accounts.confirmTransaction(txId)
+            accounts.markOwnTransfer(txId, otherAccountId)
+            ir.sadteam.loancalc.data.UsageStats.action("transfer_marked_manual")
+            done()
+        }
+    }
+
     fun load(txId: Long) {
         viewModelScope.launch { _tx.value = accounts.transactionById(txId) }
     }
@@ -92,6 +113,8 @@ fun QuickCategoryDialog(
     LaunchedEffect(txId) { viewModel.load(txId) }
     val tx by viewModel.tx.collectAsState()
     val options by viewModel.options.collectAsState()
+    val others by viewModel.otherAccounts.collectAsState()
+    var transferOpen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val t = tx
     JibakAlertDialog(
         onDismissRequest = onDismiss,
@@ -107,6 +130,49 @@ fun QuickCategoryDialog(
                     Text(t.description, color = AppMuted, fontSize = 12.sp, maxLines = 1)
                     if (CategoryLearning.counterpartyOf(t) != null) {
                         Text("دفعه‌ی بعد برای همین طرف، خودم همین دسته را می‌زنم.", color = AppMuted, fontSize = 11.sp)
+                    }
+                }
+                // 🔁 جابه‌جایی بینِ حساب‌های خودم - اولین گزینه، چون نه خرج است نه درآمد (۱۶ مهر).
+                if (t != null && others.isNotEmpty() && t.sourceType != ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER) {
+                    val isIn = t.type == TransactionType.DEPOSIT.name
+                    Row(
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                            .background(ir.sadteam.loancalc.ui.theme.AppPrimaryPill)
+                            .clickable { transferOpen = !transferOpen }
+                            .padding(horizontal = 12.dp, vertical = 11.dp),
+                    ) {
+                        androidx.compose.material3.Icon(
+                            androidx.compose.material.icons.Icons.Filled.SwapHoriz, contentDescription = null,
+                            tint = ir.sadteam.loancalc.ui.theme.AppPrimary, modifier = Modifier.size(22.dp),
+                        )
+                        Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                            Text("جابه‌جایی بینِ حساب‌های خودم", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                            Text(if (isIn) "این پول از حسابِ دیگرم آمد" else "این پول به حسابِ دیگرم رفت", color = AppMuted, fontSize = 11.sp)
+                        }
+                    }
+                    if (transferOpen) {
+                        others.forEach { acc ->
+                            Row(
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                                    .background(ir.sadteam.loancalc.ui.theme.AppSurface2)
+                                    .clickable {
+                                        viewModel.markTransfer(txId, acc.id) {
+                                            onPicked?.invoke(if (isIn) "از «${acc.name}»" else "به «${acc.name}»")
+                                            onDismiss()
+                                        }
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                            ) {
+                                Text((if (isIn) "از " else "به ") + "«${acc.name}»", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                Text(acc.bankName, color = AppMuted, fontSize = 11.sp)
+                            }
+                        }
                     }
                 }
                 // ۱۶ مهر: کاشی‌های آیکون‌دار (به‌جای تراشه‌های متنی‌ِ بی‌نظم) - چهار ستون.

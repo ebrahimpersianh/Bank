@@ -352,7 +352,8 @@ class AccountRepository(
                 tx.copy(
                     id = tx.id + 1,
                     accountId = toAccountId,
-                    type = TransactionType.DEPOSIT.name,
+                    // واریز هم می‌تواند سرِ دیگرِ جابه‌جایی باشد (۱۶ مهر: انتخابِ دستی از اعلان) - سمتِ دیگر برعکس.
+                    type = if (tx.type == TransactionType.DEPOSIT.name) TransactionType.WITHDRAWAL.name else TransactionType.DEPOSIT.name,
                     sourceType = SOURCE_TYPE_TRANSFER,
                     sourceId = tx.id.toString(),
                     category = null,
