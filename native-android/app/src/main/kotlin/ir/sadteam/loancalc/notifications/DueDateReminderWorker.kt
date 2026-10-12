@@ -86,6 +86,13 @@ class DueDateReminderWorker @AssistedInject constructor(
         // بیش از [STALE_RUN_HOURS] از ساعتِ مقرر گذشته باشد چیزی فرستاده نمی‌شود و کار به
         // اجرای فردا موکول می‌شود؛ سررسیدها روزهای بعد هم هنوز سررسیدند، پس چیزی گم نمی‌شود.
         val staleRun = isStaleCatchUpRun(uiPrefs.reminderHour.first())
+        // 🌙 قبل از ساعتِ یادآور (مثلاً ۲:۲۸ بامداد) یا بعد از ۱۱ شب هیچ اعلانی - نه سررسید، نه دنگ،
+        // نه خلاصه‌ی هفته (گزارشِ کاربر، ۱۶ مهر). فقط زمان‌بندی دوباره لنگر می‌خورد.
+        val hourGate = QuietHours.nowHour()
+        if (hourGate < uiPrefs.reminderHour.first() || hourGate >= 23) {
+            reminderScheduler.schedule()
+            return Result.success()
+        }
         // 🚨 اجرای دیررسیده لنگر را هم می‌لغزاند: دوره‌ی بعدی ۲۴ ساعت بعد از **همین** اجراست،
         // نه بعد از ساعتِ مقرر. بی این خط، یک دیرکردِ هفت‌ساعته هر روز تکرار می‌شد و یادآورها
         // برای همیشه ساکت می‌ماندند. `ExistingPeriodicWorkPolicy.UPDATE` اجازه‌ی بازچینش را

@@ -30,6 +30,8 @@ class AdminAlertWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         if (!runCatching { auth.isAdmin() }.getOrDefault(false)) return Result.success()
+        // ۱۰ صبح تا ۱۰ شب (خواسته‌ی کاربر)؛ اجرای شبانه چیزی را «دیده‌شده» نمی‌زند، پس صبح می‌آید.
+        if (!QuietHours.adminWindow()) return Result.success()
         val d = auth.adminDigest("day") ?: return Result.success()
         ir.sadteam.loancalc.ui.admin.AdminSignals.unreadSupport.value = ir.sadteam.loancalc.ui.admin.AdminSignals.parseUnread(d.notes)
         val lines = buildList {

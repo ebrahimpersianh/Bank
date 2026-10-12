@@ -86,6 +86,8 @@ class SupportCheckWorker @AssistedInject constructor(
             WorkManager.getInstance(applicationContext).cancelUniqueWork("support_check")
             return Result.success()
         }
+        // شب‌ها چیزی بررسی نمی‌شود تا پیامِ تازه «دیده‌شده» نخورد؛ اولین بررسیِ بعد از ۱۰ صبح خبر می‌دهد.
+        if (!QuietHours.adminWindow()) return Result.success()
         SupportAlerts.check(applicationContext, authRepository)
         return Result.success()
     }

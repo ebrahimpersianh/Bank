@@ -148,7 +148,7 @@ class WeeklySummaryWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         val now = Calendar.getInstance()
-        if (now.get(Calendar.DAY_OF_WEEK) != Calendar.FRIDAY || now.get(Calendar.HOUR_OF_DAY) < 18) return Result.success()
+        if (now.get(Calendar.DAY_OF_WEEK) != Calendar.FRIDAY || now.get(Calendar.HOUR_OF_DAY) < 18 || QuietHours.isQuiet()) return Result.success()
         val today = JalaliCalendar.today()
         val weekKey = "${today.y}-${today.m}-${today.d}"
         val prefs = applicationContext.getSharedPreferences("weekly_summary", Context.MODE_PRIVATE)
