@@ -166,7 +166,7 @@ private fun TodayHero(d: ir.sadteam.loancalc.data.network.AdminDigestResponse?, 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("امروز", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
-                Text("از ۷ صبح تا حالا · مقایسه با دیروز", color = AppMuted, fontSize = 11.5.sp)
+                Text("از ساعتِ ۰۰:۰۰ تا حالا · مقایسه با دیروز", color = AppMuted, fontSize = 11.5.sp)
             }
             Text("گزارشِ امروز", color = AppPrimaryInk, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
             Icon(Icons.Filled.ChevronLeft, null, tint = AppPrimaryInk, modifier = Modifier.size(18.dp))

@@ -392,15 +392,16 @@ private fun seenLocal(u: ir.sadteam.loancalc.data.network.AdminUserRow): Pair<ir
 private fun InfoLine(icon: androidx.compose.ui.graphics.vector.ImageVector, color: androidx.compose.ui.graphics.Color, label: String, value: String) {
     // ۱۶ مهر (طرح): هر ردیف قابِ گرد با آیکونِ رنگیِ مربعی.
     Row(
-        Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(16.dp)).background(AppSurface2.copy(alpha = 0.6f))
-            .border(1.dp, AppLineRow, RoundedCornerShape(16.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
+        // ۲۰ مهر (خواسته‌ی کاربر: «کشیده است»): ردیفِ کوتاه‌تر - آیکونِ ۳۰، فاصله‌ی کمتر.
+        Modifier.fillMaxWidth().padding(top = 6.dp).clip(RoundedCornerShape(14.dp)).background(AppSurface2.copy(alpha = 0.6f))
+            .border(1.dp, AppLineRow, RoundedCornerShape(14.dp)).padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-        Text(value, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 12.dp))
-        Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(color.copy(alpha = 0.85f)), contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(22.dp))
+        Box(Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(color.copy(alpha = 0.85f)), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(17.dp))
         }
+        Text(label, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 10.dp))
+        Text(value, color = AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Black)
     }
 }
 
@@ -408,13 +409,16 @@ private fun InfoLine(icon: androidx.compose.ui.graphics.vector.ImageVector, colo
 private fun UserStatTile(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: androidx.compose.ui.graphics.Color, modifier: Modifier, onClick: (() -> Unit)?) {
     Column(
         modifier.clip(RoundedCornerShape(18.dp)).background(AppSurface2.copy(alpha = 0.6f)).border(1.dp, AppLineRow, RoundedCornerShape(18.dp))
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(12.dp),
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(horizontal = 8.dp, vertical = 7.dp),
     ) {
-        Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(color.copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
+        // ۲۰ مهر: آیکون و عدد در یک ردیف - کاشی نصفِ ارتفاعِ قبل.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(26.dp).clip(RoundedCornerShape(8.dp)).background(color.copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(15.dp))
+            }
+            Text(value, color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 6.dp))
         }
-        Text(label, color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.padding(top = 8.dp))
-        Text(value, color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
+        Text(label, color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.padding(top = 3.dp))
     }
 }
 
@@ -426,7 +430,7 @@ private fun UserResult(r: AdminUserTimeline, phone: String? = null, store: Strin
     AppCard {
         Row(verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                Ltr { Text("Uid:${r.code}", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black) }
+                Ltr { Text("Uid:${r.code.removePrefix("Uid:")}", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black) }
                 // ۱۶ مهر: شماره‌ی موبایل زیرِ Uid - لمس = تماس.
                 if (!phone.isNullOrBlank()) Row(
                     Modifier.padding(top = 4.dp).clip(RoundedCornerShape(999.dp))
@@ -455,7 +459,7 @@ private fun UserResult(r: AdminUserTimeline, phone: String? = null, store: Strin
                 )
             }
         }
-        Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             UserStatTile("روزِ فعال", adminNum(r.installs.sumOf { it.activeDays }), androidx.compose.material.icons.Icons.Filled.CalendarMonth, androidx.compose.ui.graphics.Color(0xFFA855F7), Modifier.weight(1f)) { tab = 2 }
             UserStatTile("خرید", adminNum(r.purchases.size), androidx.compose.material.icons.Icons.Filled.ShoppingCart, androidx.compose.ui.graphics.Color(0xFFF59E0B), Modifier.weight(1f)) { tab = 1 }
             UserStatTile("پیامِ پشتیبانی", adminNum(r.supportCount), androidx.compose.material.icons.Icons.Filled.Sms, androidx.compose.ui.graphics.Color(0xFF22C55E), Modifier.weight(1f), null)
@@ -473,14 +477,18 @@ private fun UserResult(r: AdminUserTimeline, phone: String? = null, store: Strin
         tabs.forEachIndexed { i, (label, icon) ->
             val sel = i == tab
             Column(
-                Modifier.weight(1f).clip(RoundedCornerShape(18.dp))
+                Modifier.weight(1f).clip(RoundedCornerShape(14.dp))
                     .background(if (sel) AppPrimary.copy(alpha = 0.22f) else AppSurface)
-                    .border(if (sel) 2.dp else 1.dp, if (sel) AppPrimary else AppLineRow, RoundedCornerShape(18.dp))
-                    .clickable { tab = i }.padding(vertical = 10.dp),
+                    .border(if (sel) 1.5.dp else 1.dp, if (sel) AppPrimary else AppLineRow, RoundedCornerShape(14.dp))
+                    .clickable { tab = i }.heightIn(min = 44.dp).padding(vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
-                Icon(icon, null, tint = if (sel) AppPrimary else AppMuted, modifier = Modifier.size(24.dp))
-                Text(label, color = if (sel) AppText else AppMuted, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 4.dp))
+                // ۲۰ مهر: آیکون و نام در یک ردیف (زبانه‌ها نصف شدند).
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(icon, null, tint = if (sel) AppPrimary else AppMuted, modifier = Modifier.size(16.dp))
+                    Text(label, color = if (sel) AppText else AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, modifier = Modifier.padding(start = 4.dp))
+                }
             }
         }
     }

@@ -615,9 +615,9 @@ fun Route.adminRoutes() {
 
 /**
  * 📰 **گزارشِ روزانه/هفتگی/ماهانه** (۸ مهر، خواسته‌ی کاربر): «هر روز بگوید چه شد».
- * روزِ کاری از **۷ صبحِ ایران** تا ۷ صبحِ فردا است. `period`: day | week | month؛
- * پنجره‌ی فعلی (از آخرین مرزِ ۷ صبح تا حالا) کنارِ پنجره‌ی قبلیِ هم‌اندازه برای مقایسه.
- * عددهای استفاده از `usage_daily` روزانه‌اند (مرزشان نیمه‌شب است، نه ۷ صبح) - تقریبی.
+ * روز از **نیمه‌شبِ ایران** تا نیمه‌شبِ بعد است (تا ۲۰ مهر ۷ صبح تا ۷ صبح بود). `period`: day | week | month؛
+ * پنجره‌ی فعلی (از آخرین نیمه‌شب تا حالا) کنارِ پنجره‌ی قبلیِ هم‌اندازه برای مقایسه.
+ * عددهای استفاده از `usage_daily` هم روزانه‌اند، پس حالا دقیقاً هم‌مرزند.
  */
 @Serializable
 data class DigestMetric(val key: String, val now: Long, val prev: Long)
@@ -634,7 +634,7 @@ data class DigestResponse(
     val series: List<DigestPoint> = emptyList(),
 )
 
-/** یک روز (از ۷ صبحِ ایران) برای نمودارِ روزبه‌روز. */
+/** یک روز (از نیمه‌شبِ ایران) برای نمودارِ روزبه‌روز. */
 @Serializable
 data class DigestPoint(val day: String, val active: Int, val installs: Int, val purchases: Int, val revenueNet: Long)
 
@@ -651,8 +651,9 @@ internal fun buildDigest(conn: Connection, period: String, store: String? = null
     val buyF = if (store != null) " AND store = ?" else ""
     val bArgs: Array<Any?> = listOfNotNull<Any>(store).toTypedArray()
     val iranNow = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC).plusMinutes(210)
-    var start = iranNow.toLocalDate().atTime(7, 0)
-    if (iranNow.isBefore(start)) start = start.minusDays(1)
+    // ۲۰ مهر (خواسته‌ی کاربر): روز = نیمه‌شب تا نیمه‌شبِ ایران (قبلاً ۷ صبح تا ۷ صبح). حالا با
+    // `usage_daily` (که خودش روزِ تقویمی است) هم دقیقاً هم‌مرز است.
+    var start = iranNow.toLocalDate().atStartOfDay()
     val days = when (period) { "week" -> 7L; "month" -> 30L; else -> 1L }
     start = start.minusDays(days - 1)
     val end = start.plusDays(days)

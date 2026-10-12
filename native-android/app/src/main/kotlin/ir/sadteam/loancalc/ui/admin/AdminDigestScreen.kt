@@ -144,7 +144,7 @@ internal fun digestNoteIcon(n: String): ImageVector = when {
 }
 
 /**
- * 📰 **گزارشِ روز/هفته/ماه** (بازطراحیِ بخشِ ۸۲). روز از ۷ صبح تا ۷ صبحِ فردا.
+ * 📰 **گزارشِ روز/هفته/ماه** (بازطراحیِ بخشِ ۸۲). روز از نیمه‌شب تا نیمه‌شب (۲۰ مهر).
  * ترتیب: هشدار → چهار عددِ اصلی → پول (طلایی) → بقیه‌ی شاخص‌ها (جمع‌شونده) → بیشترین کارها/صفحه‌ها.
  * سرور برای این صفحه فقط «حالا/قبلی» می‌دهد، پس نمودارِ زمانی ندارد؛ مقایسه با دو میله است.
  */
@@ -159,7 +159,7 @@ fun AdminDigestScreen(onBack: () -> Unit, vm: AdminDigestViewModel = hiltViewMod
     val d = data
 
     AdminPage(
-        "گزارشِ روز", "هر روز از ۷ صبح تا ۷ صبحِ فردا", onBack, refreshKey = data,
+        "گزارشِ روز", "هر روز از ساعتِ ۰۰:۰۰ تا ۲۴:۰۰", onBack, refreshKey = data,
         actions = { if (d != null) AdminHeaderAction(Icons.Filled.Download, "خروجیِ اکسل (CSV)") { shareCsv(ctx, d) } },
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

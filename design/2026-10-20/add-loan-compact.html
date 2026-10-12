@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>پیش‌نمایش افزودن وام</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#131c23; --card:#1b252d; --line:#29343d; --field:#202b34; --fieldline:#1d4f55;
+    --primary:#11807f; --primaryInk:#5fd3cf; --pill:#17393c; --text:#e9eef1; --muted:#93a0a8; --label:#7d8a92;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b1116;color:var(--text);font-family:Vazirmatn,sans-serif;padding:16px}
+  .wrap{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+  .notes{max-width:360px;background:#16212a;border:1px solid var(--line);border-radius:18px;padding:16px 18px;line-height:1.9;font-size:14px}
+  .notes h2{margin:0 0 6px;font-size:16px}
+  .notes li{margin-bottom:4px}
+  .notes b{color:var(--primaryInk)}
+  .phone{width:390px;max-width:100%;background:var(--bg);border-radius:28px;border:1px solid var(--line);overflow:hidden}
+  .head{display:flex;align-items:center;gap:8px;padding:14px 14px 6px}
+  .head .back{font-size:22px;width:36px;text-align:center}
+  .head h1{flex:1;margin:0;font-size:19px;font-weight:900}
+  .hbtn{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);font-size:15px}
+  .body{padding:6px 12px 16px;display:flex;flex-direction:column;gap:8px}
+  /* کارتِ سبزِ جمع‌وجور */
+  .hero{border-radius:20px;padding:12px 14px;background:linear-gradient(135deg,#2a9192,#0f5c61);display:flex;align-items:center;gap:12px}
+  .hero .main{flex:1}
+  .hero .lbl{font-size:11px;color:#cfe9e8;font-weight:700}
+  .hero .num{font-size:22px;font-weight:900;margin-top:2px}
+  .hero .num small{font-size:11px;color:#cfe9e8;font-weight:700;margin-inline-start:4px}
+  .hero .n{font-size:10.5px;color:#cfe9e8}
+  .hero .side{display:flex;flex-direction:column;gap:4px;font-size:10.5px;color:#cfe9e8;text-align:left;border-inline-start:1px solid rgba(255,255,255,.18);padding-inline-start:12px}
+  .hero .side b{display:block;color:#fff;font-size:12.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:10px 12px}
+  .cl{font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:7px}
+  .row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+  .preset{flex:none;height:40px;padding:0 10px;border-radius:12px;background:var(--field);border:1px solid #3a4650;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .preset small{color:var(--muted);font-weight:400;font-size:10px}
+  .preset.on{border-color:var(--primary);background:#16343a}
+  .field{height:46px;border-radius:14px;background:var(--field);border:1px solid var(--fieldline);display:flex;align-items:center;padding:0 14px;font-size:14px;color:var(--muted)}
+  .field .v{flex:1;color:var(--text);font-weight:700;direction:ltr;text-align:right}
+  .field .u{font-size:12px;color:var(--muted)}
+  .field.ph .v{color:var(--muted);font-weight:400}
+  .seg{display:flex;background:#151f27;border-radius:999px;padding:3px;gap:3px;margin-bottom:8px}
+  .seg div{flex:1;height:36px;border-radius:999px;display:grid;place-items:center;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
+  .seg .on{background:#2c3a45;color:var(--text)}
+  .chip{flex:none;height:34px;padding:0 12px;border-radius:999px;background:var(--field);display:grid;place-items:center;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .chip.on{background:var(--primary);color:#fff}
+  .tiles{display:flex;gap:8px;overflow-x:auto;margin-top:6px;scrollbar-width:none}
+  .tile{flex:none;width:62px;text-align:center;font-size:10.5px;font-weight:700}
+  .tile i{display:grid;place-items:center;width:46px;height:46px;margin:0 auto 4px;border-radius:13px;background:#0f4448;font-style:normal;font-size:18px;font-weight:900}
+  .sub{font-size:10.5px;color:var(--muted);font-weight:700;margin:2px 0 5px}
+  .two{display:flex;gap:8px}
+  .two .field{flex:1}
+  .slider{height:4px;border-radius:4px;background:#0e161c;margin:12px 4px 4px;position:relative}
+  .slider::after{content:"";position:absolute;right:0;top:-6px;width:16px;height:16px;border-radius:50%;background:var(--primary)}
+  .adv{display:flex;align-items:center}
+  .adv .t{flex:1;font-size:13px;font-weight:700}
+  .adv .t span{display:block;font-size:11px;color:var(--muted);font-weight:400}
+  .btn{height:46px;border-radius:16px;background:var(--primary);display:grid;place-items:center;font-weight:900;font-size:14px;box-shadow:0 3px 0 #0a5555}
+  .foot{text-align:center;font-size:10px;color:var(--muted);margin-top:2px}
+  .tag{display:inline-block;font-size:10px;background:#3a2f12;color:#f1c75b;border-radius:6px;padding:1px 6px;margin-inline-start:6px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="notes">
+    <h2>پیش‌نمایشِ «افزودنِ وام» - جمع‌وجور</h2>
+    <ul>
+      <li><b>کادرِ سبز</b> نصف شد: قسطِ ماهانه سمتِ راست، «کلِ بازپرداخت» و «سودِ کل» کوچک سمتِ چپ (بی جعبه‌ی جدا).</li>
+      <li><b>کادرهای مبلغ/عدد</b> از حدودِ ۶۴ به ۴۶ کوتاه‌تر و گوشه‌ها کمتر گرد.</li>
+      <li><b>«نرخ» و «تعداد اقساط»</b> کنارِ هم در یک کارت؛ چیپ‌های ماه کوچک‌تر.</li>
+      <li><b>نام</b> و <b>تاریخ</b> کنارِ هم در یک کارت.</li>
+      <li>کاشی‌های بانک کوچک‌تر، فاصله‌ی کارت‌ها کمتر.</li>
+      <li><b>تاریخ</b> همان چرخِ فعلی می‌ماند (فقط کوتاه‌تر)؛ این‌جا به‌صورتِ یک خط خلاصه کشیده شده.</li>
+      <li>عددهای کادرِ سبز فقط نمونه‌اند؛ در برنامه تا مبلغ نزنید «۰» است.</li>
+      <li><b>هماهنگی:</b> «وام ازدواج» را بالا بزنید ← پایین خودش «وامِ بانکی» و «ازدواج ۴٪» انتخاب می‌شود (همین‌جا لمس کنید و ببینید).</li>
+    </ul>
+    <div style="color:var(--muted);font-size:12.5px">رنگ‌ها، سربرگ، نوارِ پایین و خودِ گزینه‌ها همان است؛ چیزی اضافه یا حذف نشده.</div>
+  </div>
+
+  <div class="phone">
+    <div class="head">
+      <div class="back">→</div>
+      <h1>افزودنِ وام</h1>
+      <div class="hbtn">✎</div>
+      <div class="hbtn">👁</div>
+    </div>
+    <div class="body">
+      <div class="hero">
+        <div class="main">
+          <div class="lbl">قسطِ ماهانه</div>
+          <div class="num">۹٬۶۳۶٬۴۲۵<small>تومان</small></div>
+          <div class="n">۳۶ قسط</div>
+        </div>
+        <div class="side">
+          <div>کلِ بازپرداخت<b>۳۴۶٬۹۱۱٬۲۸۸</b></div>
+          <div>سودِ کل<b>۹۶٬۹۱۱٬۲۸۸</b></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cl">وام‌های پرتکرار</div>
+        <div class="row" id="presets">
+          <div class="preset" data-type="ازدواج" data-rate="4">❤ وام ازدواج <small>۴٪</small></div>
+          <div class="preset" data-type="سایر" data-rate="4">☺ فرزندآوری <small>۴٪</small></div>
+          <div class="preset" data-type="مسکن" data-rate="18">⌂ وام مسکن <small>۱۸٪</small></div>
+          <div class="preset" data-type="سایر" data-rate="23">⌂ ودیعه مسکن <small>۲۳٪</small></div>
+          <div class="preset" data-type="سایر" data-rate="23">🚗 خودرو <small>۲۳٪</small></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="two">
+          <div class="field ph"><span class="v" style="direction:rtl;text-align:right">نام وام‌گیرنده (اختیاری)</span></div>
+        </div>
+        <div class="sub" style="margin-top:8px">تاریخ دریافت وام (سررسیدِ قسطِ اول)</div>
+        <div class="field"><span class="v" style="direction:rtl">۲۰ مهر ۱۴۰۵</span><span class="u">📅</span></div>
+      </div>
+
+      <div class="card">
+        <div class="cl">بانک یا سرویس اعتباری</div>
+        <div class="seg" id="seg"><div class="on" data-s="credit">سرویسِ اعتباری</div><div data-s="bank">وامِ بانکی</div></div>
+        <div id="types" style="display:none">
+          <div class="sub">نوعِ وام نرخ را می‌دهد</div>
+          <div class="row">
+            <div class="chip" data-t="ازدواج">ازدواج · ۴٪</div>
+            <div class="chip" data-t="مسکن">مسکن · ۱۸٪</div>
+            <div class="chip" data-t="قرض‌الحسنه">قرض‌الحسنه · ۰٪</div>
+            <div class="chip" data-t="سایر">سایر</div>
+          </div>
+          <div class="sub" style="margin-top:8px">بانک (اختیاری - فقط برای اسم)</div>
+        </div>
+        <div class="tiles">
+          <div class="tile"><i>د</i>دیجی‌پی</div>
+          <div class="tile"><i>ا</i>اسنپ‌پی</div>
+          <div class="tile"><i>ا</i>اسنپ‌پی ۴قسط</div>
+          <div class="tile"><i>آ</i>آپ</div>
+          <div class="tile"><i>ش</i>بانک شهر</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cl">مبلغ وام</div>
+        <div class="field"><span class="v">250,000,000</span><span class="u">تومان</span></div>
+        <div class="slider"></div>
+      </div>
+
+      <div class="card">
+        <div class="two">
+          <div style="flex:1">
+            <div class="cl">نرخ سود سالانه</div>
+            <div class="field"><span class="v" id="rate">23</span><span class="u">٪</span></div>
+          </div>
+          <div style="flex:1">
+            <div class="cl">تعداد اقساط</div>
+            <div class="field ph"><span class="v" style="direction:rtl">دلخواه</span><span class="u">ماه</span></div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <div class="chip">۱۲</div><div class="chip">۱۸</div><div class="chip">۲۴</div><div class="chip on">۳۶</div><div class="chip">۶۰</div><div class="chip">۸۴</div><div class="chip">۱۲۰</div><div class="chip">۱۸۰</div>
+        </div>
+      </div>
+
+      <div class="card adv"><div class="t">تنظیماتِ پیشرفته<span>ماهانه · بدونِ تنفس</span></div><span style="color:var(--muted)">⌄</span></div>
+
+      <div class="btn">جدولِ اقساط را ببین</div>
+      <div class="foot">کارمزد بانک به‌صورت خودکار طبق قانون بانک مرکزی محاسبه می‌شود.</div>
+    </div>
+  </div>
+</div>
+<script>
+  const seg=[...document.querySelectorAll('#seg div')], types=document.getElementById('types');
+  const chips=[...document.querySelectorAll('#types .chip')];
+  function setSeg(s){seg.forEach(d=>d.classList.toggle('on',d.dataset.s===s));types.style.display=s==='bank'?'block':'none'}
+  seg.forEach(d=>d.onclick=()=>setSeg(d.dataset.s));
+  chips.forEach(c=>c.onclick=()=>{chips.forEach(x=>x.classList.toggle('on',x===c))});
+  document.querySelectorAll('#presets .preset').forEach(p=>p.onclick=()=>{
+    document.querySelectorAll('#presets .preset').forEach(x=>x.classList.toggle('on',x===p));
+    setSeg('bank');
+    chips.forEach(x=>x.classList.toggle('on',x.dataset.t===p.dataset.type));
+    document.getElementById('rate').textContent=p.dataset.rate;
+  });
+</script>
+</body>
+</html>
