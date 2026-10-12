@@ -24,6 +24,8 @@ jobs:
             sqlite3 $DB "SELECT '#### ' || app_version || ' | ' || created_at || ' | ' || substr(message,1,90) || char(10) || substr(stack,1,1500) || char(10) || coalesce(substr(context,1,200),'') FROM crash_reports WHERE id IN (SELECT MAX(id) FROM crash_reports WHERE created_at >= datetime('now','-7 days') AND coalesce(context,'') NOT IN ('slow','sync') GROUP BY substr(message,1,40));"
             echo "=== sync errors 7 days ==="
             sqlite3 -header $DB "SELECT substr(message,1,120) m, app_version v, COUNT(*) n FROM crash_reports WHERE created_at >= datetime('now','-7 days') AND context = 'sync' GROUP BY m, v ORDER BY n DESC LIMIT 15;"
+            echo "=== sync error detail ==="
+            sqlite3 $DB "SELECT '#### ' || created_at || ' | ' || coalesce(app_version,'') || char(10) || substr(message,1,400) || char(10) || substr(stack,1,1800) FROM crash_reports WHERE created_at >= datetime('now','-7 days') AND context = 'sync' ORDER BY id DESC LIMIT 2;"
             echo "=== slow-main reports (all kept) ==="
             sqlite3 $DB "SELECT '#### ' || coalesce(app_version,'') || ' | ' || created_at || char(10) || substr(coalesce(stack,message),1,2500) FROM crash_reports WHERE context = 'slow' ORDER BY id DESC LIMIT 12;"
             echo "=== last 5 myket purchases ==="
