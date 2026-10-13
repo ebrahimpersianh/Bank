@@ -314,7 +314,8 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
             }
 
             // ── پیام‌های جیبک (اطلاعیه‌های عمومیِ سرور) ───────────────────────────
-            item(key = "jibak") {
+            // ۲۱ مهر، خواسته‌ی کاربر: «پیام‌های جیبک» فقط در تبِ «همه»؛ در مالی/یادآوری/خوانده‌نشده نه.
+            if (filter == InboxFilter.ALL) item(key = "jibak") {
                 Spacer(Modifier.height(10.dp))
                 MessageSection(
                     icon = Icons.Filled.Campaign,
