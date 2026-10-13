@@ -471,7 +471,9 @@ internal fun NewsCard(
             .shadow(3.dp, shape, ambientColor = AppPrimary.copy(alpha = 0.10f), spotColor = AppPrimary.copy(alpha = 0.10f))
             .clip(shape)
             .background(AppSurface)
-            .border(1.dp, AppLine, shape)
+            // ۲۱ مهر، خواسته‌ی کاربر: واریز و برداشت یک لایه‌ی خیلی خیلی کم‌رنگِ سبز/قرمز روی زمینه.
+            .background(if (isTx) tint.copy(alpha = 0.05f) else Color.Transparent)
+            .border(1.dp, if (isTx) tint.copy(alpha = 0.16f) else AppLine, shape)
             // ۱۶ مهر: لمسِ خودِ کارت = بازشدنِ متنِ کامل (همان‌جا)؛ پنجره/دسته فقط با فلشِ گوشه باز می‌شود.
             .pressScaleClickable(scale = 0.99f, onClick = { expanded = !expanded; onRead() })
             .padding(11.dp),
