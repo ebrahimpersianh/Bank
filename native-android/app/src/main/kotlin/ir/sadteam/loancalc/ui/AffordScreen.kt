@@ -462,7 +462,7 @@ private fun RateFinderCard() {
             }
             result?.let { r ->
                 Text(
-                    text = "نرخ سود سالانه تقریبی: ${toFa(String.format(Locale.US, "%.1f", r))}٪",
+                    text = "نرخ سود سالانه تقریبی: ${toFa(String.format(Locale.US, "%.1f", r).replace('.', '٫'))}٪",
                     color = AppPrimary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,

@@ -88,14 +88,15 @@ fun Text(
     onTextLayout: ((TextLayoutResult) -> Unit)? = null,
     style: TextStyle = LocalTextStyle.current,
 ) {
-    val span = if (hasUnitWord(text)) unitSpanFor(color, fontSize, style) else null
-    val styled = if (span != null) remember(text, span) { styleUnits(AnnotatedString(text), span) } else null
+    val shown = remember(text) { uniformDigits(text) }
+    val span = if (hasUnitWord(shown)) unitSpanFor(color, fontSize, style) else null
+    val styled = if (span != null) remember(shown, span) { styleUnits(AnnotatedString(shown), span) } else null
     // ۲۱ مهر: مبلغ‌ها کامل‌اند («۳٬۴۰۰٬۰۰۰ تومان»)؛ مبلغِ تک‌خطی اگر جا نشد **متن کوچک می‌شود**، نه
     // اینکه بشکند یا «…» بخورد (قاعده‌ی کاربر: کادر بزرگ نشود، متن کوچک شود).
-    val shrink = remember(text, maxLines) { (maxLines == 1 && looksLikeAmount(text)) || isPureAmount(text) }
+    val shrink = remember(shown, maxLines) { (maxLines == 1 && looksLikeAmount(shown)) || isPureAmount(shown) }
     val baseSp = effectiveSp(fontSize, style)
     // کلید = طولِ متن، نه خودِ متن: عددِ شمارشی (count-up) هر فریم عوض می‌شود و نباید هر بار از اول کوچک شود.
-    var scale by remember(text.length, baseSp) { mutableFloatStateOf(1f) }
+    var scale by remember(shown.length, baseSp) { mutableFloatStateOf(1f) }
     val minScale = if (baseSp != null) (8f / baseSp).coerceIn(0.6f, 1f) else 1f
     val useShrink = shrink && baseSp != null
     val layout: (TextLayoutResult) -> Unit = { r ->
@@ -104,13 +105,25 @@ fun Text(
     }
     val size = if (useShrink) (baseSp!! * scale).sp else fontSize
     M3Text(
-        text = styled ?: AnnotatedString(text), modifier = modifier, color = color, fontSize = size, fontStyle = fontStyle,
+        text = styled ?: AnnotatedString(shown), modifier = modifier, color = color, fontSize = size, fontStyle = fontStyle,
         fontWeight = fontWeight, fontFamily = fontFamily, letterSpacing = letterSpacing,
         textDecoration = textDecoration, textAlign = textAlign, lineHeight = lineHeight,
         overflow = overflow, softWrap = if (useShrink) false else softWrap,
         maxLines = if (useShrink) 1 else maxLines, minLines = minLines,
         onTextLayout = layout, style = style,
     )
+}
+
+private val LATIN_DOT_BETWEEN_FA = Regex("(?<=[۰-۹])[.](?=[۰-۹])")
+private val LATIN_COMMA_BETWEEN_FA = Regex("(?<=[۰-۹]),(?=[۰-۹]{3})")
+
+/**
+ * ۲۱ مهر، خواسته‌ی کاربر: «کلِ برنامه عددها یک‌جور باشند». ممیزِ لاتین بینِ ارقامِ فارسی («۲۳.۵٪»)
+ * → «٫»، کامای لاتین («۴۰۷,۵۵۰») → «٬». فقط نمایش؛ کادرهای ورودی دست نمی‌خورند.
+ */
+private fun uniformDigits(s: String): String {
+    if ('.' !in s && ',' !in s) return s
+    return s.replace(LATIN_DOT_BETWEEN_FA, "٫").replace(LATIN_COMMA_BETWEEN_FA, "٬")
 }
 
 private val PURE_AMOUNT = Regex(

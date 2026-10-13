@@ -593,7 +593,7 @@ fun ResultScreen(
                         }
                         HorizontalDivider(color = AppLine)
                         val pctText = if (interestPct < 10) {
-                            toFa(String.format(Locale.US, "%.1f", interestPct))
+                            toFa(String.format(Locale.US, "%.1f", interestPct).replace('.', '٫'))
                         } else {
                             toFa(interestPct.roundToLong().toString())
                         }
