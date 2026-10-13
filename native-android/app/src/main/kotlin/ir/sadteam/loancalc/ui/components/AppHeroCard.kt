@@ -100,6 +100,8 @@ fun AppHeroCard(
     tone: HeroTone = HeroTone.GREEN,
     /** هاله‌ی رنگیِ لبه‌ی آغاز (راست)، مثلاً قرمز برای «عقب افتادی». `null` یعنی هیچ. */
     glow: Color? = null,
+    /** فاصله‌ی داخلی. ۲۱ مهر: کارت‌های بودجه/دارایی/وام کمی کم‌فاصله‌تر (جمع‌وجورتر، عرضِ بیشتر برای محتوا). */
+    contentPadding: androidx.compose.foundation.layout.PaddingValues = androidx.compose.foundation.layout.PaddingValues(AppSpacing.cardPadding),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(AppRadius.card)
@@ -161,7 +163,7 @@ fun AppHeroCard(
                 )
             }
         }
-        Column(modifier = Modifier.fillMaxWidth().padding(AppSpacing.cardPadding)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(contentPadding)) {
             CompositionLocalProvider(LocalContentColor provides Color.White) {
                 content()
             }

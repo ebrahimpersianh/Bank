@@ -234,25 +234,28 @@ internal fun DailyAllowanceHero(
     // نمی‌شوند - نمودارِ ماه همان خبر را کامل‌تر می‌دهد.
     // هم‌قدِ کارتِ خانه (خواسته‌ی کاربر، ۳ مهر): یک ردیفِ بالا، عدد و «تومان» در یک خط،
     // درآمد/خرج بی‌قاب مثلِ خانه، نمودارِ کوتاه‌تر و یک خطِ پایین.
-    AppHeroCard {
+    // ۲۱ مهر (خواسته‌ی کاربر با اسکرین‌شات): کارت کوتاه‌تر و جمع‌وجورتر، فونت‌ها کمی کوچک‌تر. ردیفِ پایین
+    // (تاریخِ دو سر، خطِ جداکننده، «N روز تا پایانِ ماه» و «… کمتر از سهمِ روزانه») برداشته شد؛
+    // «روزهای مانده» داخلِ قرصِ بالا ادغام شد. `saved` دیگر نمایش داده نمی‌شود.
+    AppHeroCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 13.dp, vertical = 12.dp)) {
         // خواسته‌ی کاربر (۳ مهر): قرصِ «روزِ X از Y» گوشه‌ی بالا-راست، «امروز می‌توانی…» زیرش،
         // و درآمد/خرج کوچک‌تر در ستونِ چپ از بالای کارت - تا ارتفاعِ کارت کم شود.
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(modifier = Modifier.weight(1f)) {
-                HeroPillLabel(icon = Icons.Filled.Today, text = "روزِ ${toFa(dayOfMonth)} از ${toFa(daysInMonth)}")
+                HeroPillLabel(icon = Icons.Filled.Today, text = "روزِ ${toFa(dayOfMonth)} از ${toFa(daysInMonth)} · ${toFa(daysLeft)} روز مانده")
                 Text(
                     "امروز می‌توانی خرج کنی",
                     color = Color.White.copy(alpha = 0.85f),
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = 6.dp),
                 )
                 Row(verticalAlignment = Alignment.Bottom) {
                     PrivacyCrossfade(privacyMode) { masked ->
                         AutoShrinkText(
                             maskIfPrivate(masked, allowance.rialToFaCompact()),
                             color = Color.White,
-                            maxFontSize = 30.sp,
+                            maxFontSize = 26.sp,
                             fontWeight = FontWeight.Black,
                         )
                     }
@@ -268,7 +271,7 @@ internal fun DailyAllowanceHero(
             Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 10.dp)) {
                 HeroMiniStat(up = true, label = "درآمدِ این ماه", value = monthIncome, privacyMode = privacyMode)
                 // ۲۱ مهر (طرحِ جی): خطِ نازک بینِ درآمد و خرج.
-                Box(modifier = Modifier.padding(vertical = 6.dp).width(96.dp).height(1.dp).background(Color.White.copy(alpha = 0.22f)))
+                Box(modifier = Modifier.padding(vertical = 4.dp).width(90.dp).height(1.dp).background(Color.White.copy(alpha = 0.22f)))
                 HeroMiniStat(
                     up = false,
                     label = "خرجِ این ماه",
@@ -284,45 +287,9 @@ internal fun DailyAllowanceHero(
                 valueLabel = { value -> if (privacyMode) "•••" else "${value.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}" },
                 currentIndex = (dayOfMonth - 1).coerceIn(0, monthDaily.lastIndex),
                 natural = HeroChartStyle.BARS,
-                height = 44.dp,
-                modifier = Modifier.padding(top = 12.dp),
+                height = 34.dp,
+                modifier = Modifier.padding(top = 8.dp),
             )
-            // ۲۱ مهر (طرحِ جی): تاریخِ دو سرِ نمودار - هم‌جهتِ میله‌ها (فیزیکی چپ‌به‌راست).
-            val monthName = ir.sadteam.loancalc.ui.components.persianMonthName(ir.sadteam.loancalc.core.JalaliCalendar.today().m)
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 5.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("۱ $monthName", color = Color.White.copy(alpha = 0.75f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    Text("${toFa(daysInMonth)} $monthName", color = Color.White.copy(alpha = 0.75f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-        Box(modifier = Modifier.fillMaxWidth().padding(top = 9.dp).height(1.dp).background(Color.White.copy(alpha = 0.18f)))
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "${toFa(daysLeft)} روز تا پایانِ ماه",
-                color = Color.White.copy(alpha = 0.85f),
-                fontSize = 9.5.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f),
-            )
-            if (saved > 0) {
-                Icon(
-                    Icons.Filled.Savings,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(13.dp),
-                )
-                Text(
-                    "${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, saved.rialToFaCompactUnit())} کمتر از سهمِ روزانه خرج کردی",
-                    color = Color.White,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.padding(start = 4.dp),
-                )
-            }
         }
     }
 }
@@ -333,13 +300,13 @@ private fun HeroPillLabel(icon: androidx.compose.ui.graphics.vector.ImageVector,
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
             .background(Color.White.copy(alpha = 0.16f))
-            .padding(horizontal = 11.dp, vertical = 6.dp),
+            .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
         Text(
             text,
             color = Color.White,
-            fontSize = 10.5.sp,
+            fontSize = 9.5.sp,
             fontWeight = FontWeight.Black,
             maxLines = 1,
             modifier = Modifier.padding(start = 6.dp),

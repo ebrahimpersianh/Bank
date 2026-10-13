@@ -95,7 +95,8 @@ internal fun LoansHeroCard(
     totalRemainingDebtState: MutableState<Double>,
 ) {
     var totalRemainingDebt by totalRemainingDebtState
-        AppHeroCard {
+        // ۲۱ مهر (خواسته‌ی کاربر): کوتاه‌تر و جمع‌وجورتر، فونت‌ها کمی کوچک‌تر - چیزی بریده نمی‌شود.
+        AppHeroCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 13.dp, vertical = 12.dp)) {
             // 🚨 **حلقه جای نوارِ تخت** (طرحِ مرجعِ کاربر، ۳۱ شهریور): نوار درصد را
             // بی‌عدد می‌گفت و «چند قسط مانده» هیچ‌جای این کارت نبود. حلقه هر دو را
             // می‌دهد و ارتفاعِ تازه‌ای هم نمی‌گیرد چون کنارِ عددِ قهرمان می‌نشیند.
@@ -132,7 +133,7 @@ internal fun LoansHeroCard(
                         "${maskIfPrivate(masked, animatedMonthly.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", // ۱۶ مهر: فشرده، هم‌قالبِ بقیه‌ی صفحه‌ها
                         color = Color.White,
                         // ۲۱ مهر (طرحِ جی): عددِ اصلی درشت، هم‌اندازه‌ی کارتِ بقیه‌ی تب‌ها.
-                        fontSize = 26.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = (-0.5).sp,
                         maxLines = 1,
@@ -159,9 +160,9 @@ internal fun LoansHeroCard(
                         centerBottomColor = HeroMuted,
                         // کوچک‌تر (۷۸→۶۶) تا کارتِ وام هم‌قدِ بقیه‌ی کارت‌های قهرمان شود.
                         // ۱۴ مهر: بزرگ‌تر تا «از ۴۹۸ قسط» کامل دیده شود (بریده می‌شد).
-                        size = 76.dp,
-                        stroke = 8.dp,
-                        centerTopSize = 17,
+                        size = 66.dp,
+                        stroke = 7.dp,
+                        centerTopSize = 15,
                     )
                     // ۱۶ مهر: «۱۸۴ پرداخت شده» حالا داخلِ حلقه است («۱۸۴ از ۴۹۸»)؛ قرصِ جدا برای کوتاه‌ترشدنِ کارت رفت.
                     if (false) Row(
@@ -203,11 +204,11 @@ internal fun LoansHeroCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp)
+                        .padding(top = 6.dp)
                         .clip(RoundedCornerShape(999.dp))
                         .background(Color.White.copy(alpha = if (over) 0.3f else 0.16f))
                         .pressScaleClickable(onClick = onOpenIncome)
-                        .padding(horizontal = 12.dp, vertical = 7.dp),
+                        .padding(horizontal = 12.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
@@ -216,7 +217,7 @@ internal fun LoansHeroCard(
                         if (over) "قسط‌ها ${toFa((incomeRatio * 100).roundToInt())}٪ درآمدت است؛ بیشتر از درآمد"
                         else "${toFa((incomeRatio * 100).roundToInt())}٪ از درآمدت صرفِ اقساط می‌شه",
                         color = Color.White,
-                        fontSize = 10.sp,
+                        fontSize = 9.5.sp,
                         fontWeight = FontWeight.Black,
                         maxLines = 1,
                         modifier = Modifier.weight(1f),
@@ -307,11 +308,11 @@ internal fun LoansHeroCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 10.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(16.dp))
+                    .padding(top = 7.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(14.dp))
                     .background(Color.White.copy(alpha = 0.05f))
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -325,7 +326,7 @@ internal fun LoansHeroCard(
                         Text(
                             maskIfPrivate(masked, animatedDebt.rialToFaCompactUnit()),
                             color = Color.White,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             maxLines = 1,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(top = 1.dp),
@@ -344,7 +345,7 @@ internal fun LoansHeroCard(
                         Text(
                             "${toFa(monthsLeft)} ماه",
                             color = Color.White,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(top = 1.dp),
                         )
@@ -364,7 +365,7 @@ internal fun LoansHeroCard(
                             Text(
                                 maskIfPrivate(masked, totalOverdue.rialToFaCompactUnit()),
                                 color = Color.White,
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
                                 maxLines = 1,
                                 fontWeight = FontWeight.Black,
                                 modifier = Modifier.padding(top = 1.dp),
@@ -380,7 +381,7 @@ internal fun LoansHeroCard(
 @Composable
 private fun HeroStatDivider() {
     androidx.compose.foundation.layout.Box(
-        modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.18f)),
+        modifier = Modifier.width(1.dp).height(26.dp).background(Color.White.copy(alpha = 0.18f)),
     )
 }
 @Composable

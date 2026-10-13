@@ -70,13 +70,17 @@ internal fun TotalWealthHero(
     onOpen: (() -> Unit)? = null,
     onPill: (String) -> Unit,
 ) {
-    AppHeroCard(modifier = if (onOpen != null) Modifier.pressScaleClickable(onClick = onOpen) else Modifier) {
+    // ۲۱ مهر (خواسته‌ی کاربر): کوتاه‌تر و جمع‌وجورتر؛ قرص‌های پایین (نقد/طلا/ارز/…) برداشته شدند.
+    AppHeroCard(
+        modifier = if (onOpen != null) Modifier.pressScaleClickable(onClick = onOpen) else Modifier,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 13.dp, vertical = 12.dp),
+    ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(10.dp))
                         .background(Color.White.copy(alpha = 0.18f)),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -84,13 +88,13 @@ internal fun TotalWealthHero(
                         Icons.Filled.AccountBalanceWallet,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(19.dp),
+                        modifier = Modifier.size(16.dp),
                     )
                 }
                 Text(
                     "ارزشِ کلِ دارایی‌ها",
                     color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f).padding(start = 9.dp),
                 )
@@ -121,13 +125,13 @@ internal fun TotalWealthHero(
                 }
             }
             // مبلغ و «تومان» در یک خط (خواسته‌ی کاربر: کارت هم‌قدِ کارتِ خانه، نه کشیده).
-            Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.Bottom) {
+            Row(modifier = Modifier.padding(top = 4.dp), verticalAlignment = Alignment.Bottom) {
                 val shownTotal = ir.sadteam.loancalc.ui.components.countUpDouble(total)
                 PrivacyCrossfade(privacyMode) { masked ->
                     AutoShrinkText(
                         maskIfPrivate(masked, shownTotal.rialToFaCompact()),
                         color = Color.White,
-                        maxFontSize = 30.sp,
+                        maxFontSize = 26.sp,
                         fontWeight = FontWeight.Black,
                     )
                 }
@@ -153,8 +157,8 @@ internal fun TotalWealthHero(
                     natural = HeroChartStyle.LINE,
                     currentIndex = trend.lastIndex,
                     // ۲۱ مهر (طرحِ جی): نمودار بلندتر تا روند خوانا باشد.
-                    height = 48.dp,
-                    modifier = Modifier.padding(top = 12.dp),
+                    height = 36.dp,
+                    modifier = Modifier.padding(top = 6.dp),
                     labels = trend.indices.map { index ->
                         val ago = trend.lastIndex - index
                         if (ago == 0) "امروز" else "${ago.toFa()} روز پیش"
@@ -162,7 +166,7 @@ internal fun TotalWealthHero(
                     valueLabel = { value -> "${value.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}" },
                 )
                 // برچسبِ دو سرِ محور، مثلِ کارتِ خانه - جای قرصِ بزرگِ قبلی که کارت را بلند می‌کرد.
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                     Text("امروز", color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         if (onOpen != null) Text("نمودارِ کامل ‹", color = Color.White.copy(alpha = 0.85f), fontSize = 9.5.sp, fontWeight = FontWeight.Black)
@@ -177,7 +181,7 @@ internal fun TotalWealthHero(
                 }
             }
             // پنج قرص تو یه ردیفِ عادی جا نمی‌شن؛ FlowRow خطِ دوم می‌سازه.
-            FlowRow(
+            if (false) FlowRow(
                 modifier = Modifier.padding(top = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
