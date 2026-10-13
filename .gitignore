@@ -17,3 +17,6 @@ node_modules/
 secrets.properties
 local.properties
 design-batches/
+
+# graphify map (local only, rebuilt with `graphify update .`)
+graphify-out/

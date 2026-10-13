@@ -72,3 +72,12 @@
 - ⏳ نسخه‌ی بعد: کم‌استفاده‌ها پشتِ «بیشتر…» (بعد از چند هفته آمار)؛ اینتروی تازه؛ ثبتِ چند تراکنش با هم؛ پیش‌نویسِ تراکنش؛ «مانده» از پیامک؛ «تازه‌های این نسخه» بعد از آپدیت.
 - ⏳ طرح‌های ذخیره‌شده: `design/2026-10-16/NOTES.md` (سبک‌کردنِ کارتِ بالای خانه منتظرِ طرحِ جی). `ExactReminderAlarm` هنوز روی گوشیِ واقعی تست نشده.
 - جزئیاتِ فنیِ قدیمی‌تر (حالتِ ساده، `SlowMainWatcher`، `PersistentTabs`، کلیدِ SSH و…): `CLAUDE-ARCHIVE.md` ← «جداشده از CLAUDE.md».
+
+## graphify
+
+This project has a code knowledge graph at graphify-out/ (Kotlin app + Kotlin/Ktor server, code only; docs/design are excluded via `.graphifyignore`).
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
