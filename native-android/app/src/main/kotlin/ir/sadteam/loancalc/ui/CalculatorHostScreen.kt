@@ -19,7 +19,7 @@ import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

@@ -29,7 +29,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
+import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween

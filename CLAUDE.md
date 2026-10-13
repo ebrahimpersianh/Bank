@@ -43,6 +43,7 @@
 
 ## Compose - قواعدی که نقضشان باگ داده
 - توکن‌های رنگ `@Composable`اند؛ داخلِ `Canvas` قبلش در `val` بخوان.
+- **`Text` همیشه از `ir.sadteam.loancalc.ui.text.Text`** (نه `material3.Text`): همان امضا، ولی «تومان/ریال»ِ بعد از عدد را کوچک‌تر/کم‌رنگ می‌کشد (۲۱ مهر). فایلِ تازه هم همین را ایمپورت کند.
 - کارت همیشه `AppCard` (نه clip/background دستی). `Icon` بیرونِ AppCard همیشه `tint` صریح.
 - فیلدِ مبلغ: state فقط رقمِ خام + `ThousandsSeparatorTransformation`؛ داخلِ onValueChange فرمت نکن.
 - مبلغِ تازه → `maskIfPrivate` (حالتِ خصوصی).

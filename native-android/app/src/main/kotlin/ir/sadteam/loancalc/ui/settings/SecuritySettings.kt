@@ -19,7 +19,7 @@ import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.VisibilityOff
 import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState

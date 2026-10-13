@@ -28,7 +28,7 @@ fun UnreadDot(count: Int, modifier: androidx.compose.ui.Modifier = androidx.comp
             .padding(horizontal = 4.dp),
         contentAlignment = androidx.compose.ui.Alignment.Center,
     ) {
-        androidx.compose.material3.Text(
+        ir.sadteam.loancalc.ui.text.Text(
             ir.sadteam.loancalc.core.toFa(count.coerceAtMost(99)),
             color = androidx.compose.ui.graphics.Color.White,
             fontSize = androidx.compose.ui.unit.TextUnit(10f, androidx.compose.ui.unit.TextUnitType.Sp),

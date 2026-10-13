@@ -24,7 +24,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.EventRepeat
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -140,10 +140,10 @@ fun BudgetTabScreen(
         var capText by remember(r) { mutableStateOf((r.cap / ir.sadteam.loancalc.ui.jibak.unitDiv).toLong().toString()) }
         ir.sadteam.loancalc.ui.components.JibakAlertDialog(
             onDismissRequest = { editingRow = null },
-            title = { androidx.compose.material3.Text("بودجه‌ی ${r.category.name}") },
+            title = { ir.sadteam.loancalc.ui.text.Text("بودجه‌ی ${r.category.name}") },
             text = {
                 androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
-                    androidx.compose.material3.Text("سقفِ ماهانه")
+                    ir.sadteam.loancalc.ui.text.Text("سقفِ ماهانه")
                     androidx.compose.material3.OutlinedTextField(
                         value = capText,
                         onValueChange = { capText = ir.sadteam.loancalc.core.cleanNum(it).take(13) },
@@ -151,7 +151,7 @@ fun BudgetTabScreen(
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        suffix = { androidx.compose.material3.Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}") },
+                        suffix = { ir.sadteam.loancalc.ui.text.Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}") },
                         textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                         colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
                         shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
@@ -165,15 +165,15 @@ fun BudgetTabScreen(
                         viewModel.setBudget(r.category.name, toman * ir.sadteam.loancalc.ui.jibak.unitDivD, entity.id, entity.accountId)
                     }
                     editingRow = null
-                }) { androidx.compose.material3.Text("ذخیره") }
+                }) { ir.sadteam.loancalc.ui.text.Text("ذخیره") }
             },
             dismissButton = {
                 androidx.compose.foundation.layout.Row {
                     androidx.compose.material3.TextButton(onClick = {
                         entity?.let { viewModel.deleteBudget(it) }
                         editingRow = null
-                    }) { androidx.compose.material3.Text("حذفِ بودجه", color = ir.sadteam.loancalc.ui.theme.AppDanger) }
-                    androidx.compose.material3.TextButton(onClick = { editingRow = null }) { androidx.compose.material3.Text("انصراف") }
+                    }) { ir.sadteam.loancalc.ui.text.Text("حذفِ بودجه", color = ir.sadteam.loancalc.ui.theme.AppDanger) }
+                    androidx.compose.material3.TextButton(onClick = { editingRow = null }) { ir.sadteam.loancalc.ui.text.Text("انصراف") }
                 }
             },
         )

@@ -19,7 +19,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue

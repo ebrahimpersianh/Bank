@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Text
+import ir.sadteam.loancalc.ui.text.Text
 
 /**
  * حلقه‌ی درصدِ پیشرفت با دو خطِ متن در مرکزش - طرحِ مرجعِ کاربر (۳۱ شهریور).
