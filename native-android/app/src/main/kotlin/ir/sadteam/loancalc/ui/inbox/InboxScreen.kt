@@ -239,25 +239,15 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
             run {
                 item {
                     // ۱۶ مهر: سطلِ زباله‌ی واقعی - خالی = درِ نیمه‌باز، پر = کاغذ بیرون زده و تکانِ ریز.
-                    Row(
+                    // ۲۱ مهر، خواسته‌ی کاربر: «جلوش هیچی ننویسه، فقط همون آیکون» - بی کادر و بی نوشته؛ تعداد
+                    // روی نشانِ سطل است و لمسش (وقتی پر است) فهرست را باز/بسته می‌کند.
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
-                            .background(ir.sadteam.loancalc.ui.theme.AppSurface)
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
                             .clickable(enabled = bin.isNotEmpty()) { binOpen = !binOpen }
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                            .padding(horizontal = 6.dp, vertical = 4.dp),
                     ) {
                         TrashBinIcon(count = bin.size)
-                        // ۲۱ مهر، خواسته‌ی کاربر: کوچک‌تر و بی نوشته‌ی توضیح - فقط نام؛ تعداد روی نشانِ سطل است.
-                        Text(
-                            "سطلِ زباله",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f).padding(start = 4.dp),
-                        )
-                        if (bin.isNotEmpty()) Text(if (binOpen) "▴" else "▾", color = AppMuted, fontSize = 13.sp)
                     }
                 }
                 if (binOpen) {
