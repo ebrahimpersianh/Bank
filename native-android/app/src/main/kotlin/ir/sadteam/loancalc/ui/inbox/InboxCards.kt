@@ -30,7 +30,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.foundation.layout.heightIn
-import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import androidx.compose.material.icons.filled.RemoveCircle
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Event
@@ -687,41 +686,31 @@ internal fun TrashBinIcon(count: Int) {
  */
 @Composable
 private fun GapFixButton(gapRial: Double, done: Boolean, onFix: () -> Unit) {
+    // ۲۱ مهر، خواسته‌ی کاربر: «مینیمال باشد، تو ذوق نزند» - بی پس‌زمینه، یک خطِ کوچکِ رنگی؛ فقط
+    // ناحیه‌ی لمس ۴۴dp است. مبلغ در خودِ متنِ پیام هست، تکرار نمی‌شود.
     var tapped by remember { mutableStateOf(false) }
-    val amount = ir.sadteam.loancalc.ui.jibak.rialToToman(kotlin.math.abs(gapRial).toLong()).toFaMoney() + " " + ir.sadteam.loancalc.ui.jibak.unitFa()
     if (done || tapped) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-            Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = AppTxIn, modifier = Modifier.size(16.dp))
-            Text(
-                "ثبت شد - موجودی با بانک یکی شد",
-                color = AppTxIn,
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(start = 5.dp),
-            )
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
+            Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = AppMuted, modifier = Modifier.size(13.dp))
+            Text("ثبت شد", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
         }
         return
     }
-    val deposit = gapRial > 0
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .padding(top = 8.dp)
-            .fillMaxWidth()
             .heightIn(min = 44.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(AppPrimaryPill)
-            .pressScaleClickable(onClick = { tapped = true; onFix() })
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { tapped = true; onFix() }
+            .padding(end = 6.dp),
     ) {
-        Icon(Icons.Filled.AddCircle, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+        Icon(Icons.Filled.AddCircle, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(14.dp))
         Text(
-            "ثبتِ $amount به‌عنوانِ ${if (deposit) "واریز" else "برداشت"}",
-            color = AppPrimary,
-            fontSize = 12.sp,
+            "ثبت به‌عنوانِ ${if (gapRial > 0) "واریز" else "برداشت"}",
+            color = AppPrimaryInk,
+            fontSize = 11.5.sp,
             fontWeight = FontWeight.Black,
-            maxLines = 1,
-            modifier = Modifier.padding(start = 6.dp).weight(1f),
+            modifier = Modifier.padding(start = 5.dp),
         )
     }
 }
