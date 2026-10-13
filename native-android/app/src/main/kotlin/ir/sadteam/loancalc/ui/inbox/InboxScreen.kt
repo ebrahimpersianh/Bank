@@ -133,6 +133,14 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
     }
     // دو بخشِ کاملاً جدا: پیام‌های شخصیِ کاربر، و اطلاعیه‌های عمومیِ جیبک از سرور.
     val personal = news.filter { it.kind != InboxMessageEntity.Kind.ANNOUNCEMENT && visible(it) }
+    // ۲۱ مهر، خواسته‌ی کاربر: دکمه‌ی «ثبتِ اختلاف» فقط روی **جدیدترین** پیامِ اختلافِ هر حساب - پیام‌های
+    // قدیمی‌ترِ همان حساب اختلافِ کهنه دارند و ثبتشان یعنی دوباره‌شماری.
+    val latestGapIds = remember(news) {
+        news.mapNotNull { m -> parseBalanceGap(m)?.let { g -> (g.accountName ?: g.accountId.toString()) to m } }
+            .groupBy({ it.first }, { it.second })
+            .values.map { group -> group.maxBy { it.createdAt }.id }
+            .toSet()
+    }
     val jibak = news.filter { it.kind == InboxMessageEntity.Kind.ANNOUNCEMENT && visible(it) }
     // 🎁 هدیه‌ی خوانده‌نشده: با باز شدنِ صندوق، جشنش خودش باز می‌شود (۹ مهر، خواسته‌ی کاربر).
     var celebrate by remember { mutableStateOf<InboxMessageEntity?>(null) }
@@ -292,7 +300,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                     }
                     val list = if (showAllPersonal) personal else personal.take(3)
                     list.forEach { message ->
-                        val gap = remember(message.id, message.refId) { parseBalanceGap(message) }
+                        val gap = remember(message.id, message.refId) { parseBalanceGap(message) }?.takeIf { message.id in latestGapIds }
                         NewsCard(
                             message = message,
                             onRead = { viewModel.markRead(message.id) },
