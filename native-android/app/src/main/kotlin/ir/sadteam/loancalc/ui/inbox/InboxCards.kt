@@ -179,8 +179,9 @@ internal fun MessageSection(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(tint.copy(alpha = 0.06f))
-            .border(1.dp, tint.copy(alpha = 0.16f), shape)
+            // ۲۱ مهر، کاربر: «کادری که بخش‌ها را جدا می‌کند نامفهوم است» - لبه و زمینه پررنگ‌تر.
+            .background(tint.copy(alpha = 0.09f))
+            .border(1.5.dp, tint.copy(alpha = 0.38f), shape)
             .padding(10.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
