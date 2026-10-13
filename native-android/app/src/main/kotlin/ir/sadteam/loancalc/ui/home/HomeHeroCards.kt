@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.Icon
 import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.runtime.Composable
@@ -58,6 +59,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppWarningInk
 
 // ═══ ۲ · کارتِ سبزِ خرجِ امروز ═══════════════════════════════════════════════════
@@ -77,151 +79,154 @@ internal fun TodaySpendHero(
     weekChangePercent: Int? = null,
 ) {
     val shown = countUpAmount(periodSpend, enabled = !privacyMode)
-    val deltaPercent: Int? = if (yesterdaySpend > 0.0) {
-        (((todaySpend - yesterdaySpend) / yesterdaySpend) * 100).toInt()
-    } else {
-        null
-    }
     val simpleHero = ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current
-    AppHeroCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
-        // چهار قرصِ بازه. روی زمینه‌ی تیره‌ی کارت، انتخاب‌شده سفیدِ مات و بقیه فقط متن -
-        // همان زبانِ تاگلِ تبِ گزارش، با رنگِ مناسبِ این زمینه.
+    val today = JalaliCalendar.today()
+    // ۲۱ مهر (خواسته‌ی کاربر با اسکرین‌شات): کارتِ سبزِ خانه **عینِ کارتِ بالای تبِ گزارش** شد -
+    // «تو در تو» بود. قرص‌های بازه **بیرونِ** کارت (همان تاگلِ گزارش)؛ داخلش فقط: آیکون + عنوان،
+    // قرصِ درصد، عددِ بزرگ، نمودارِ تمام‌عرض، و یک خطِ ریزِ درآمد/خرجِ امروز در پایین.
+    // («٪ از دیروز» برداشته شد تا کارت شلوغ نشود.) `yesterdaySpend` دیگر خوانده نمی‌شود.
+    Column {
         // حالتِ ساده: بی قرص‌های بازه (همیشه «این ماه»).
         if (!simpleHero) Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
+            modifier = Modifier.padding(bottom = 8.dp),
         ) {
             ReportPeriod.entries.forEach { p ->
                 val selected = p == period
                 Text(
                     p.label,
-                    color = if (selected) AppPrimaryInk else Color.White,
-                    fontSize = 9.5.sp,
-                    fontWeight = if (selected) FontWeight.Black else FontWeight.Bold,
-                    maxLines = 1,
+                    color = if (selected) Color.White else AppMuted,
+                    fontSize = 11.sp,
+                    fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Bold,
                     modifier = Modifier
                         .clip(RoundedCornerShape(999.dp))
-                        .background(if (selected) Color.White else HeroPillBg)
+                        .background(if (selected) AppPrimary else Color.Transparent)
                         .pressScaleClickable { onPeriod(p) }
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                        .padding(horizontal = if (selected) 14.dp else 12.dp, vertical = 7.dp),
                 )
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top,
-        ) {
-            // ستونِ چپ. `weight` اجباری است: بی آن، عددِ بزرگ با اندازه‌ی متنِ درشت کلِ
-            // عرض را می‌گیرد و ستونِ درآمد/خرج از کادر بیرون می‌افتد (باگی که کاربر با
-            // اسکرین‌شات گزارش کرد: «همه‌چی کشیده شده»).
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        periodLabel,
-                        color = HeroMuted,
-                        fontSize = 10.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (period == ReportPeriod.WEEK && weekChangePercent != null && !privacyMode) {
+        AppHeroCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+            ) {
+                // `weight` اجباری است: بی آن، عددِ بزرگ با اندازه‌ی متنِ درشت کلِ عرض را می‌گیرد
+                // و قرصِ درصد از کادر بیرون می‌افتد.
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(HeroPillBg),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Filled.AccountBalanceWallet, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        }
                         Text(
-                            // ۱۶ مهر: هفته‌ی قبلِ تقریباً خالی «۲۲۸۵٪» می‌ساخت که بی‌معنا بود؛ بالای ۲۰۰٪ «N برابر».
-                            if (weekChangePercent >= 200) "▲ ${kotlin.math.round(1 + weekChangePercent / 100.0).toInt().toFa()} برابرِ هفته‌ی قبل"
-                            else "${if (weekChangePercent <= 0) "▼" else "▲"} ${kotlin.math.abs(weekChangePercent).toFa()}٪ از هفته‌ی قبل",
+                            periodLabel,
+                            color = Color.White.copy(alpha = 0.8f),
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            maskIfPrivate(masked, shown.rialToFaCompact()) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                             color = Color.White,
-                            fontSize = 9.5.sp,
+                            // «عددِ کارتِ سبزِ خانه» ۲۶ با letterSpacing منفی (جدولِ تایپوگرافی).
+                            fontSize = 26.sp,
+                            letterSpacing = (-0.5).sp,
                             fontWeight = FontWeight.Black,
-                            modifier = Modifier
-                                .padding(start = 8.dp)
-                                .clip(RoundedCornerShape(999.dp))
-                                .background(HeroPillBg)
-                                .padding(horizontal = 8.dp, vertical = 2.dp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 6.dp),
                         )
                     }
                 }
-                PrivacyCrossfade(privacyMode) { masked ->
+                if (period == ReportPeriod.WEEK && weekChangePercent != null && !privacyMode) {
                     Text(
-                        // fmt() جداکننده‌ی لاتین می‌داد و عدد ریال بود.
-                        maskIfPrivate(masked, shown.rialToFaCompact()) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
+                        // ۱۶ مهر: هفته‌ی قبلِ تقریباً خالی «۲۲۸۵٪» می‌ساخت که بی‌معنا بود؛ بالای ۲۰۰٪ «N برابر».
+                        if (weekChangePercent >= 200) "▲ ${kotlin.math.round(1 + weekChangePercent / 100.0).toInt().toFa()} برابرِ هفته‌ی قبل"
+                        else "${if (weekChangePercent <= 0) "▼" else "▲"} ${kotlin.math.abs(weekChangePercent).toFa()}٪ از هفته‌ی قبل",
                         color = Color.White,
-                        // ⚠️ **۲۶/۹۰۰ با letterSpacing منفی**، نه ۲۸. جدولِ تایپوگرافی دو
-                        // ردیفِ جدا داره: «عددِ قهرمان» ۲۸ (بقیه‌ی تب‌ها) و «عددِ کارتِ
-                        // سبزِ خانه» ۲۶ - و همین یکی مالِ این کارته.
-                        fontSize = 26.sp,
-                        letterSpacing = (-0.5).sp,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Black,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 3.dp),
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(Color.White.copy(alpha = if (weekChangePercent > 0) 0.28f else 0.16f))
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
                     )
                 }
-                HomeSevenDayChart(
-                    values = weekSpend,
-                    modifier = Modifier.padding(top = 12.dp),
-                    // برچسبِ هر میله - بی این، لمسِ نمودار چیزی برای گفتن ندارد.
-                    labels = weekSpend.indices.map { index ->
-                        val ago = weekSpend.lastIndex - index
-                        if (ago == 0) "امروز" else "${ago.toFa()} روز پیش"
-                    },
-                )
-                HomeSevenDayChartLabels()
             }
-            // 🚨 **درآمد و خرجِ امروز، با فلشِ رنگی** (خواسته‌ی کاربر با طرحِ مرجع).
-            //
-            // تا امروز این گوشه یک قرصِ «٪ کمتر از دیروز» بود: یک عددِ نسبی که فقط با
-            // حفظ‌کردنِ رقمِ دیروز معنی می‌داد. جفتِ درآمد/خرج جوابِ سوالی است که کاربر
-            // واقعاً صبح می‌پرسد - «امروز چقدر آمد، چقدر رفت».
-            //
-            // رنگ‌ها معنایی‌اند نه تزئینی، پس **با تمِ خریدنی نمی‌چرخند**: سبزِ درآمد و
-            // قرمزِ خرج همان دو توکنِ سراسری‌اند. روی زمینه‌ی تیره‌ی هیرو، نسخه‌ی روشنشان.
-            if (!simpleHero) Column(
-                horizontalAlignment = Alignment.End,
-                modifier = Modifier.padding(start = 10.dp, top = 4.dp),
-            ) {
-                HeroFlowLine(
-                    label = "درآمدِ امروز",
-                    amount = todayIncome,
-                    income = true,
-                    privacyMode = privacyMode,
+            if (weekSpend.any { it > 0.0 }) {
+                val monthName = persianMonthName(today.m)
+                ir.sadteam.loancalc.ui.components.HeroChart(
+                    values = weekSpend,
+                    // برچسبِ هر میله برای حبابِ لمس.
+                    labels = when (period) {
+                        ReportPeriod.WEEK -> weekSpend.indices.map { i ->
+                            val ago = weekSpend.lastIndex - i
+                            if (ago == 0) "امروز" else "${ago.toFa()} روز پیش"
+                        }
+                        ReportPeriod.MONTH -> weekSpend.indices.map { i -> "${(i + 1).toFa()} $monthName" }
+                        else -> emptyList()
+                    },
+                    valueLabel = { value -> maskIfPrivate(privacyMode, "${value.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}") },
+                    // در نمای ماه، میله‌ی سفید **امروز** است نه آخرین روزِ ماه.
+                    currentIndex = if (period == ReportPeriod.MONTH) (today.d - 1).coerceIn(0, weekSpend.lastIndex) else weekSpend.lastIndex,
+                    natural = ir.sadteam.loancalc.ui.components.HeroChartStyle.BARS,
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                 )
-                // ⚠️ این خط یک‌بار حذف شده بود چون عددِ بزرگِ کارت هم «خرجِ امروز» بود و
-                // تکراری می‌شد. حالا که عددِ بزرگ **بازه‌ی انتخاب‌شده** است (هفته/ماه/…)،
-                // دیگر تکراری نیست و جفتِ فلشِ مثبت/منفیِ طرح کامل می‌شود.
-                HeroFlowLine(
-                    label = "خرجِ امروز",
-                    amount = todaySpend,
-                    income = false,
-                    privacyMode = privacyMode,
-                    modifier = Modifier.padding(top = 7.dp),
-                )
-                // درصدِ دیروز از قرص درآمد و به یک خطِ ریزِ زیرِ همین جفت تبدیل شد -
-                // خبرش می‌مانَد، ولی دیگر جای عددِ اصلی را نمی‌گیرد.
-                if (deltaPercent != null && deltaPercent != 0) {
-                    Text(
-                        when {
-                            deltaPercent < 0 -> "${(-deltaPercent).toFa()}٪ کمتر از دیروز"
-                            // ۱۶ مهر: «۳۵۱۴۰۰٪ بیشتر» (دیروز تقریباً صفر بود) گمراه‌کننده بود؛
-                            // مثلِ کارتِ هفته از ۲۰۰٪ به بالا «N برابر» می‌نویسیم.
-                            deltaPercent >= 200 -> "${kotlin.math.round(1 + deltaPercent / 100.0).toLong().toFa()} برابرِ دیروز"
-                            else -> "${deltaPercent.toFa()}٪ بیشتر از دیروز"
-                        },
-                        color = HeroMuted,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
+                // هم‌جهتِ میله‌ها (فیزیکی چپ‌به‌راست): اولِ بازه چپ، حالا راست.
+                val (firstLabel, lastLabel) = when (period) {
+                    ReportPeriod.WEEK -> "۷ روزِ گذشته" to "امروز"
+                    ReportPeriod.MONTH -> "۱ $monthName" to "${weekSpend.size.toFa()} $monthName"
+                    ReportPeriod.SEASON -> "۳ ماهِ پیش" to "این ماه"
+                    ReportPeriod.YEAR -> "۱۲ ماهِ پیش" to "این ماه"
                 }
+                androidx.compose.runtime.CompositionLocalProvider(
+                    androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(firstLabel, color = Color.White.copy(alpha = 0.85f), fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                        Text(lastLabel, color = Color.White, fontSize = 9.5.sp, fontWeight = FontWeight.ExtraBold)
+                    }
+                }
+            } else {
+                Text(
+                    "هنوز خرجی در این بازه ثبت نکردی",
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
+            }
+            // درآمد و خرجِ امروز - یک خطِ ریز در پایینِ کارت (رنگ‌ها معنایی‌اند: سبزِ درآمد، قرمزِ خرج).
+            if (!simpleHero) Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                HeroFlowLine(label = "درآمدِ امروز", amount = todayIncome, income = true, privacyMode = privacyMode, modifier = Modifier.weight(1f, fill = false))
+                HeroFlowLine(label = "خرجِ امروز", amount = todaySpend, income = false, privacyMode = privacyMode, modifier = Modifier.weight(1f, fill = false).padding(start = 8.dp))
             }
         }
     }
 }
 /**
- * یک خطِ «برچسب + فلش + مبلغ» برای گوشه‌ی کارتِ قهرمان.
+ * یک خطِ «فلش + برچسب + مبلغ» برای پایینِ کارتِ قهرمان.
  *
- * فلش **بالا برای درآمد و پایین برای خرج** است - همان قراردادی که در طرحِ مرجعِ کاربر
- * بود و در همه‌ی برنامه‌های مالی یکی است، پس چیزی برای یادگرفتن ندارد.
+ * فلش **بالا برای درآمد و پایین برای خرج** است - همان قراردادی که در همه‌ی برنامه‌های مالی
+ * یکی است. **تک‌خطی** است: اگر جا نشد مبلغ خودش کوچک می‌شود (ui.text.Text)، کارت بلند نمی‌شود.
  */
 @Composable
 private fun HeroFlowLine(
@@ -231,34 +236,28 @@ private fun HeroFlowLine(
     privacyMode: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    // 🚨 **هر دو خط تک‌خطی‌اند** (گزارشِ کاربر با اسکرین‌شات: «همه‌چی کشیده شده»).
-    // با اندازه‌ی متنِ بزرگِ تنظیمات، «درآمدِ امروز» و مبلغ می‌شکستند و چند خط می‌شدند؛
-    // چون ارتفاعِ کارتِ قهرمان از محتوایش می‌آید، کارت سه‌برابر بلند می‌شد.
-    Column(modifier = modifier, horizontalAlignment = Alignment.End) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            if (income) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
+            contentDescription = null,
+            tint = if (income) HeroIncome else HeroExpense,
+            modifier = Modifier.size(11.dp),
+        )
         Text(
             label,
             color = HeroMuted,
-            fontSize = 9.5.sp,
+            fontSize = 9.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(start = 3.dp, end = 4.dp),
         )
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
-            PrivacyCrossfade(privacyMode) { masked ->
-                Text(
-                    ir.sadteam.loancalc.ui.jibak.isoSigned(income, maskIfPrivate(masked, heroFlowAmount(amount))) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
-                    color = if (income) HeroIncome else HeroExpense,
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Black,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Icon(
-                if (income) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
-                contentDescription = null,
-                tint = if (income) HeroIncome else HeroExpense,
-                modifier = Modifier.padding(start = 3.dp).size(11.dp),
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                ir.sadteam.loancalc.ui.jibak.isoSigned(income, maskIfPrivate(masked, heroFlowAmount(amount))) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
+                color = if (income) HeroIncome else HeroExpense,
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
             )
         }
     }

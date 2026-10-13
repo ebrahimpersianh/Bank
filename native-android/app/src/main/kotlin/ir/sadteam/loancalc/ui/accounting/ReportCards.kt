@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import ir.sadteam.loancalc.data.netDangShares
@@ -118,15 +119,30 @@ internal fun PeriodSpendHero(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top,
         ) {
-            Column {
-                Text(
-                    "خرجِ $label",
-                    color = Color.White.copy(alpha = 0.8f),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                )
+            Column(modifier = Modifier.weight(1f)) {
+                // ۲۱ مهر (طرحِ جی): آیکونِ کیف در قابِ کم‌رنگ کنارِ عنوان - هم‌شکلِ کارتِ خانه و دارایی.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(Color.White.copy(alpha = 0.16f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        androidx.compose.material3.Icon(
+                            androidx.compose.material.icons.Icons.Filled.AccountBalanceWallet,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                    Text(
+                        "خرجِ $label",
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
                 // ۲۰ مهر (خواسته‌ی کاربر): واحد کنارِ عدد، نه خطِ زیرش.
-                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 3.dp)) {
+                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 6.dp)) {
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
                             maskIfPrivate(masked, spend.rialToFaCompact()),
@@ -155,7 +171,9 @@ internal fun PeriodSpendHero(
                     color = Color.White,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Black,
+                    maxLines = 1,
                     modifier = Modifier
+                        .padding(start = 8.dp)
                         .clip(RoundedCornerShape(999.dp))
                         // خرجِ بیشتر پُررنگ‌تر. قرمز روی هیرویِ بنفش نمی‌نشیند، پس شدتِ
                         // همان سفید جهت را می‌رساند - کنارِ مثلثِ ▲/▼ که مستقل از رنگ است.

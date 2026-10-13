@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import androidx.compose.foundation.layout.width
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.foundation.background
@@ -130,9 +131,10 @@ internal fun LoansHeroCard(
                     Text(
                         "${maskIfPrivate(masked, animatedMonthly.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}", // ۱۶ مهر: فشرده، هم‌قالبِ بقیه‌ی صفحه‌ها
                         color = Color.White,
-                        fontSize = 19.sp,
+                        // ۲۱ مهر (طرحِ جی): عددِ اصلی درشت، هم‌اندازه‌ی کارتِ بقیه‌ی تب‌ها.
+                        fontSize = 26.sp,
                         fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.4).sp,
+                        letterSpacing = (-0.5).sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -157,9 +159,9 @@ internal fun LoansHeroCard(
                         centerBottomColor = HeroMuted,
                         // کوچک‌تر (۷۸→۶۶) تا کارتِ وام هم‌قدِ بقیه‌ی کارت‌های قهرمان شود.
                         // ۱۴ مهر: بزرگ‌تر تا «از ۴۹۸ قسط» کامل دیده شود (بریده می‌شد).
-                        size = 64.dp,
-                        stroke = 7.dp,
-                        centerTopSize = 15,
+                        size = 76.dp,
+                        stroke = 8.dp,
+                        centerTopSize = 17,
                     )
                     // ۱۶ مهر: «۱۸۴ پرداخت شده» حالا داخلِ حلقه است («۱۸۴ از ۴۹۸»)؛ قرصِ جدا برای کوتاه‌ترشدنِ کارت رفت.
                     if (false) Row(
@@ -200,11 +202,12 @@ internal fun LoansHeroCard(
                 val over = incomeRatio > 1f
                 Row(
                     modifier = Modifier
-                        .padding(top = 5.dp)
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
                         .clip(RoundedCornerShape(999.dp))
                         .background(Color.White.copy(alpha = if (over) 0.3f else 0.16f))
                         .pressScaleClickable(onClick = onOpenIncome)
-                        .padding(horizontal = 9.dp, vertical = 3.dp),
+                        .padding(horizontal = 12.dp, vertical = 7.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
@@ -213,8 +216,10 @@ internal fun LoansHeroCard(
                         if (over) "قسط‌ها ${toFa((incomeRatio * 100).roundToInt())}٪ درآمدت است؛ بیشتر از درآمد"
                         else "${toFa((incomeRatio * 100).roundToInt())}٪ از درآمدت صرفِ اقساط می‌شه",
                         color = Color.White,
-                        fontSize = 9.5.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f),
                     )
                     Icon(
                         Icons.Filled.ChevronLeft,
@@ -298,11 +303,18 @@ internal fun LoansHeroCard(
             }
             // ⚠️ نوارِ تختِ پیشرفت **حذف شد**: همان درصد حالا در حلقه است و دو گرافیک
             // برای یک عدد، همان چیزی است که این صفحه یک‌بار از آن پاک شد.
+            // ۲۱ مهر (طرحِ جی): سه عددِ پایین در یک قابِ کم‌رنگ، سه ستونِ هم‌عرض با خطِ جداکننده.
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(16.dp))
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         "ماندهٔ کل",
                         color = HeroMuted,
@@ -313,14 +325,16 @@ internal fun LoansHeroCard(
                         Text(
                             maskIfPrivate(masked, animatedDebt.rialToFaCompactUnit()),
                             color = Color.White,
-                            fontSize = 10.5.sp,
+                            fontSize = 12.sp,
+                            maxLines = 1,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(top = 1.dp),
                         )
                     }
                 }
                 if (heroDetails && monthsLeft > 0) {
-                    Column {
+                    HeroStatDivider()
+                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             "تا آزادی",
                             color = HeroMuted,
@@ -330,7 +344,7 @@ internal fun LoansHeroCard(
                         Text(
                             "${toFa(monthsLeft)} ماه",
                             color = Color.White,
-                            fontSize = 10.5.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(top = 1.dp),
                         )
@@ -338,7 +352,8 @@ internal fun LoansHeroCard(
                 }
                 // مبلغِ معوق فقط وقتی واقعاً هست - وگرنه ستونِ صفرِ همیشگی.
                 if (totalOverdue > 0) {
-                    Column {
+                    HeroStatDivider()
+                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             "معوق",
                             color = AppDangerInk.copy(alpha = 0.75f),
@@ -349,7 +364,8 @@ internal fun LoansHeroCard(
                             Text(
                                 maskIfPrivate(masked, totalOverdue.rialToFaCompactUnit()),
                                 color = Color.White,
-                                fontSize = 10.5.sp,
+                                fontSize = 12.sp,
+                                maxLines = 1,
                                 fontWeight = FontWeight.Black,
                                 modifier = Modifier.padding(top = 1.dp),
                             )
@@ -360,6 +376,13 @@ internal fun LoansHeroCard(
         }
 }
 
+/** خطِ عمودیِ نازک بینِ ستون‌های قابِ پایینِ کارتِ وام. */
+@Composable
+private fun HeroStatDivider() {
+    androidx.compose.foundation.layout.Box(
+        modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.18f)),
+    )
+}
 @Composable
 internal fun LoansIncomeCard(
     incomes: List<IncomeEntity>,

@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.foundation.layout.width
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompactUnit
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
@@ -266,12 +267,13 @@ internal fun DailyAllowanceHero(
             }
             Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 10.dp)) {
                 HeroMiniStat(up = true, label = "درآمدِ این ماه", value = monthIncome, privacyMode = privacyMode)
+                // ۲۱ مهر (طرحِ جی): خطِ نازک بینِ درآمد و خرج.
+                Box(modifier = Modifier.padding(vertical = 6.dp).width(96.dp).height(1.dp).background(Color.White.copy(alpha = 0.22f)))
                 HeroMiniStat(
                     up = false,
                     label = "خرجِ این ماه",
                     value = monthExpense,
                     privacyMode = privacyMode,
-                    modifier = Modifier.padding(top = 5.dp),
                 )
             }
         }
@@ -282,12 +284,21 @@ internal fun DailyAllowanceHero(
                 valueLabel = { value -> if (privacyMode) "•••" else "${value.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}" },
                 currentIndex = (dayOfMonth - 1).coerceIn(0, monthDaily.lastIndex),
                 natural = HeroChartStyle.BARS,
-                height = 34.dp,
-                modifier = Modifier.padding(top = 10.dp),
+                height = 44.dp,
+                modifier = Modifier.padding(top = 12.dp),
             )
+            // ۲۱ مهر (طرحِ جی): تاریخِ دو سرِ نمودار - هم‌جهتِ میله‌ها (فیزیکی چپ‌به‌راست).
+            val monthName = ir.sadteam.loancalc.ui.components.persianMonthName(ir.sadteam.loancalc.core.JalaliCalendar.today().m)
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 5.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("۱ $monthName", color = Color.White.copy(alpha = 0.75f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Text("${toFa(daysInMonth)} $monthName", color = Color.White.copy(alpha = 0.75f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                }
+            }
         }
+        Box(modifier = Modifier.fillMaxWidth().padding(top = 9.dp).height(1.dp).background(Color.White.copy(alpha = 0.18f)))
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(

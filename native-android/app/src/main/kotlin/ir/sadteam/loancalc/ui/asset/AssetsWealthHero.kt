@@ -152,8 +152,9 @@ internal fun TotalWealthHero(
                     slots = 30,
                     natural = HeroChartStyle.LINE,
                     currentIndex = trend.lastIndex,
-                    height = 38.dp,
-                    modifier = Modifier.padding(top = 6.dp),
+                    // ۲۱ مهر (طرحِ جی): نمودار بلندتر تا روند خوانا باشد.
+                    height = 48.dp,
+                    modifier = Modifier.padding(top = 12.dp),
                     labels = trend.indices.map { index ->
                         val ago = trend.lastIndex - index
                         if (ago == 0) "امروز" else "${ago.toFa()} روز پیش"
@@ -161,7 +162,7 @@ internal fun TotalWealthHero(
                     valueLabel = { value -> "${value.rialToFaCompact()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}" },
                 )
                 // برچسبِ دو سرِ محور، مثلِ کارتِ خانه - جای قرصِ بزرگِ قبلی که کارت را بلند می‌کرد.
-                Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
                     Text("امروز", color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         if (onOpen != null) Text("نمودارِ کامل ‹", color = Color.White.copy(alpha = 0.85f), fontSize = 9.5.sp, fontWeight = FontWeight.Black)
@@ -177,7 +178,7 @@ internal fun TotalWealthHero(
             }
             // پنج قرص تو یه ردیفِ عادی جا نمی‌شن؛ FlowRow خطِ دوم می‌سازه.
             FlowRow(
-                modifier = Modifier.padding(top = 10.dp),
+                modifier = Modifier.padding(top = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
