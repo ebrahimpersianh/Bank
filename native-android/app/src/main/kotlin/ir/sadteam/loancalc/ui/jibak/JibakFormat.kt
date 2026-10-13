@@ -147,6 +147,15 @@ fun Double.toFaPercent(): String {
  * چهار بازه، و زیرِ هزار عددِ کامل چون سه رقم همیشه جا می‌شود.
  */
 fun Long.toFaCompact(): String {
+    // ۲۱ مهر، خواسته‌ی کاربر: «دیگه میلیون نوشته نشه، فقط ریال یا تومان» - همه‌جا عددِ کامل
+    // («۳٬۴۰۰٬۰۰۰»). اگر جا نشد، `ui.text.Text` خودش متن را کوچک می‌کند. فقط جاهای واقعاً تنگ
+    // (برچسبِ محورِ نمودار) [toFaShort] را صدا بزنند.
+    val body = faGrouped(kotlin.math.abs(this))
+    return if (this < 0) isoSigned(false, body) else body
+}
+
+/** فرمِ کوتاهِ قدیمی («۳٫۴ میلیون») - فقط برای جای خیلی تنگ مثلِ برچسبِ محورِ نمودار. */
+fun Long.toFaShort(): String {
     val negative = this < 0
     val v = kotlin.math.abs(this)
     val body = when {
@@ -187,6 +196,9 @@ private fun faScaled(v: Long, unit: Double, word: String): String {
  */
 fun Double.rialToFaCompact(): String = rialToToman(toLong()).toFaCompact()
 
+/** همان [toFaShort] برای مقدارِ ریالی - فقط جای خیلی تنگ. */
+fun Double.rialToFaShort(): String = rialToToman(toLong()).toFaShort()
+
 /** همان، **با واحد** کنارش («۳۲٫۶ میلیون تومان») - ۲۰ مهر، خواسته‌ی کاربر: هر مبلغی واحدش کنارش باشد. */
 fun Double.rialToFaCompactUnit(): String = "${rialToFaCompact()} ${unitFa()}"
 
@@ -211,22 +223,10 @@ fun Double.rialToFaSignedCompact(): String {
  * نسخه‌ی محلی یعنی کپیِ سوم — همان الگویی که سه بار در `compact` تکرار شد.
  */
 fun Double.rialToFaCompactParts(): Pair<String, String> {
+    // ۲۱ مهر: «میلیون» نه - عددِ کامل (رجوع کن به toFaCompact).
     val toman = rialToToman(toLong())
-    val v = kotlin.math.abs(toman)
-    val (number, unit) = when {
-        v >= 1_000_000_000L -> faOneDecimal(v / 1_000_000_000.0) to "میلیارد ${unitFa()}"
-        v >= 1_000_000L -> faOneDecimal(v / 1_000_000.0) to "میلیون ${unitFa()}"
-        else -> faGrouped(v) to unitFa()
-    }
-    return (if (toman < 0L) "$FA_MINUS$number" else number) to unit
-}
-
-/** یک رقمِ اعشار، بی صفرِ آخر، با ممیزِ فارسی. `Locale.US` اجباری است. */
-private fun faOneDecimal(v: Double): String {
-    val s = String.format(Locale.US, "%.1f", v).trimEnd('0').trimEnd('.')
-    return buildString {
-        s.forEach { append(if (it.isDigit()) faDigits[it - '0'] else FA_DECIMAL_SEPARATOR) }
-    }
+    val number = faGrouped(kotlin.math.abs(toman))
+    return (if (toman < 0L) "$FA_MINUS$number" else number) to unitFa()
 }
 
 /** حالتِ حریمِ خصوصی: همیشه پنج نقطه، مستقل از تعدادِ رقم. */

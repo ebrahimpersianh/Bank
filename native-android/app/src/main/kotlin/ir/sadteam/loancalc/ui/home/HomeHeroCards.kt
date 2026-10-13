@@ -53,6 +53,7 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
@@ -267,13 +268,8 @@ private fun HeroFlowLine(
  * قبلاً «۸ میلیون» کنارِ «۳۵۲,۴۰۳» می‌نشست و ناهماهنگ بود.
  */
 private fun heroFlowAmount(rial: Double): String {
-    val toman = kotlin.math.abs(rialToToman(rial.toLong()))
-    return when {
-        toman >= 1_000_000_000L -> rial.rialToFaCompact()
-        toman >= 1_000_000L -> rial.rialToFaCompact()
-        toman >= 1_000L -> "${(toman / 1_000).toFa()} هزار"
-        else -> toman.toFa()
-    }
+    // ۲۱ مهر: «میلیون/هزار» نه - عددِ کامل؛ جا نشد، متن خودش کوچک می‌شود.
+    return rialToToman(kotlin.math.abs(rial.toLong())).toFaMoney()
 }
 // ═══ ۳ · بودجهٔ ماه ════════════════════════════════════════════════════════════
 /**

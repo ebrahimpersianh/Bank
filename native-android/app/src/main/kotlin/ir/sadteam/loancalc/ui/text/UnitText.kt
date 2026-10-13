@@ -4,7 +4,10 @@ import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
@@ -21,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text as M3Text
 
 /*
@@ -86,23 +90,44 @@ fun Text(
 ) {
     val span = if (hasUnitWord(text)) unitSpanFor(color, fontSize, style) else null
     val styled = if (span != null) remember(text, span) { styleUnits(AnnotatedString(text), span) } else null
-    if (styled == null || styled.spanStyles.isEmpty()) {
-        M3Text(
-            text = text, modifier = modifier, color = color, fontSize = fontSize, fontStyle = fontStyle,
-            fontWeight = fontWeight, fontFamily = fontFamily, letterSpacing = letterSpacing,
-            textDecoration = textDecoration, textAlign = textAlign, lineHeight = lineHeight,
-            overflow = overflow, softWrap = softWrap, maxLines = maxLines, minLines = minLines,
-            onTextLayout = { onTextLayout?.invoke(it) }, style = style,
-        )
-    } else {
-        M3Text(
-            text = styled, modifier = modifier, color = color, fontSize = fontSize, fontStyle = fontStyle,
-            fontWeight = fontWeight, fontFamily = fontFamily, letterSpacing = letterSpacing,
-            textDecoration = textDecoration, textAlign = textAlign, lineHeight = lineHeight,
-            overflow = overflow, softWrap = softWrap, maxLines = maxLines, minLines = minLines,
-            onTextLayout = { onTextLayout?.invoke(it) }, style = style,
-        )
+    // ۲۱ مهر: مبلغ‌ها کامل‌اند («۳٬۴۰۰٬۰۰۰ تومان»)؛ مبلغِ تک‌خطی اگر جا نشد **متن کوچک می‌شود**، نه
+    // اینکه بشکند یا «…» بخورد (قاعده‌ی کاربر: کادر بزرگ نشود، متن کوچک شود).
+    val shrink = remember(text, maxLines) { (maxLines == 1 && looksLikeAmount(text)) || isPureAmount(text) }
+    val baseSp = effectiveSp(fontSize, style)
+    // کلید = طولِ متن، نه خودِ متن: عددِ شمارشی (count-up) هر فریم عوض می‌شود و نباید هر بار از اول کوچک شود.
+    var scale by remember(text.length, baseSp) { mutableFloatStateOf(1f) }
+    val minScale = if (baseSp != null) (8f / baseSp).coerceIn(0.6f, 1f) else 1f
+    val useShrink = shrink && baseSp != null
+    val layout: (TextLayoutResult) -> Unit = { r ->
+        if (useShrink && r.hasVisualOverflow && scale > minScale) scale = (scale - 0.05f).coerceAtLeast(minScale)
+        onTextLayout?.invoke(r)
     }
+    val size = if (useShrink) (baseSp!! * scale).sp else fontSize
+    M3Text(
+        text = styled ?: AnnotatedString(text), modifier = modifier, color = color, fontSize = size, fontStyle = fontStyle,
+        fontWeight = fontWeight, fontFamily = fontFamily, letterSpacing = letterSpacing,
+        textDecoration = textDecoration, textAlign = textAlign, lineHeight = lineHeight,
+        overflow = overflow, softWrap = if (useShrink) false else softWrap,
+        maxLines = if (useShrink) 1 else maxLines, minLines = minLines,
+        onTextLayout = layout, style = style,
+    )
+}
+
+private val PURE_AMOUNT = Regex(
+    "^[\\s\\u2066-\\u2069+\\u2212-]*[0-9۰-۹•][0-9۰-۹•٬,٫.]*[\\u2066-\\u2069]*" +
+        "(?:[\\s\\u00A0\\u202F]+(?:(?:هزار|میلیون|میلیارد)[\\s\\u00A0\\u202F]+)?(?:تومان|ریال))?\\s*$",
+)
+
+/** خودِ متن فقط یک مبلغ است («۳٬۴۰۰٬۰۰۰ تومان» یا فقط عدد). */
+private fun isPureAmount(s: String) = s.length <= 40 && PURE_AMOUNT.matches(s)
+
+/** متنی که مبلغِ واحددار دارد («قیمتِ روز ۳٬۴۰۰ تومان»). */
+private fun looksLikeAmount(s: String) = hasUnitWord(s) && UNIT_REGEX.containsMatchIn(s)
+
+private fun effectiveSp(fontSize: TextUnit, style: TextStyle): Float? = when {
+    fontSize.isSpecified && fontSize.isSp -> fontSize.value
+    !fontSize.isSpecified && style.fontSize.isSpecified && style.fontSize.isSp -> style.fontSize.value
+    else -> null
 }
 
 @Composable

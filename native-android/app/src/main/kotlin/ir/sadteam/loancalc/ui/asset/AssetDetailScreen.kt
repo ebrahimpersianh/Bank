@@ -62,6 +62,7 @@ import ir.sadteam.loancalc.ui.jibak.toFaDate
 import ir.sadteam.loancalc.ui.jibak.toFaSignedCompact
 import ir.sadteam.loancalc.ui.jibak.rialToFaSignedCompact
 import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.rialToFaShort
 import ir.sadteam.loancalc.ui.theme.AppDangerBorder
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
@@ -477,8 +478,8 @@ internal fun AssetSparkline(points: List<PricePoint>) {
                 modifier = Modifier.width(60.dp).fillMaxHeight().padding(end = 6.dp),
                 verticalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(max.rialToFaCompact(), color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                Text(min.rialToFaCompact(), color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(max.rialToFaShort(), color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(min.rialToFaShort(), color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             }
             Canvas(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 val w = size.width
