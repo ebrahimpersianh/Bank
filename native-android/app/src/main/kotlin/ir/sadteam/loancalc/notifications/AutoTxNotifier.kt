@@ -91,6 +91,8 @@ object AutoTxNotifier {
             .setGroup(GROUP_AUTO_TX)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            // اندرویدِ زیرِ ۸ کانال ندارد؛ صدا/لرزش را خودِ اعلان می‌خواهد (۲۱ مهر: «صدا بدهد»).
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
 
         // فقط یک سوال: درست است یا نه. دسته بعداً و جدا.
         builder.addAction(confirmAction(context, notificationId, txId, confident))

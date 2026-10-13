@@ -43,7 +43,10 @@ object ReminderChannels {
     const val CHANNEL_DUE_DATES = "jibak_due_dates"
 
     /** تراکنشی که خودکار از پیامک یا اعلانِ بانکی ثبت شده. */
-    const val CHANNEL_AUTO_TX = "jibak_auto_transactions"
+    // ۲۱ مهر، کاربر: «اعلانِ تراکنش صدا بدهد، خالی نباشد». صدای کانال فقط لحظه‌ی ساختِ اول ثبت
+    // می‌شود (و روی بعضی گوشی‌ها کانالِ قبلی بی‌صدا مانده بود)، پس شناسه‌ی تازه + حذفِ قبلی.
+    const val CHANNEL_AUTO_TX = "jibak_auto_transactions_v2"
+    private const val CHANNEL_AUTO_TX_OLD = "jibak_auto_transactions"
 
     /** انگیزشی: «دخل‌وخرج امروز یادت نره»، «برگشت». */
     const val CHANNEL_NUDGES = "jibak_nudges"
@@ -80,9 +83,18 @@ object ReminderChannels {
                 NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
                 description = "تراکنشی که خودکار از پیامک یا اعلانِ بانک ثبت شد"
-                enableVibration(false)
+                setSound(
+                    android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION),
+                    android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build(),
+                )
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 180)
             },
         )
+        manager.deleteNotificationChannel(CHANNEL_AUTO_TX_OLD)
 
         manager.createNotificationChannel(
             NotificationChannel(

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.Icon
 import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -205,7 +206,7 @@ internal fun HomeHeader(
             )
             InboxBell(
                 count = inboxCount,
-                hasUnreadNews = inboxUnreadNews > 0,
+                unreadNews = inboxUnreadNews,
                 onClick = onOpenInbox,
             )
             ir.sadteam.loancalc.ui.components.HeaderIconButton(
@@ -262,31 +263,43 @@ fun PrivacyEyeButton(
  * دلیلش اینه که عدد یعنی «کاری با توئه»، نه «چیزی برای خوندن هست».
  */
 @Composable
-private fun InboxBell(count: Int, hasUnreadNews: Boolean, onClick: () -> Unit) {
+private fun InboxBell(count: Int, unreadNews: Int, onClick: () -> Unit) {
+    // ۲۱ مهر، خواسته‌ی کاربر: پیامِ تازه که آمد زنگوله تکان بخورد + یک لرزشِ کوچک، و **عدد** رویش
+    // بیاید (نه فقط نقطه). عدد = اقدام‌دارهای باز + خبرهای خوانده‌نشده؛ قرمز اگر کاری منتظرِ توست،
+    // فیروزه‌ای اگر فقط خبر است.
+    val total = count + unreadNews
+    val shake = remember { androidx.compose.animation.core.Animatable(0f) }
+    var previous by remember { mutableStateOf(total) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    androidx.compose.runtime.LaunchedEffect(total) {
+        if (total > previous) {
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+            shake.animateTo(
+                0f,
+                androidx.compose.animation.core.keyframes {
+                    durationMillis = 700
+                    0f at 0; 16f at 80; -14f at 180; 11f at 280; -8f at 380; 5f at 480; -2f at 580; 0f at 700
+                },
+            )
+        }
+        previous = total
+    }
     ir.sadteam.loancalc.ui.components.HeaderIconButton(
         icon = Icons.Filled.NotificationsNone,
         description = "پیام‌ها",
         onClick = onClick,
+        modifier = Modifier.graphicsLayer { rotationZ = shake.value },
         badge = {
-            if (count > 0) {
+            if (total > 0) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .clip(RoundedCornerShape(999.dp))
-                        .background(AppDanger)
+                        .background(if (count > 0) AppDanger else AppPrimary)
                         .padding(horizontal = 5.dp, vertical = 1.dp),
                 ) {
-                    Text((count).toFa(), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                    Text(total.coerceAtMost(99).toFa(), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
                 }
-            } else if (hasUnreadNews) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 3.dp, end = 3.dp)
-                        .size(7.dp)
-                        .clip(CircleShape)
-                        .background(AppPrimary),
-                )
             }
         },
     )

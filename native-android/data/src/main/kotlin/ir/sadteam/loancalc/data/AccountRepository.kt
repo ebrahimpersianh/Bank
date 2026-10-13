@@ -553,10 +553,15 @@ class AccountRepository(
      * یا موجودیِ شروع غلط است. خروجی = بانک منهای برنامه (ریال)، یا null اگر هم‌خوان است.
      */
     suspend fun bankBalanceGap(account: AccountEntity, newTxDeposit: Boolean, newTxAmount: Double, bankBalance: Double): Double? {
-        val txs = observeTransactions().first().filter { it.confirmed }
-        val expected = currentBalance(account, txs) + if (newTxDeposit) newTxAmount else -newTxAmount
-        val gap = bankBalance - expected
-        val tolerance = maxOf(100_000.0, kotlin.math.abs(bankBalance) * 0.01)
+        // ۲۱ مهر (گزارشِ کاربر: «انتقال زدم، موجودی برابر نبود ولی پیام نیامد»):
+        // ۱) تراکنش‌های **تأییدنشده‌ی خودکار** هم حساب می‌شوند - همان‌هایی که بانک واقعاً زده؛ بی آن‌ها
+        //    هر واریز/برداشتِ تأییدنشده اختلافِ دروغین می‌ساخت یا اختلافِ واقعی را می‌پوشاند.
+        //    تراکنشِ همین پیامک قبل از این صدا ساخته شده، پس جدا اضافه نمی‌شود ([newTxDeposit]/[newTxAmount]
+        //    فقط برای سازگاریِ امضا مانده‌اند).
+        // ۲) آستانه ۱۰۰٬۰۰۰ ریال/۱٪ بود؛ اختلافِ ۱٬۰۰۰ تومانی دیده نمی‌شد. حالا ۱۰٬۰۰۰ ریال (۱٬۰۰۰ تومان).
+        val txs = observeTransactions().first()
+        val gap = bankBalance - currentBalance(account, txs)
+        val tolerance = 10_000.0
         return gap.takeIf { kotlin.math.abs(it) > tolerance }
     }
 

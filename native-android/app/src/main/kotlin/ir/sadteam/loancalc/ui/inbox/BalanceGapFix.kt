@@ -16,6 +16,9 @@ internal data class BalanceGap(val accountId: Long?, val accountName: String?, v
 
 internal const val GAP_REF_PREFIX = "gap:"
 
+/** شناسه‌ی ثابتِ پیامِ اختلافِ هر حساب (بالاتر از هر `currentTimeMillis`) - پیامِ تازه جای قبلی را می‌گیرد. */
+internal fun gapMessageId(accountId: Long) = 7_000_000_000_000L + accountId
+
 internal fun gapRef(accountId: Long, gapRial: Double) = "$GAP_REF_PREFIX$accountId:${gapRial.toLong()}"
 
 private val GAP_TITLE = Regex("موجودیِ «(.+)» با بانک فرق دارد")
