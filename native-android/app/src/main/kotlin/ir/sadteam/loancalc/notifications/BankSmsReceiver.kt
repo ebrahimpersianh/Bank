@@ -208,6 +208,7 @@ class BankSmsReceiver : BroadcastReceiver() {
                         inboxRepository.post(
                             kind = InboxMessageEntity.Kind.SYSTEM,
                             title = "موجودیِ «${updated.name}» با بانک فرق دارد",
+                            refId = ir.sadteam.loancalc.ui.inbox.gapRef(updated.id, gap),
                             body = "بانک مانده را $gapToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} " + (if (gap > 0) "بیشتر" else "کمتر") +
                                 " از جیبک نوشته. احتمالاً تراکنشی ثبت نشده یا «موجودیِ روزِ شروع» درست نیست.",
                             sourceLabel = "پیامک از $sender",

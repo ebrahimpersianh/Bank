@@ -28,6 +28,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.foundation.layout.heightIn
+import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import androidx.compose.material.icons.filled.RemoveCircle
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Event
@@ -441,7 +444,14 @@ private fun timeLabel(millis: Long): String {
  * متن، قرصِ منبع، زمان و فلش. نقطه‌ی کنارِ عنوان یعنی خوانده‌نشده.
  */
 @Composable
-internal fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit, onRead: () -> Unit = {}) {
+internal fun NewsCard(
+    message: InboxMessageEntity,
+    onClick: () -> Unit,
+    onRead: () -> Unit = {},
+    /** پیامِ «موجودی با بانک فرق دارد»: اختلاف (ریال؛ مثبت = بانک بیشتر). `null` = دکمه نه. */
+    gapRial: Double? = null,
+    onFixGap: () -> Unit = {},
+) {
     // متنِ بلند ۲ خط نشان داده می‌شود؛ زدن روی کارت بازش می‌کند (و کارِ قبلیِ کارت هم انجام می‌شود).
     var expanded by remember { mutableStateOf(false) }
     val isTx = message.kind == InboxMessageEntity.Kind.DETECTED_TX
@@ -497,6 +507,7 @@ internal fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit, onRead: 
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 3.dp),
             )
+            if (gapRial != null) GapFixButton(gapRial, done = message.actionState == InboxMessageEntity.ActionState.DONE, onFix = onFixGap)
         }
         // ستونِ کناری (طرحِ ChatGPT): زمان بالا؛ پایین نامِ برنامه/فرستنده به آبی **بالای** قرصِ نوع
         // (خواسته‌ی کاربر، ۳ مهر: «blu» دقیقاً بالای «اعلان»).
@@ -667,5 +678,50 @@ internal fun TrashBinIcon(count: Int) {
                 .padding(horizontal = 4.dp),
             contentAlignment = Alignment.Center,
         ) { Text(toFa(count), color = Color.White, fontSize = 9.sp, lineHeight = 11.sp, fontWeight = FontWeight.Black) }
+    }
+}
+
+/**
+ * ۲۱ مهر: زیرِ پیامِ «موجودی با بانک فرق دارد» - یک لمس، همان اختلاف به‌عنوانِ تراکنش ثبت می‌شود تا
+ * موجودیِ جیبک با بانک یکی شود. بعد از ثبت، به‌جای دکمه «ثبت شد» می‌آید (دوباره ثبت نمی‌شود).
+ */
+@Composable
+private fun GapFixButton(gapRial: Double, done: Boolean, onFix: () -> Unit) {
+    var tapped by remember { mutableStateOf(false) }
+    val amount = ir.sadteam.loancalc.ui.jibak.rialToToman(kotlin.math.abs(gapRial).toLong()).toFaMoney() + " " + ir.sadteam.loancalc.ui.jibak.unitFa()
+    if (done || tapped) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+            Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = AppTxIn, modifier = Modifier.size(16.dp))
+            Text(
+                "ثبت شد - موجودی با بانک یکی شد",
+                color = AppTxIn,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(start = 5.dp),
+            )
+        }
+        return
+    }
+    val deposit = gapRial > 0
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(top = 8.dp)
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(AppPrimaryPill)
+            .pressScaleClickable(onClick = { tapped = true; onFix() })
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Icon(Icons.Filled.AddCircle, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+        Text(
+            "ثبتِ $amount به‌عنوانِ ${if (deposit) "واریز" else "برداشت"}",
+            color = AppPrimary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 6.dp).weight(1f),
+        )
     }
 }

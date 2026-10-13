@@ -292,9 +292,12 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                     }
                     val list = if (showAllPersonal) personal else personal.take(3)
                     list.forEach { message ->
+                        val gap = remember(message.id, message.refId) { parseBalanceGap(message) }
                         NewsCard(
                             message = message,
                             onRead = { viewModel.markRead(message.id) },
+                            gapRial = gap?.gapRial,
+                            onFixGap = { viewModel.markRead(message.id); viewModel.fixBalanceGap(message) },
                             onClick = {
                                 viewModel.markRead(message.id)
                                 // ۱۴ مهر: تراکنشِ خودکار → پنجره‌ی دسته (متنِ پیام از همان‌جا).
@@ -413,7 +416,7 @@ private fun SourceDialog(
                 modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (message.refId != null) {
+                if (message.refId?.toLongOrNull() != null) {
                     Box(
                         modifier = Modifier
                             .weight(1f)
