@@ -94,6 +94,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
         }
     }
     val messages by viewModel.messages.collectAsState()
+    val txCategories by viewModel.txCategories.collectAsState()
     val bin by viewModel.recycleBin.collectAsState()
     var binOpen by remember { mutableStateOf(false) }
     val sourceAccount by viewModel.sourceAccount.collectAsState()
@@ -295,6 +296,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                             onRead = { viewModel.markRead(message.id) },
                             gapRial = gap?.gapRial,
                             onFixGap = { viewModel.markRead(message.id); viewModel.fixBalanceGap(message) },
+                            txCategory = message.refId?.toLongOrNull()?.let { txCategories[it] },
                             onClick = {
                                 viewModel.markRead(message.id)
                                 // ۱۴ مهر: تراکنشِ خودکار → پنجره‌ی دسته (متنِ پیام از همان‌جا).

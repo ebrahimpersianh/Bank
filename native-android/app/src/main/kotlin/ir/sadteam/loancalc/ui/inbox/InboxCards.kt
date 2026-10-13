@@ -452,6 +452,8 @@ internal fun NewsCard(
     /** پیامِ «موجودی با بانک فرق دارد»: اختلاف (ریال؛ مثبت = بانک بیشتر). `null` = دکمه نه. */
     gapRial: Double? = null,
     onFixGap: () -> Unit = {},
+    /** دسته‌ی فعلیِ تراکنشِ این پیام (فقط «برداشت/واریزِ تازه»)؛ `null` = متنِ اصلیِ پیام. */
+    txCategory: TxCategoryLabel? = null,
 ) {
     // متنِ بلند ۲ خط نشان داده می‌شود؛ زدن روی کارت بازش می‌کند (و کارِ قبلیِ کارت هم انجام می‌شود).
     var expanded by remember { mutableStateOf(false) }
@@ -500,7 +502,36 @@ internal fun NewsCard(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Text(
+            // ۲۱ مهر (خواسته‌ی کاربر): دسته که انتخاب شد، به‌جای «دسته‌بندیش نامشخصه، لمس کن…» اسمِ
+            // دسته با آیکونِ کوچکش کنارِ مبلغ می‌آید. پیامِ «دسته: X. تایید می‌کنی؟» تا تأیید همان می‌ماند.
+            val shownCategory = txCategory?.takeIf { isTx && (it.confirmed || "نامشخص" in message.body) }
+            if (shownCategory != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 3.dp)) {
+                    Text(
+                        message.body.substringBefore(" - "),
+                        color = AppMuted,
+                        fontSize = 11.5.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    val catColor = shownCategory.color ?: AppPrimary
+                    Icon(
+                        shownCategory.icon,
+                        contentDescription = null,
+                        tint = catColor,
+                        modifier = Modifier.padding(start = 6.dp).size(14.dp),
+                    )
+                    Text(
+                        shownCategory.name,
+                        color = catColor,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 3.dp),
+                    )
+                }
+            } else Text(
                 message.body,
                 color = AppMuted,
                 fontSize = 11.5.sp,

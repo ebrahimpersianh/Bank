@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.inbox
 
 import androidx.lifecycle.ViewModel
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.data.AccountRepository
@@ -25,6 +26,7 @@ class InboxViewModel @Inject constructor(
     private val accounts: AccountRepository,
     private val api: ApiService,
     private val authPrefs: ir.sadteam.loancalc.data.prefs.AuthPrefs,
+    private val categories: ir.sadteam.loancalc.data.CategoryRepository,
 ) : ViewModel() {
 
     init {
@@ -39,6 +41,29 @@ class InboxViewModel @Inject constructor(
 
     val messages: StateFlow<List<InboxMessageEntity>> = inbox.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * ۲۱ مهر (خواسته‌ی کاربر): دسته‌ی فعلیِ تراکنشِ هر پیامِ «برداشت/واریزِ تازه» (کلید: txId)، تا بعد
+     * از انتخابِ دسته، متنِ کارت به‌جای «دسته‌بندیش نامشخصه…» اسم و آیکونِ دسته را نشان دهد. از خودِ
+     * تراکنش خوانده می‌شود، پس انتخاب از هر جا (پنجره‌ی دسته، اعلان، صفحه‌ی تراکنش) دیده می‌شود.
+     */
+    val txCategories: StateFlow<Map<Long, TxCategoryLabel>> = kotlinx.coroutines.flow.combine(
+        accounts.observeTransactions(),
+        categories.orderedCategories(ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL),
+        categories.orderedCategories(ir.sadteam.loancalc.core.TransactionType.DEPOSIT),
+    ) { txs, out, inc ->
+        val byKey = (out + inc).associateBy { it.type.name to it.name }
+        txs.mapNotNull { t ->
+            val label = if (t.sourceType == ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER) {
+                TxCategoryLabel("جابه‌جایی بینِ حساب‌های خودم", androidx.compose.material.icons.Icons.Filled.SwapHoriz, null, t.confirmed)
+            } else {
+                // «سایر…» یعنی هنوز دسته‌ای انتخاب نشده - همان متنِ اصلیِ پیام می‌ماند.
+                val c = t.category?.takeIf { !it.startsWith("سایر") }?.let { byKey[t.type to it] } ?: return@mapNotNull null
+                TxCategoryLabel(c.name, c.icon, c.color, t.confirmed)
+            }
+            t.id to label
+        }.toMap()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     /** عددِ روی زنگ - فقط اقدام‌دارهای باز. */
     val actionableCount: StateFlow<Int> = inbox.observeActionableCount()
@@ -148,3 +173,11 @@ class InboxViewModel @Inject constructor(
         }
     }
 }
+
+/** دسته‌ی تراکنشِ پشتِ یک پیامِ «برداشت/واریزِ تازه» - برای جایگزینیِ متنِ «دسته‌بندیش نامشخصه». `color` تهی = رنگِ اصلی. */
+data class TxCategoryLabel(
+    val name: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val color: androidx.compose.ui.graphics.Color?,
+    val confirmed: Boolean,
+)
