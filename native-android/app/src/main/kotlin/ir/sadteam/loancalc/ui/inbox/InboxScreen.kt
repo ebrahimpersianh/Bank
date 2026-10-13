@@ -245,20 +245,19 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                             .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
                             .background(ir.sadteam.loancalc.ui.theme.AppSurface)
                             .clickable(enabled = bin.isNotEmpty()) { binOpen = !binOpen }
-                            .padding(horizontal = 10.dp, vertical = 0.dp),
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TrashBinIcon(count = bin.size)
-                        Column(Modifier.weight(1f).padding(start = 6.dp)) {
-                            Text("سطلِ زباله", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            Text(
-                                if (bin.isEmpty()) "خالی · ردشده‌ها ۳۰ روز می‌مانند"
-                                else "${toFa(bin.size)} تراکنشِ ردشده · بزن تا ببینی",
-                                color = AppMuted,
-                                fontSize = 9.5.sp,
-                            )
-                        }
-                        if (bin.isNotEmpty()) Text(if (binOpen) "▴" else "▾", color = AppMuted, fontSize = 16.sp)
+                        // ۲۱ مهر، خواسته‌ی کاربر: کوچک‌تر و بی نوشته‌ی توضیح - فقط نام؛ تعداد روی نشانِ سطل است.
+                        Text(
+                            "سطلِ زباله",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f).padding(start = 4.dp),
+                        )
+                        if (bin.isNotEmpty()) Text(if (binOpen) "▴" else "▾", color = AppMuted, fontSize = 13.sp)
                     }
                 }
                 if (binOpen) {
