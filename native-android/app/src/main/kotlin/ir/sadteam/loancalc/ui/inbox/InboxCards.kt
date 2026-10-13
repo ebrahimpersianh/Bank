@@ -173,8 +173,8 @@ internal fun MessageSection(
     onMarkAllRead: (() -> Unit)?,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    // ۲۱ مهر، کاربر: رنگِ «پیام‌های جیبک» با سبزِ واریز یکی نباشد → بنفش.
-    val tint = if (green) AppPurple else AppPrimary
+    // ۲۱ مهر، کاربر: رنگِ «پیام‌های جیبک» با سبزِ واریز یکی نباشد → آبی (بنفش نه).
+    val tint = if (green) ir.sadteam.loancalc.ui.theme.AppInfo else AppPrimary
     val shape = RoundedCornerShape(AppRadius.card)
     Column(
         modifier = Modifier
@@ -234,7 +234,7 @@ internal fun EmptyLine(text: String) {
 }
 @Composable
 internal fun SeeAllButton(label: String, green: Boolean, onClick: () -> Unit) {
-    val tint = if (green) AppPurple else AppPrimary
+    val tint = if (green) ir.sadteam.loancalc.ui.theme.AppInfo else AppPrimary
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -259,9 +259,9 @@ internal fun AnnouncementCard(message: InboxMessageEntity, onAction: (String) ->
         claimed -> Triple(Icons.Filled.CardGiftcard, AppMuted, "✓ دریافت شد")
         gift -> Triple(Icons.Filled.CardGiftcard, ir.sadteam.loancalc.ui.theme.AppGoldInk, "هدیه · بزن")
         else -> when (kind) {
-        "update" -> Triple(Icons.Filled.CardGiftcard, AppPurple, "جدید")
+        "update" -> Triple(Icons.Filled.CardGiftcard, ir.sadteam.loancalc.ui.theme.AppInfo, "جدید")
         "outage" -> Triple(Icons.Filled.Warning, AppWarningInk, "اطلاعیه")
-        "feature" -> Triple(Icons.Filled.AutoAwesome, AppPurple, "قابلیتِ تازه")
+        "feature" -> Triple(Icons.Filled.AutoAwesome, ir.sadteam.loancalc.ui.theme.AppInfo, "قابلیتِ تازه")
         else -> Triple(Icons.Filled.Campaign, AppPrimary, "اطلاعیه")
         }
     }
