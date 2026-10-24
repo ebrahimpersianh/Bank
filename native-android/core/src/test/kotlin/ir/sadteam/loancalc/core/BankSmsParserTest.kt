@@ -53,6 +53,18 @@ class BankSmsParserTest {
         assertTrue(smsSenderMatches("0210 0011", "02100011"))
     }
 
+    /** گزارشِ ۲ آبان: پیامکِ «TejaratBank» روی حسابِ «بلوبانک» نشست و موجودی‌اش را خراب کرد. */
+    @Test
+    fun senderNamingAnotherBankConflicts() {
+        assertTrue(smsSenderConflictsWithBank("TejaratBank", "بلوبانک"))
+        assertTrue(smsSenderConflictsWithBank("BankMellat", "بانک ملی"))
+        assertFalse(smsSenderConflictsWithBank("TejaratBank", "بانک تجارت"))
+        assertFalse(smsSenderConflictsWithBank("BLUBANK", "بلو بانک"))
+        assertFalse(smsSenderConflictsWithBank("SamanBank", "بلوبانک"))
+        assertFalse(smsSenderConflictsWithBank("+98200011111", "بلوبانک"))
+        assertFalse(smsSenderConflictsWithBank("TejaratBank", ""))
+    }
+
     @Test
     fun senderDoesNotMatchDifferentBankOrEmptyValue() {
         assertFalse(smsSenderMatches("100011111", "200022222"))

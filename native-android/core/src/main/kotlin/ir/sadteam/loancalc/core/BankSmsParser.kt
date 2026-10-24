@@ -238,6 +238,32 @@ fun smsSenderMatches(accountSender: String?, incoming: String?): Boolean =
     // یک حساب می‌تواند سرشماره‌ی پیامک و بسته‌نامِ اپِ اعلان را با «,» کنارِ هم داشته باشد.
     accountSender.orEmpty().split(',').any { singleSenderMatches(it, incoming) }
 
+/** سرشماره‌ی حرفی ← تکه‌ی نامِ فارسیِ بانک. فقط نام‌های بلند (اختصارِ کوتاه تصادفی جور درمی‌آید).
+ * بلو زیرمجموعه‌ی سامان است، پس آن دو با هم سازگارند. */
+private val SENDER_BANKS = listOf(
+    "tejarat" to listOf("تجارت"), "mellat" to listOf("ملت"), "melli" to listOf("ملی"),
+    "saderat" to listOf("صادرات"), "sepah" to listOf("سپه"), "maskan" to listOf("مسکن"),
+    "keshavarzi" to listOf("کشاورزی"), "refah" to listOf("رفاه"), "parsian" to listOf("پارسیان"),
+    "pasargad" to listOf("پاسارگاد"), "saman" to listOf("سامان", "بلو"), "blu" to listOf("بلو", "سامان"),
+    "resalat" to listOf("رسالت"), "karafarin" to listOf("کارآفرین"), "ayandeh" to listOf("آینده"),
+    "eghtesad" to listOf("اقتصاد"), "postbank" to listOf("پست"), "sina" to listOf("سینا"),
+)
+
+/**
+ * سرشماره‌ی پیامک **صریحاً** نامِ بانکِ دیگری را دارد؟ (مثلاً «TejaratBank» برای حسابِ «بلوبانک».)
+ *
+ * 🚨 گزارشِ کاربر (۲ آبان): پیامک‌های بانکِ تجارت روی حسابِ بلوبانک ثبت شد و چون «مانده»ی پیامکِ
+ * تجارت با موجودیِ بلو مقایسه شد، پیامِ «موجودی با بانک فرق دارد» آمد و ثبتش موجودیِ بلو را خراب کرد.
+ * سرشماره‌ی عددی یا نامِ بانکِ خالی = نمی‌دانیم → تعارض نیست.
+ */
+fun smsSenderConflictsWithBank(sender: String?, bankName: String?): Boolean {
+    val s = sender.orEmpty().lowercase().filter { it in 'a'..'z' }
+    val names = SENDER_BANKS.firstOrNull { (key, _) -> key in s }?.second ?: return false
+    val bank = bankName.orEmpty().replace('ي', 'ی').replace('ك', 'ک').replace("‌", "").replace(" ", "")
+    if (bank.replace("بانک", "").isBlank()) return false
+    return names.none { it in bank }
+}
+
 private fun singleSenderMatches(accountSender: String?, incoming: String?): Boolean {
     val a = normalizeSmsSender(accountSender)
     val b = normalizeSmsSender(incoming)

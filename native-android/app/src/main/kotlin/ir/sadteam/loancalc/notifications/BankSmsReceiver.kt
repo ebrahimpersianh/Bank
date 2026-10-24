@@ -80,19 +80,23 @@ class BankSmsReceiver : BroadcastReceiver() {
                 //    یه حساب سرشماره داره، دیگه حدس نمی‌زنیم و پیامکِ ناشناس نادیده گرفته می‌شه،
                 //    وگرنه پیامکِ بانکِ B بی‌سروصدا رو حسابِ بانکِ A ثبت می‌شد.
                 // کلیدِ هر بانک: حسابی که کاربر خاموشش کرده اصلاً نامزدِ تطبیق نیست.
-                val candidates = accounts.filter { it.smsEnabled && it.type == ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK }
+                // 🚨 (۲ آبان) سرشماره‌ای که صریحاً نامِ بانکِ دیگری دارد («TejaratBank» برای حسابِ بلو) اصلاً
+                // نامزدِ آن حساب نیست - حتی اگر قبلاً اشتباهی یاد گرفته شده باشد.
+                val candidates = accounts.filter {
+                    it.smsEnabled && it.type == ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK &&
+                        !ir.sadteam.loancalc.core.smsSenderConflictsWithBank(sender, it.bankName)
+                }
                 // ⚠️ سرشماره اول **مجموعه‌ی نامزدها** را محدود می‌کند، بعد شماره‌ی کارت بینِ
                 // همان‌ها تصمیم می‌گیرد. قبلاً اولین تطبیقِ سرشماره فوراً برنده می‌شد، پس با دو
                 // حساب در یک بانک، پیامکی که صریحاً چهار رقمِ آخرِ کارتِ دوم را داشت روی حسابِ
                 // اول می‌نشست.
                 val sameSender = candidates.filter { acc -> smsSenderMatches(acc.smsSender, sender) }
-                val account = sameSender.firstOrNull { acc ->
+                val byCard = { acc: ir.sadteam.loancalc.data.db.AccountEntity ->
                     parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
                 }
+                val account = sameSender.firstOrNull(byCard)
                     ?: sameSender.firstOrNull()
-                    ?: candidates.firstOrNull { acc ->
-                        parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
-                    }
+                    ?: candidates.firstOrNull(byCard)
                     ?: candidates.takeIf { list -> list.none { !it.smsSender.isNullOrBlank() } }?.firstOrNull()
                     // نامِ بانک در متنِ پیامک («بانک ملت») با نامِ بانکِ حساب - مثلِ تطبیقِ نامِ اپ در مسیرِ اعلان.
                     ?: candidates.filter { acc ->
@@ -198,10 +202,14 @@ class BankSmsReceiver : BroadcastReceiver() {
                 // زمانِ آخرین پیامکِ **همین حساب** - زیرنویسِ صفحه‌ی تنظیماتِ پیامک از این ساخته می‌شه.
                 val updated = account.copy(lastSmsAt = System.currentTimeMillis())
                 accountRepository.updateAccount(updated)
-                // 🧠 با کارت پیدا شد ولی سرشماره وصل نبود → از این به بعد وصل باشد.
-                if (account !in sameSender) runCatching { accountRepository.learnSender(updated, sender.orEmpty()) }
+                // حساب با سرشماره یا کارت پیدا شد، نه با حدس (حسابِ اول / نامِ بانک در متن).
+                val sureMatch = account in sameSender || byCard(account)
+                // 🧠 با کارت پیدا شد ولی سرشماره وصل نبود → از این به بعد وصل باشد. حدس هرگز یاد گرفته
+                // نمی‌شود (۲ آبان: حدسِ «حسابِ اول» سرشماره‌ی تجارت را برای همیشه به حسابِ بلو چسبانده بود).
+                if (account !in sameSender && byCard(account)) runCatching { accountRepository.learnSender(updated, sender.orEmpty()) }
                 // 🧠 مانده‌ی بانک در برابرِ موجودیِ ثبت‌شده - روزی یک بار برای هر حساب.
-                parsed.balanceRial?.let { bankBal ->
+                // فقط وقتی مطمئنیم پیامک مالِ همین حساب است؛ وگرنه «مانده»ی بانکِ دیگری مقایسه می‌شود.
+                if (sureMatch) parsed.balanceRial?.let { bankBal ->
                     val gap = accountRepository.bankBalanceGap(updated, !isWithdrawal, parsed.amountRial, bankBal)
                     if (gap != null && uiPrefs.claimAutoImportKey("gap|${updated.id}|${today.y}-${today.m}-${today.d}|${(gap / 10_000).toLong()}")) {
                         val gapToman = fmt(rialToToman(kotlin.math.abs(gap).toLong()).toDouble()).faDigits()

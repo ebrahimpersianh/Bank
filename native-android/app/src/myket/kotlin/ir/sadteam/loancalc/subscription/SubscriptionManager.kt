@@ -36,12 +36,22 @@ val subscriptionTiers = listOf(
 class SubscriptionManager(private val activity: ComponentActivity) {
     private val helper = IabHelper(activity, MYKET_IAB_PUBLIC_KEY)
     private var connected = false
+    // 🚨 کرشِ ۸۵۹ (۲ بار): اگر صفحه پیش از وصل‌شدنِ مایکت بسته شود، dispose زمینه را پاک می‌کند و بعد
+    // کتابخانه‌ی مایکت در onServiceConnected روی زمینه‌ی خالی می‌خورد (NPE در checkBillingSupported).
+    // پس تا راه‌اندازی تمام نشده dispose نمی‌کنیم؛ همان‌جا در پایانِ راه‌اندازی انجامش می‌دهیم.
+    private var setupDone = false
+    private var disposeWhenReady = false
     private var latestInventory: Inventory? = null
     /** خریدهای دیده‌شده (از فهرستِ مالکیت یا همین خرید) - برای [consume] شیءِ Purchase لازم است. */
     private val knownPurchases = mutableMapOf<String, Purchase>()
 
     fun connect(onStateChange: (connected: Boolean) -> Unit) {
         helper.startSetup { result: IabResult ->
+            setupDone = true
+            if (disposeWhenReady) {
+                runCatching { helper.dispose() }
+                return@startSetup
+            }
             if (!result.isSuccess) {
                 connected = false
                 onStateChange(false)
@@ -56,8 +66,12 @@ class SubscriptionManager(private val activity: ComponentActivity) {
     }
 
     fun disconnect() {
-        helper.dispose()
         connected = false
+        if (!setupDone) {
+            disposeWhenReady = true
+            return
+        }
+        runCatching { helper.dispose() }
     }
 
     /** بازیابیِ خریدهای «مالکیت‌شده ولی هنوز سمتِ سرور تاییدنشده» - برای کاربرهایی که قبل از رفعِ
