@@ -1,5 +1,7 @@
-name: جوابِ پشتیبانی (یک‌بار، ۱۴ مهر)
+name: جوابِ پشتیبانی (یک‌بار، ۲ آبان)
 
+# همان کارِ دکمه‌ی «جواب» در پنلِ ادمین: پیامِ اختصاصی در «پیام‌های جیبک»ِ همان کاربر + بستنِ پیام.
+# متن‌ها را صاحبِ برنامه در چت تأیید کرد. به هر کاربر فقط یک جواب (نه یکی برای هر پیام).
 on:
   workflow_dispatch:
 
@@ -14,9 +16,13 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             DB=~/VameMan/data.sqlite
-            send() {
-              T="$1"; B="$2"
-              sqlite3 $DB "INSERT INTO announcements (title, body, kind, target_user_id) SELECT '💬 جوابِ پشتیبانی ($T)', '$B', 'info', user_id FROM bug_reports WHERE ticket = '$T' AND status = 'open'; SELECT '$T sent: ' || changes(); UPDATE bug_reports SET status = 'answered' WHERE ticket = '$T';"
-            }
-            send 'JB-QXC8YK' "$(printf '%s\n' 'سلام، ممنون از پیامت 🌱' 'جیبک دفترِ حساب‌وکتابِ شخصی است و به حسابِ بانکیت وصل نیست، پس پولی از حسابت جابه‌جا نمی‌کند؛ فقط برداشت‌هایی که خودت انجام دادی را یادداشت می‌کند.' 'برای ثبتِ یک برداشت: در صفحه‌ی خانه دکمه‌ی «+» پایینِ صفحه را بزن ← «خرج» را انتخاب کن ← مبلغ، حساب و دسته را وارد کن ← ذخیره.' 'اگر بخواهی برداشت‌های کارتت خودکار ثبت شوند: تنظیمات ← «پیامک‌های بانکی» را روشن کن.')"
-            send 'JB-CQCY2J' "$(printf '%s\n' 'سلام، نگران نباش 🌱' 'حسابِ جیبک فقط با کدی باز می‌شود که به شماره‌ی موبایلِ خودت پیامک می‌شود؛ پس تا وقتی این کد را به کسی ندهی، هیچ‌کسِ دیگری نمی‌تواند وارد حسابت شود. اطلاعاتت هم رمزنگاری‌شده روی گوشیِ خودت است.' 'برای اطمینانِ بیشتر: تنظیمات ← «قفلِ برنامه» را روشن کن تا با رمز یا اثرِ انگشت باز شود.' 'هیچ‌وقت کدِ ورود را برای کسی نفرست - پشتیبانیِ جیبک هم هرگز آن را از تو نمی‌خواهد.')"
+            LOAN="$(printf '%s\n' 'سلام، ممنون که پیام دادی 🙏 جیبک وام نمی‌ده و برداشتِ پول هم نداره؛ یه دفترِ حساب‌وکتابِ شخصیه. وامی که از بانک گرفتی رو توش ثبت می‌کنی تا اقساطش رو یادآوری کنه و نشون بده چقدر مونده. برای گرفتنِ وام باید مستقیم به بانک یا اپِ بانکت مراجعه کنی.')"
+            STUCK="$(printf '%s\n' 'سلام، ببخشید که اذیت شدی. لطفاً بگو کدوم دکمه رو می‌زنی که کار نمی‌کنه؟ اگه برای گرفتن یا برداشتِ وام هست، جیبک وام نمی‌ده؛ فقط وام‌هایی که از بانک گرفتی رو ثبت و یادآوری می‌کنه.')"
+            # شرط: پیام‌های ۱۷ مهر به بعد با همین متن‌ها (عکسِ پنلِ ادمین).
+            WHERE_LOAN="created_at >= '2026-10-08' AND (ticket = 'JB-A2C55V' OR message LIKE '%برداشت وام%' OR message LIKE '%پولم رو بردارم%')"
+            WHERE_STUCK="created_at >= '2026-10-08' AND ticket = 'JB-GAEM9M'"
+            echo "=== matched ==="
+            sqlite3 $DB "SELECT ticket, user_id, status, created_at, substr(message,1,60) FROM bug_reports WHERE ($WHERE_LOAN) OR ($WHERE_STUCK);"
+            sqlite3 $DB "INSERT INTO announcements (title, body, kind, target_user_id) SELECT '💬 جوابِ پشتیبانی (' || MAX(ticket) || ')', '$LOAN', 'info', user_id FROM bug_reports WHERE $WHERE_LOAN GROUP BY user_id; SELECT 'loan replies: ' || changes();"
+            sqlite3 $DB "INSERT INTO announcements (title, body, kind, target_user_id) SELECT '💬 جوابِ پشتیبانی (' || ticket || ')', '$STUCK', 'info', user_id FROM bug_reports WHERE $WHERE_STUCK; SELECT 'stuck replies: ' || changes();"
+            sqlite3 $DB "UPDATE bug_reports SET status = 'answered' WHERE ($WHERE_LOAN) OR ($WHERE_STUCK); SELECT 'closed: ' || changes();"
