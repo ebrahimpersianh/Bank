@@ -274,11 +274,27 @@ class AuthRepository(
         return runCatching { apiService.adminSupportFile("Bearer $token", id).bytes() }.getOrNull()
     }
 
-    suspend fun adminSupportReply(id: Long, text: String): Boolean {
+    /** [image] = عکسِ همراه (JPEG، از قبل کوچک‌شده)؛ اگر بالا نرفت، جواب نمی‌رود (تا بی عکس نرسد). */
+    suspend fun adminSupportReply(id: Long, text: String, image: ByteArray? = null): Boolean {
         val token = authPrefs.authToken.first() ?: return false
         return runCatching {
-            apiService.adminSupportReply("Bearer $token", ir.sadteam.loancalc.data.network.AdminSupportReplyRequest(id, text)).isSuccessful
+            val imageId = image?.let {
+                apiService.uploadSupportFile("Bearer $token", ProgressRequestBody(it, "image/jpeg".toMediaType()) {}).id
+            }
+            apiService.adminSupportReply("Bearer $token", ir.sadteam.loancalc.data.network.AdminSupportReplyRequest(id, text, imageId = imageId)).isSuccessful
         }.getOrDefault(false)
+    }
+
+    /** عکسِ یک پیامِ جیبک؛ یک بار دانلود و در پوشه‌ی خودِ برنامه نگه داشته می‌شود. */
+    suspend fun announcementImage(cacheDir: java.io.File, id: String): ByteArray? {
+        if (!Regex("[A-Za-z0-9_-]{8,64}").matches(id)) return null
+        // همان پوشه‌ای که FileProvider می‌شناسد (support_view) تا با لمس در گالری باز شود.
+        val f = java.io.File(cacheDir, "support_view/msg_$id.jpg")
+        if (f.isFile) return runCatching { f.readBytes() }.getOrNull()
+        val token = authPrefs.authToken.first() ?: return null
+        val bytes = runCatching { apiService.announcementImage("Bearer $token", id).bytes() }.getOrNull() ?: return null
+        runCatching { f.parentFile?.mkdirs(); f.writeBytes(bytes) }
+        return bytes
     }
 
     /** هدیه‌ی مستقیم. نتیجه: `null` = موفق، `user_not_found`، یا `failed`. */

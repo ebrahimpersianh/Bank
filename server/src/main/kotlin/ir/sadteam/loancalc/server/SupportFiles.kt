@@ -51,8 +51,10 @@ object SupportFiles {
     fun sweep() {
         Db.withConnection { conn ->
             val ids = conn.prepareStatement(
-                "SELECT id FROM support_files WHERE (report_id IS NULL AND created_at < datetime('now','-1 day')) " +
-                    "OR created_at < datetime('now','-30 day')",
+                // عکسِ جوابِ پشتیبانی تا وقتی پیامش هست می‌ماند (پیامِ حساب‌پاک‌شده که رفت، یتیم می‌شود).
+                "SELECT id FROM support_files WHERE ((report_id IS NULL AND created_at < datetime('now','-1 day')) " +
+                    "OR created_at < datetime('now','-30 day')) " +
+                    "AND id NOT IN (SELECT image_id FROM announcements WHERE image_id IS NOT NULL)",
             ).use { ps -> ps.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.getString(1)) } } }
             ids.forEach { id ->
                 fileFor(id)?.delete()

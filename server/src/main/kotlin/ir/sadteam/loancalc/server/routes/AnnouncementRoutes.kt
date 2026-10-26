@@ -8,6 +8,8 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondBytes
+import io.ktor.server.response.header
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -33,7 +35,7 @@ import ir.sadteam.loancalc.server.Log
 private val KINDS = setOf("update", "outage", "feature", "info")
 
 @Serializable
-data class AnnouncementDto(val id: Long, val title: String, val body: String, val kind: String, val createdAt: String, val coins: Int = 0, val action: String? = null)
+data class AnnouncementDto(val id: Long, val title: String, val body: String, val kind: String, val createdAt: String, val coins: Int = 0, val action: String? = null, val imageId: String? = null)
 
 @Serializable
 private data class AnnouncementsResponse(val items: List<AnnouncementDto>)
@@ -113,13 +115,27 @@ fun Route.announcementRoutes() {
             }
             call.respond(mapOf("ok" to true))
         }
+        // عکسِ همراهِ پیام (۴ آبان) - فقط برای کسی که آن پیام مالِ اوست (یا پیامِ همگانی).
+        get("/image/{id}") {
+            val uid = call.optionalUid() ?: return@get call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "auth"))
+            val id = call.parameters["id"].orEmpty()
+            val allowed = Db.withConnection { conn ->
+                conn.queryOne(
+                    "SELECT 1 FROM announcements WHERE image_id = ? AND (target_user_id IS NULL OR target_user_id = ?)", id, uid,
+                ) { true } == true
+            }
+            val file = ir.sadteam.loancalc.server.SupportFiles.fileFor(id)
+            if (!allowed || file == null || !file.isFile) return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "not_found"))
+            call.response.header("X-Content-Type-Options", "nosniff")
+            call.respondBytes(file.readBytes(), io.ktor.http.ContentType.Image.JPEG)
+        }
         get {
             val since = call.request.queryParameters["since"]?.toLongOrNull() ?: 0L
             // همگانی‌ها برای همه؛ اختصاصی‌ها فقط برای صاحبش (با توکن). بی ورود، فقط همگانی.
             val uid = call.optionalUid() ?: -1L
             val items = Db.withConnection { conn ->
                 conn.prepareStatement(
-                    "SELECT id, title, body, kind, created_at, coins, action FROM announcements " +
+                    "SELECT id, title, body, kind, created_at, coins, action, image_id FROM announcements " +
                         "WHERE active = 1 AND id > ? AND (target_user_id IS NULL OR target_user_id = ?) " +
                         "ORDER BY id DESC LIMIT 30",
                 ).use { ps ->
@@ -137,6 +153,7 @@ fun Route.announcementRoutes() {
                                         createdAt = rs.getString("created_at"),
                                         coins = rs.getInt("coins"),
                                         action = rs.getString("action"),
+                                        imageId = rs.getString("image_id"),
                                     ),
                                 )
                             }

@@ -84,7 +84,8 @@ class InboxRepository(
                     actionState = InboxMessageEntity.ActionState.NONE,
                     refId = a.kind,
                     // دکمه‌ی داخلِ پیام (shop/subscription/update) - در همین ستون تا مهاجرتِ دیتابیس لازم نشود.
-                    sourceLabel = a.action?.let { "action:$it" },
+                    // عکسِ همراه (۴ آبان) هم همین‌جا: «image:شناسه». جوابِ پشتیبانی دکمه ندارد، پس با هم برخورد نمی‌کنند.
+                    sourceLabel = a.action?.let { "action:$it" } ?: a.imageId?.let { "image:$it" },
                 ),
             )
         }

@@ -245,6 +245,12 @@ interface ApiService {
     suspend fun getAppVersion(): AppVersionResponse
 
     /** «پیام‌های جیبک» - عمومی و بی‌ورود. رجوع کن به server/routes/AnnouncementRoutes.kt. */
+    @GET("api/announcements/image/{id}")
+    suspend fun announcementImage(
+        @Header("Authorization") authHeader: String,
+        @Path("id") id: String,
+    ): okhttp3.ResponseBody
+
     @GET("api/announcements")
     suspend fun getAnnouncements(
         @Query("since") since: Long = 0,
@@ -354,7 +360,7 @@ data class SupportMessage(
 )
 data class AdminSupportGiftRequest(val id: Long, val days: Int, val text: String)
 data class AdminSupportResponse(val items: List<SupportMessage> = emptyList(), val openCount: Int = 0)
-data class AdminSupportReplyRequest(val id: Long, val text: String, val close: Boolean = true)
+data class AdminSupportReplyRequest(val id: Long, val text: String, val close: Boolean = true, val imageId: String? = null)
 data class AdminSupportStatusRequest(val id: Long, val status: String)
 
 data class BugReportResponse(val ok: Boolean, val ticket: String)
@@ -425,6 +431,8 @@ data class AnnouncementDto(
     val coins: Int = 0,
     /** دکمه‌ی داخلِ پیام: shop / subscription / update. */
     val action: String? = null,
+    /** عکسِ همراهِ جوابِ پشتیبانی (۴ آبان) - از `api/announcements/image/{id}`. */
+    val imageId: String? = null,
 )
 
 data class AdminGiftRequest(val user: String, val days: Int = 0, val coins: Int = 0, val text: String = "")

@@ -90,7 +90,7 @@ data class SupportMessageDto(
 private data class SupportListResponse(val items: List<SupportMessageDto>, val openCount: Int)
 
 @Serializable
-private data class ReplyBody(val id: Long, val text: String, val close: Boolean = true)
+private data class ReplyBody(val id: Long, val text: String, val close: Boolean = true, val imageId: String? = null)
 
 @Serializable
 private data class StatusBody(val id: Long, val status: String)
@@ -253,11 +253,14 @@ fun Route.supportRoutes() {
                     // جواب‌ها همان اطلاعیه‌های اختصاصیِ «… (کدِ پیگیری)»اند - ستونِ تازه لازم نیست و جواب‌های قدیمی هم دیده می‌شوند.
                     val replies = m.userId?.let { uid ->
                         conn.prepareStatement(
-                            "SELECT body FROM announcements WHERE target_user_id = ? AND title LIKE ? ORDER BY id",
+                            "SELECT body, image_id FROM announcements WHERE target_user_id = ? AND title LIKE ? ORDER BY id",
                         ).use { ps ->
                             ps.setLong(1, uid)
                             ps.setString(2, "%(${m.ticket})")
-                            ps.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.getString(1)) } }
+                            ps.executeQuery().use { rs ->
+                                buildList { while (rs.next()) add(rs.getString(1) + if (rs.getString(2) != null) "
+🖼 همراهِ عکس" else "") }
+                            }
                         }
                     }.orEmpty()
                     m.copy(
@@ -295,9 +298,13 @@ fun Route.supportRoutes() {
                 val row = conn.queryOne("SELECT user_id, ticket FROM bug_reports WHERE id = ?", body.id) {
                     it.getLong(1) to it.getString(2)
                 } ?: return@withConnection false
+                // عکسِ همراه (۴ آبان): فقط پیوستی که واقعاً بالا رفته و عکس است.
+                val imageId = body.imageId?.takeIf { id ->
+                    conn.queryOne("SELECT kind FROM support_files WHERE id = ?", id) { it.getString(1) } == "image"
+                }
                 conn.insertReturningId(
-                    "INSERT INTO announcements (title, body, kind, target_user_id) VALUES (?, ?, ?, ?)",
-                    "💬 جوابِ پشتیبانی (${row.second})", text, "info", row.first,
+                    "INSERT INTO announcements (title, body, kind, target_user_id, image_id) VALUES (?, ?, ?, ?, ?)",
+                    "💬 جوابِ پشتیبانی (${row.second})", text, "info", row.first, imageId,
                 )
                 if (body.close) {
                     // پیوست دیگر با جواب پاک نمی‌شود (۱۳ مهر: «عکس بعد از جواب غیب شد»)؛ sweep بعد از ۳۰ روز.

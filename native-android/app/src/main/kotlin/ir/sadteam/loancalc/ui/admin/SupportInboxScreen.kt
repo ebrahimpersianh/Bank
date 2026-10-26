@@ -113,8 +113,8 @@ class SupportInboxViewModel @Inject constructor(
 
     fun consumeNew() { _newCount.value = 0 }
 
-    fun reply(id: Long, text: String, done: (Boolean) -> Unit) = viewModelScope.launch {
-        val ok = repo.adminSupportReply(id, text)
+    fun reply(id: Long, text: String, image: ByteArray? = null, done: (Boolean) -> Unit) = viewModelScope.launch {
+        val ok = repo.adminSupportReply(id, text, image)
         if (ok) load()
         done(ok)
     }
@@ -224,6 +224,14 @@ private fun SupportMessageCard(
     var expanded by rememberSaveable(msg.id) { mutableStateOf(false) }
     var replying by remember { mutableStateOf(false) }
     var text by remember { mutableStateOf("") }
+    // عکسِ همراهِ جواب (۴ آبان): کوچک‌شده تا ۱۶۰۰ پیکسل، JPEG - همان روشِ پیوستِ کاربر.
+    var replyImage by remember { mutableStateOf<ByteArray?>(null) }
+    var sending by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val imagePicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia(),
+    ) { uri -> if (uri != null) scope.launch { replyImage = shrinkToJpeg(context, uri) } }
     var gifting by remember { mutableStateOf(false) }
     var giftDays by remember { mutableStateOf(3) }
     var giftText by remember { mutableStateOf(defaultGiftText(msg.category, 3)) }
@@ -324,18 +332,41 @@ private fun SupportMessageCard(
                 placeholder = { Text("جواب (در «پیام‌های جیبک»ِ همین کاربر می‌نشیند)", fontSize = 11.sp) },
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp), colors = adminFieldColors(), shape = AdminFieldShape,
             )
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                val bmp = remember(replyImage) { replyImage?.let { android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() } }
+                if (bmp != null) {
+                    androidx.compose.foundation.Image(
+                        bmp, "عکسِ جواب", contentScale = ContentScale.Crop,
+                        modifier = Modifier.padding(end = 8.dp).size(56.dp).clip(RoundedCornerShape(10.dp)),
+                    )
+                }
+                GradientButton(
+                    onClick = {
+                        if (replyImage != null) replyImage = null
+                        else imagePicker.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                    variant = AppButtonVariant.SECONDARY,
+                ) {
+                    Icon(Icons.Filled.Image, null, modifier = Modifier.size(18.dp))
+                    Text(if (replyImage != null) "برداشتنِ عکس" else "افزودنِ عکس", modifier = Modifier.padding(start = 4.dp))
+                }
+            }
         }
         Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             GradientButton(
                 onClick = {
                     if (!replying) replying = true
-                    else if (text.isNotBlank()) viewModel.reply(msg.id, text.trim()) { ok ->
-                        if (ok) { replying = false; text = "" }
-                        onReplied(ok)
+                    else if (text.isNotBlank() && !sending) {
+                        sending = true
+                        viewModel.reply(msg.id, text.trim(), replyImage) { ok ->
+                            sending = false
+                            if (ok) { replying = false; text = ""; replyImage = null }
+                            onReplied(ok)
+                        }
                     }
                 },
                 modifier = Modifier.weight(1f),
-            ) { Text(if (replying) "فرستادنِ جواب" else "جواب") }
+            ) { Text(if (sending) "در حالِ فرستادن…" else if (replying) "فرستادنِ جواب" else "جواب") }
             if (msg.rewardedDays == 0) {
                 GradientButton(onClick = { gifting = !gifting }, variant = AppButtonVariant.SECONDARY) {
                     Icon(Icons.Filled.CardGiftcard, null, modifier = Modifier.size(18.dp))
@@ -381,3 +412,17 @@ private fun AttachmentThumb(a: SupportAttachment, viewModel: SupportInboxViewMod
         }
     }
 }
+
+/** عکسِ انتخاب‌شده → حداکثر ۱۶۰۰ پیکسل، JPEG ۸۵ (متادیتا و مکان دور ریخته می‌شود). */
+private suspend fun shrinkToJpeg(context: Context, uri: android.net.Uri): ByteArray? =
+    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        runCatching {
+            val bmp = context.contentResolver.openInputStream(uri)!!.use { android.graphics.BitmapFactory.decodeStream(it) }
+                ?: return@runCatching null
+            val scale = minOf(1f, 1600f / maxOf(bmp.width, bmp.height))
+            val scaled = android.graphics.Bitmap.createScaledBitmap(
+                bmp, (bmp.width * scale).toInt().coerceAtLeast(1), (bmp.height * scale).toInt().coerceAtLeast(1), true,
+            )
+            java.io.ByteArrayOutputStream().also { scaled.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray()
+        }.getOrNull()
+    }

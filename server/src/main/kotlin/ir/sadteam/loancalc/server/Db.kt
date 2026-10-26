@@ -361,6 +361,8 @@ object Db {
             // «چند نفر باز کردند» (۱۰ مهر): هر پیامِ گروهی یک batch_id دارد و دیدنِ کاربر read_at را پر می‌کند.
             addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN batch_id INTEGER")
             addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN read_at TEXT")
+            // عکسِ همراهِ جوابِ پشتیبانی (۴ آبان): شناسه‌ی یک ردیفِ support_files از نوعِ image.
+            addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN image_id TEXT")
             // شماره‌ی نسخه‌ی هر اسنپ‌شاتِ ابری - پایه‌ی کنترلِ هم‌زمانی (رجوع کن به BackupRoutes).
             // کلاینتِ کهنه که `expectedRevision` نمی‌فرستد، رفتارِ قبلی را می‌گیرد.
             addColumnIfMissing(conn, "ALTER TABLE loans ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")

@@ -300,6 +300,7 @@ internal fun AnnouncementCard(message: InboxMessageEntity, onAction: (String) ->
                 Text(timeLabel(message.createdAt), color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             }
             Text(message.body, color = AppMuted, fontSize = 11.5.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 4.dp))
+            message.sourceLabel?.takeIf { it.startsWith("image:") }?.let { MessageImage(it.removePrefix("image:")) }
             val action = message.sourceLabel?.removePrefix("action:")?.takeIf { message.sourceLabel?.startsWith("action:") == true }
             val actionLabel = when (action) {
                 "shop" -> "برو به فروشگاه"
