@@ -258,8 +258,7 @@ fun Route.supportRoutes() {
                             ps.setLong(1, uid)
                             ps.setString(2, "%(${m.ticket})")
                             ps.executeQuery().use { rs ->
-                                buildList { while (rs.next()) add(rs.getString(1) + if (rs.getString(2) != null) "
-🖼 همراهِ عکس" else "") }
+                                buildList { while (rs.next()) add(rs.getString(1) + if (rs.getString(2) != null) " · 🖼 همراهِ عکس" else "") }
                             }
                         }
                     }.orEmpty()
