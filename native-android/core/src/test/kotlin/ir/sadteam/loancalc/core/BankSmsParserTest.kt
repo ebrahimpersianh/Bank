@@ -24,6 +24,16 @@ class BankSmsParserTest {
         assertTrue(looksLikeBankSms("برداشت از حساب 1234 مبلغ 500,000 ریال مانده 2,000,000"))
     }
 
+    /** اعلانِ واقعیِ اپِ بلو (۱۰ آبان؛ نام عوض شده) - عنوان + متنِ بلند، همان‌طور که BankNotificationListener سر هم می‌کند. */
+    @Test
+    fun parsesRealBluWithdrawalNotification() {
+        val body = "بلو برداشت پول\nکاربر عزیز، 600,000ریال از حساب شما پرید.\nموجودی: 8,802,583 ریال\n۱۴:۲۲\n۱۴۰۵.۰۸.۱۰"
+        val parsed = BankSmsParser.parse(body, trustedSource = true)
+        assertEquals(600_000.0, parsed?.amountRial)
+        assertEquals(TransactionType.WITHDRAWAL, parsed?.type)
+        assertEquals(8_802_583.0, parsed?.balanceRial)
+    }
+
     @Test
     fun parsesWithdrawalSmsInRial() {
         val parsed = BankSmsParser.parse("برداشت 1,500,000 ریال از کارت منتهی به 4821")
