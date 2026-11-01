@@ -49,6 +49,8 @@ android {
         // با هر انتشارِ جدید خودکار عوض بشه) - این مقادیرِ پیش‌فرض فقط برای build لوکاله.
         versionCode = 1
         versionName = "2.0"
+        // بیلدِ لوکالِ شبیه‌ساز: `-PjibakVersionCode=999` تا پیامِ «نسخه‌ی تازه لازم است» جلوی تست را نگیرد.
+        (project.findProperty("jibakVersionCode") as String?)?.let { versionCode = it.toInt() }
     }
 
     // دو استورِ ایرانی، هرکدوم SDK پرداختِ درون‌برنامه‌ای مخصوصِ خودشون رو می‌خوان (Poolakey برای
