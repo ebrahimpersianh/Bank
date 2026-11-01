@@ -158,7 +158,7 @@ class InboxViewModel @Inject constructor(
         val account = all.firstOrNull { it.id == gap.accountId } ?: return@launch
         // اختلاف **همین لحظه**: آخرین مانده‌ی بانک منهای موجودیِ الانِ جیبک (نه عددِ لحظه‌ی رسیدنِ پیام؛
         // شاید کاربر در این فاصله ردیفی پاک یا اضافه کرده باشد).
-        val gapNow = bankBalance - accounts.currentBalance(account, accounts.observeTransactions().first())
+        val gapNow = bankBalance - accounts.balanceAsBankSeesIt(account)
         val today = ir.sadteam.loancalc.core.JalaliCalendar.today()
         inbox.resolve(message.id, done = true)
         if (kotlin.math.abs(gapNow) <= 10_000.0) return@launch

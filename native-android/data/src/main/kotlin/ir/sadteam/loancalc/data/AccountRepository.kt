@@ -559,11 +559,21 @@ class AccountRepository(
         //    تراکنشِ همین پیامک قبل از این صدا ساخته شده، پس جدا اضافه نمی‌شود ([newTxDeposit]/[newTxAmount]
         //    فقط برای سازگاریِ امضا مانده‌اند).
         // ۲) آستانه ۱۰۰٬۰۰۰ ریال/۱٪ بود؛ اختلافِ ۱٬۰۰۰ تومانی دیده نمی‌شد. حالا ۱۰٬۰۰۰ ریال (۱٬۰۰۰ تومان).
-        val txs = observeTransactions().first()
-        val gap = bankBalance - currentBalance(account, txs)
+        val gap = bankBalance - balanceAsBankSeesIt(account)
         val tolerance = 10_000.0
         return gap.takeIf { kotlin.math.abs(it) > tolerance }
     }
+
+    /**
+     * موجودیِ حساب همان‌طور که بانک می‌بیند: تأییدشده‌ها **به‌علاوه‌ی** خودکارهای منتظرِ تأیید.
+     *
+     * 🚨 ۱۰ آبان (تستِ شبیه‌ساز، ریشه‌ی خرابیِ حسابِ بلوِ کاربر): `observeTransactions()` فقط
+     * `confirmed = 1` را می‌دهد، پس خریدی که همین الان از پیامک/اعلان ثبت شده و هنوز منتظرِ تأیید
+     * است حساب نمی‌شد - با اینکه بانک کمش کرده بود. اختلاف به اندازه‌ی همان خرید بزرگ‌تر درمی‌آمد و
+     * بعد از تأییدِ خرید و زدنِ «ثبت»، مبلغ دو بار کم می‌شد.
+     */
+    suspend fun balanceAsBankSeesIt(account: AccountEntity): Double =
+        currentBalance(account, observeTransactions().first() + observePendingTransactions().first())
 
     /**
      * 🧠 یادگیری: پیامکی که با ۴ رقمِ کارت به حسابی رسید ولی سرشماره‌اش به آن حساب وصل نبود،
