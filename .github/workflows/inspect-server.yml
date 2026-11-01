@@ -28,5 +28,6 @@ jobs:
             sqlite3 $DB "SELECT '#### ' || created_at || ' | ' || coalesce(app_version,'') || char(10) || substr(message,1,400) || char(10) || substr(stack,1,1800) FROM crash_reports WHERE created_at >= datetime('now','-7 days') AND context = 'sync' ORDER BY id DESC LIMIT 2;"
             echo "=== slow-main reports (all kept) ==="
             sqlite3 $DB "SELECT '#### ' || coalesce(app_version,'') || ' | ' || created_at || char(10) || substr(coalesce(stack,message),1,2500) FROM crash_reports WHERE context = 'slow' ORDER BY id DESC LIMIT 12;"
-            echo "=== last 5 myket purchases ==="
-            sqlite3 -header $DB "SELECT id, user_id, product_id, store, price_toman, created_at, subscribed_until FROM subscription_purchases WHERE store = 'myket' ORDER BY id DESC LIMIT 5;"
+            # ریپو عمومی است: فقط شناسه‌ی کاربر، نه شماره/نام.
+            echo "=== last 10 purchases (all stores) ==="
+            sqlite3 -header $DB "SELECT id, user_id, product_id, store, price_toman, created_at, subscribed_until FROM subscription_purchases ORDER BY id DESC LIMIT 10;"
