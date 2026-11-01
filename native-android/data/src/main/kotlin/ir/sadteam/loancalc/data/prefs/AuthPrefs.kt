@@ -40,7 +40,8 @@ class AuthPrefs(private val context: Context) {
     /** نامِ اختیاریِ کاربر - null یعنی وارد نکرده، که کاملاً عادیه. جای مصرفش سربرگِ خروجیِ
      * PDF/اکسله؛ عمداً برای پیامِ خوش‌آمد استفاده نمی‌شه (قبلاً ساخته و به‌خواستِ کاربر حذف شد). */
     val userName: Flow<String?> = context.authDataStore.data.map { it[Keys.USER_NAME] }
-    val subscribed: Flow<Boolean> = context.authDataStore.data.map { it[Keys.SUBSCRIBED] ?: false }
+    // بیلدِ debug (فقط تستِ شبیه‌سازِ لپ‌تاپ، هرگز منتشر نمی‌شود) همه‌ی بخش‌های اشتراکی را باز دارد.
+    val subscribed: Flow<Boolean> = context.authDataStore.data.map { (it[Keys.SUBSCRIBED] ?: false) || ir.sadteam.loancalc.data.BuildConfig.DEBUG }
     val guestMode: Flow<Boolean> = context.authDataStore.data.map { it[Keys.GUEST_MODE] ?: false }
 
     /** چند روز از دوره‌ی آزمایشیِ ۷روزه مونده (از سرور - رجوع کن به MeResponse/
