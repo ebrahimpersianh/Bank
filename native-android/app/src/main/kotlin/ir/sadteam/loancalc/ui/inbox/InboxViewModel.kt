@@ -152,14 +152,20 @@ class InboxViewModel @Inject constructor(
     fun fixBalanceGap(message: InboxMessageEntity) = viewModelScope.launch {
         if (message.actionState == InboxMessageEntity.ActionState.DONE) return@launch
         val gap = parseBalanceGap(message) ?: return@launch
+        // ۱۰ آبان: پیامِ قدیمی (بی مانده‌ی بانک) دیگر ثبت نمی‌شود - عددش کهنه است.
+        val bankBalance = gap.bankBalanceRial ?: return@launch
         val all = accounts.observeAccounts().first()
-        val account = all.firstOrNull { it.id == gap.accountId } ?: all.firstOrNull { it.name == gap.accountName } ?: return@launch
+        val account = all.firstOrNull { it.id == gap.accountId } ?: return@launch
+        // اختلاف **همین لحظه**: آخرین مانده‌ی بانک منهای موجودیِ الانِ جیبک (نه عددِ لحظه‌ی رسیدنِ پیام؛
+        // شاید کاربر در این فاصله ردیفی پاک یا اضافه کرده باشد).
+        val gapNow = bankBalance - accounts.currentBalance(account, accounts.observeTransactions().first())
         val today = ir.sadteam.loancalc.core.JalaliCalendar.today()
         inbox.resolve(message.id, done = true)
+        if (kotlin.math.abs(gapNow) <= 10_000.0) return@launch
         accounts.addTransaction(
             accountId = account.id,
-            type = if (gap.gapRial > 0) ir.sadteam.loancalc.core.TransactionType.DEPOSIT else ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL,
-            amount = kotlin.math.abs(gap.gapRial),
+            type = if (gapNow > 0) ir.sadteam.loancalc.core.TransactionType.DEPOSIT else ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL,
+            amount = kotlin.math.abs(gapNow),
             description = "اختلاف با مانده‌ی بانک",
             year = today.y, month = today.m, day = today.d,
         )

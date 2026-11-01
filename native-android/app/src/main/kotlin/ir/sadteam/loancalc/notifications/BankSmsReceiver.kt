@@ -210,21 +210,8 @@ class BankSmsReceiver : BroadcastReceiver() {
                 // 🧠 مانده‌ی بانک در برابرِ موجودیِ ثبت‌شده - روزی یک بار برای هر حساب.
                 // فقط وقتی مطمئنیم پیامک مالِ همین حساب است؛ وگرنه «مانده»ی بانکِ دیگری مقایسه می‌شود.
                 if (sureMatch) parsed.balanceRial?.let { bankBal ->
-                    val gap = accountRepository.bankBalanceGap(updated, !isWithdrawal, parsed.amountRial, bankBal)
-                    if (gap != null && uiPrefs.claimAutoImportKey("gap|${updated.id}|${today.y}-${today.m}-${today.d}|${(gap / 10_000).toLong()}")) {
-                        val gapToman = fmt(rialToToman(kotlin.math.abs(gap).toLong()).toDouble()).faDigits()
-                        // ۲۱ مهر: هر اختلافِ تازه (مثلاً بعد از ثبتِ قبلی یا یک انتقال) پیامِ تازه می‌گیرد؛ شناسه‌ی
-                        // ثابتِ هر حساب یعنی پیامِ قبلیِ همان حساب جایگزین می‌شود، نه اینکه چندتا روی هم جمع شوند.
-                        inboxRepository.post(
-                            id = ir.sadteam.loancalc.ui.inbox.gapMessageId(updated.id),
-                            kind = InboxMessageEntity.Kind.SYSTEM,
-                            title = "موجودیِ «${updated.name}» با بانک فرق دارد",
-                            refId = ir.sadteam.loancalc.ui.inbox.gapRef(updated.id, gap),
-                            body = "بانک مانده را $gapToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} " + (if (gap > 0) "بیشتر" else "کمتر") +
-                                " از جیبک نوشته. احتمالاً تراکنشی ثبت نشده یا «موجودیِ روزِ شروع» درست نیست.",
-                            sourceLabel = "پیامک از $sender",
-                            sourceText = body,
-                        )
+                    runCatching {
+                        ir.sadteam.loancalc.ui.inbox.reportBalanceGap(accountRepository, inboxRepository, uiPrefs, updated, bankBal, "پیامک از $sender", body)
                     }
                 }
             } finally {

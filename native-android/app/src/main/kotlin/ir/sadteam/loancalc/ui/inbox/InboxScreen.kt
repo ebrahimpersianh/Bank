@@ -290,7 +290,9 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                     }
                     val list = if (showAllPersonal) personal else personal.take(3)
                     list.forEach { message ->
-                        val gap = remember(message.id, message.refId) { parseBalanceGap(message) }?.takeIf { message.id in latestGapIds }
+                        val gap = remember(message.id, message.refId) { parseBalanceGap(message) }
+                            // ۱۰ آبان: دکمه فقط روی جدیدترین پیامِ هر حساب **و** فقط پیامی که مانده‌ی بانک را دارد.
+                            ?.takeIf { message.id in latestGapIds && it.bankBalanceRial != null }
                         NewsCard(
                             message = message,
                             onRead = { viewModel.markRead(message.id) },

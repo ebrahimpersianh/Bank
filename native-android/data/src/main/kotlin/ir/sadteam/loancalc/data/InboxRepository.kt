@@ -119,6 +119,20 @@ class InboxRepository(
 
     suspend fun byId(id: Long) = dao.byId(id)
 
+    /**
+     * جایگزینیِ بی‌صدای یک پیام (زمان و «خوانده‌شده» همان می‌ماند؛ زنگوله دوباره نمی‌زند). حالتِ اقدام
+     * مثلِ [post] از نو باز می‌شود - برای پیامِ اختلافِ موجودی که با مانده‌ی تازه‌ی بانک به‌روز می‌شود.
+     */
+    suspend fun replaceQuietly(message: InboxMessageEntity) = dao.upsert(
+        message.copy(
+            actionState = if (InboxMessageEntity.Kind.isActionable(message.kind)) {
+                InboxMessageEntity.ActionState.OPEN
+            } else {
+                InboxMessageEntity.ActionState.NONE
+            },
+        ),
+    )
+
     suspend fun delete(id: Long) = dao.delete(id)
 
     /** دو قاعده‌ی نگهداشتِ طرح: خبرِ خوانده‌شده‌ی کهنه‌تر از ۳۰ روز، و سقفِ ۲۰۰ ردیف. */
