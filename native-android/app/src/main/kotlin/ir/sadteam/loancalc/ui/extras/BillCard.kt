@@ -76,7 +76,7 @@ internal fun BillCard(
     val privacy = LocalPrivacyMode.current
     val paid = bill.lastPaidKey == "$todayY-$todayM"
     val due = bill.isDueSoon(todayY, todayM, todayD)
-    val overdue = due && todayD > bill.dueDay
+    val overdue = due && todayD > bill.dueDay && !bill.createdAfterDueIn(todayY, todayM)
     var menu by remember { mutableStateOf(false) }
     AppCard(modifier = Modifier.pressScaleClickable(scale = 0.99f) { onEdit() }) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -123,22 +123,27 @@ internal fun BillCard(
                 }
             }
             Box(Modifier.fillMaxWidth().padding(vertical = 10.dp).height(1.dp).background(AppLine))
+            // ۱۱ آبان (شکایتِ کاربر: کادرهای خالیِ «—»؛ تستِ شبیه‌ساز: موعد بعد از پرداخت روی همان ماه می‌ماند):
+            // خانه‌ی بی‌مقدار نشان داده نمی‌شود، و «موعد» همیشه **موعدِ بعدی** است.
+            val nextDueMonth = if (paid || bill.createdAfterDueIn(todayY, todayM)) {
+                ((todayM - 1 + bill.periodMonths.coerceAtLeast(1)) % 12) + 1
+            } else {
+                todayM
+            }
+            val paidMonth = bill.lastPaidKey?.split('-')?.getOrNull(1)?.toIntOrNull()
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                BillInfoCell(
+                if (bill.lastAmount > 0) BillInfoCell(
                     "مبلغِ قبض",
-                    if (bill.lastAmount > 0) maskIfPrivate(privacy, "${fmt(bill.lastAmount / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}") else "—",
+                    maskIfPrivate(privacy, "${fmt(bill.lastAmount / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
                     Modifier.weight(1.3f),
                 )
-                BillInfoCell("موعد", "${toFa(bill.dueDay)} ${ir.sadteam.loancalc.ui.jibak.faMonthName(todayM)}", Modifier.weight(1f))
-                BillInfoCell(
-                    "پرداخت",
-                    bill.lastPaidKey?.split('-')?.getOrNull(1)?.toIntOrNull()?.let { ir.sadteam.loancalc.ui.jibak.faMonthName(it) } ?: "—",
-                    Modifier.weight(1f),
-                )
+                BillInfoCell("موعدِ بعدی", "${toFa(bill.dueDay)} ${ir.sadteam.loancalc.ui.jibak.faMonthName(nextDueMonth)}", Modifier.weight(1f))
+                if (paidMonth != null) BillInfoCell("آخرین پرداخت", ir.sadteam.loancalc.ui.jibak.faMonthName(paidMonth), Modifier.weight(1f))
             }
             if (due && !paid) {
                 // ۲۰ مهر: دکمه‌ی کم‌رنگِ تیک‌دار، نه دکمه‌ی پررنگِ هم‌شکلِ «افزودن».
-                val payInk = if (overdue) AppDanger else AppTxIn
+                // ۱۱ آبان: دکمه‌ی «پرداخت شد» همیشه سبز (قرمز = خطر و گیج‌کننده بود)؛ برچسبِ «گذشته» قرمز می‌ماند.
+                val payInk = AppTxIn
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

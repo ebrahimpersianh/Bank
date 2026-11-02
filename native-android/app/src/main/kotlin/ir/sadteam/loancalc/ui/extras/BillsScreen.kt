@@ -84,7 +84,21 @@ fun billKindLabel(kind: String) = BILL_KINDS.firstOrNull { it.first == kind }?.s
 fun BillEntity.isDueSoon(y: Int, m: Int, d: Int): Boolean {
     if (periodMonths > 1 && (m - 1) % periodMonths != 0) return false
     if (lastPaidKey == "$y-$m") return false
+    if (createdAfterDueIn(y, m)) return false
     return d >= dueDay - 3
+}
+
+/**
+ * ۱۱ آبان (تستِ شبیه‌ساز): قبضی که **امروز** ساخته شده و روزِ موعدش در همین ماه گذشته، فوراً
+ * «گذشته» نشان داده می‌شد. موعدِ این ماه مالِ قبل از ساختنش بوده؛ اولین موعد، دوره‌ی بعد است.
+ * شناسه‌ی قبض زمانِ ساختِ آن است (`System.currentTimeMillis()` در فرمِ افزودن).
+ */
+fun BillEntity.createdAfterDueIn(y: Int, m: Int): Boolean {
+    val c = java.util.Calendar.getInstance().apply { timeInMillis = id }
+    val made = ir.sadteam.loancalc.core.JalaliCalendar.fromGregorian(
+        c.get(java.util.Calendar.YEAR), c.get(java.util.Calendar.MONTH) + 1, c.get(java.util.Calendar.DAY_OF_MONTH),
+    )
+    return made.y == y && made.m == m && made.d > dueDay
 }
 
 /** دسترسیِ بی‌ایمپورت به [isDueSoon] از فایل‌های دیگر. */
@@ -261,8 +275,8 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(if (sel) tint.copy(alpha = 0.16f) else AppSurface2)
-                                        .border(if (sel) 1.5.dp else 1.dp, if (sel) tint else AppLine, RoundedCornerShape(16.dp))
+                                        .background(if (sel) AppPrimary.copy(alpha = 0.14f) else AppSurface2)
+                                        .border(if (sel) 1.5.dp else 1.dp, if (sel) AppPrimary else AppLine, RoundedCornerShape(16.dp))
                                         .clickable { kind = k }
                                         .padding(vertical = 10.dp),
                                 ) {
