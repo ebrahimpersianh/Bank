@@ -34,6 +34,16 @@ class BankSmsParserTest {
         assertEquals(8_802_583.0, parsed?.balanceRial)
     }
 
+    /** ۱۱ آبان: «ناموفق» پولی جابه‌جا نکرده؛ «استرداد/برگشتِ وجه» واریز است. */
+    @Test
+    fun failedIsIgnoredAndRefundIsDeposit() {
+        assertNull(BankSmsParser.parse("تراکنش ناموفق خرید مبلغ 500,000 ریال کارت 1234 مانده 2,000,000", trustedSource = true))
+        assertNull(BankSmsParser.parse("بانک ملت\nخرید ناموفق\nمبلغ:500,000\nموجودی:2,000,000", trustedSource = true))
+        assertEquals(TransactionType.DEPOSIT, BankSmsParser.parse("استرداد مبلغ 500,000 ریال به کارت 1234 مانده 2,500,000", trustedSource = true)?.type)
+        assertEquals(TransactionType.DEPOSIT, BankSmsParser.parse("برگشت وجه تراکنش خرید مبلغ 500,000 ریال به حساب شما واریز شد مانده 2,500,000", trustedSource = true)?.type)
+        assertEquals(TransactionType.WITHDRAWAL, BankSmsParser.parse("خرید 500,000 ریال کارت 1234 مانده 2,000,000", trustedSource = true)?.type)
+    }
+
     @Test
     fun parsesWithdrawalSmsInRial() {
         val parsed = BankSmsParser.parse("برداشت 1,500,000 ریال از کارت منتهی به 4821")

@@ -689,6 +689,19 @@ class UiPrefs(private val context: Context) {
         context.uiPrefsDataStore.edit { it[Keys.NOTIF_AUTO_IMPORT_ENABLED] = value }
     }
 
+    /**
+     * ۱۱ آبان (تستِ شبیه‌ساز، باگِ مهم): کاربرِ تازه در «دو اجازه» هر دو مجوز را می‌داد و صفحه
+     * «فعال است» می‌گفت، ولی کلیدهای داخلِ برنامه پیش‌فرض خاموش می‌ماندند و **هیچ خریدی ثبت
+     * نمی‌شد**. حالا با دادنِ مجوزِ سیستم، کلیدِ همان مسیر روشن می‌شود - **فقط اگر کاربر هرگز خودش
+     * دستش نزده** (کلیدی که عمداً خاموش شده، خاموش می‌ماند).
+     */
+    suspend fun enableAutoImportIfGranted(smsGranted: Boolean, listenerGranted: Boolean) {
+        context.uiPrefsDataStore.edit {
+            if (smsGranted && it[Keys.SMS_AUTO_IMPORT_ENABLED] == null) it[Keys.SMS_AUTO_IMPORT_ENABLED] = true
+            if (listenerGranted && it[Keys.NOTIF_AUTO_IMPORT_ENABLED] == null) it[Keys.NOTIF_AUTO_IMPORT_ENABLED] = true
+        }
+    }
+
     /** اعلانِ «X روزه تراکنش ثبت نکردی» - رجوع کن به ComeBackWorker. پیش‌فرض روشنه چون کاربر
      * صریحاً خواستش؛ از تنظیمات قابلِ خاموش‌کردنه. */
     val comeBackReminderEnabled: Flow<Boolean> =

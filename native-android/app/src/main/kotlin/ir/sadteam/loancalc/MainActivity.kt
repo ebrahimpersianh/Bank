@@ -143,6 +143,7 @@ import ir.sadteam.loancalc.data.prefs.UiPrefs
 import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.lifecycle.lifecycleScope
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
@@ -164,6 +165,21 @@ class MainActivity : FragmentActivity() {
 
     @Inject
     lateinit var pendingSharedSms: PendingSharedSms
+
+    @Inject
+    lateinit var uiPrefs: ir.sadteam.loancalc.data.prefs.UiPrefs
+
+    // ۱۱ آبان: مجوزِ پیامک/اعلان که داده شد (در «دو اجازه» یا از تنظیماتِ گوشی)، کلیدِ ثبتِ خودکارِ
+    // همان مسیر روشن شود - رجوع کن به [UiPrefs.enableAutoImportIfGranted].
+    override fun onResume() {
+        super.onResume()
+        val sms = androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECEIVE_SMS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        val listener = androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName)
+        if (sms || listener) lifecycleScope.launch {
+            runCatching { uiPrefs.enableAutoImportIfGranted(sms, listener) }
+        }
+    }
 
     private fun handleDeepLinkIntent(intent: Intent?) {
         // «اشتراک‌گذاری» از برنامه‌ی پیامکِ خودِ گوشی - تنها راهِ رسمیِ اندروید برای
