@@ -284,7 +284,9 @@ class AccountRepository(
         if (tx.originLabel == null || tx.sourceType == SOURCE_TYPE_TRANSFER) return@inTransaction false
         // پیامکِ واریزِ حسابِ مقصد، بعد از این‌که سمتِ واریز از روی پیامکِ برداشت ساخته شده بود:
         // تکراری است، پس حذف.
-        val all = observeTransactions().first()
+        // 🚨 ۱۱ آبان: منتظرهای تأیید هم - هر دو سمتِ انتقالِ خودکار تازه رسیده‌اند و هنوز تأییدنشده‌اند؛
+        // قبلاً فقط تأییدشده‌ها دیده می‌شدند و جفت هرگز پیدا نمی‌شد (یک خرج + یک درآمدِ دروغین).
+        val all = observeTransactions().first() + observePendingTransactions().first()
         if (tx.type == TransactionType.DEPOSIT.name && all.any {
                 it.originLabel == AUTO_DEST_LEG_LABEL && it.accountId == tx.accountId &&
                     it.amount == tx.amount && kotlin.math.abs(it.id - tx.id) <= TRANSFER_PAIR_WINDOW_MS
