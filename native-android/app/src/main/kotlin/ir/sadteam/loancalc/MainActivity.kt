@@ -1183,7 +1183,8 @@ internal fun LoanCalcApp(
             LaunchedEffect(Unit) { showSettings = false }
             LaunchedEffect(guideIndex, currentRoute, guideAccounts.size, guideTxs.size, shortcutDrawerOpen) {
                 val done = when (step?.target) {
-                    "tab_assets" -> currentRoute == BottomTab.ASSETS.route
+                    // تستِ ۱۳ آبان: کسی که در راه‌اندازی حساب ساخته، «برو دارایی، حساب بساز» نبیند.
+                    "tab_assets" -> currentRoute == BottomTab.ASSETS.route || guideAccounts.isNotEmpty()
                     "add_account" -> guideAccounts.isNotEmpty()
                     "tab_home" -> currentRoute == BottomTab.HOME.route
                     "add_tx" -> guideTxs.isNotEmpty()

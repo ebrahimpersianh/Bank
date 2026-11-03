@@ -163,7 +163,7 @@ internal fun ChequeReportScreen(
                         ReportStat(label = "کل چک‌ها", value = toFa(stats.total), color = AppText, modifier = Modifier.weight(1f))
                         ReportStat(label = "پاس‌شده", value = toFa(stats.passed), color = AppPrimary, modifier = Modifier.weight(1f))
                         ReportStat(label = "برگشت‌خورده", value = toFa(stats.bounced), color = AppDanger, modifier = Modifier.weight(1f))
-                        ReportStat(label = "وضع‌نشده", value = toFa(stats.pending), color = AppMuted, modifier = Modifier.weight(1f))
+                        ReportStat(label = "در انتظار", value = toFa(stats.pending), color = AppMuted, modifier = Modifier.weight(1f))
                     }
                     // نوارِ سهمِ passed/bounced/pending - همون سه عدد به‌صورتِ weight، دادهٔ جدید نیست.
                     Row(
@@ -191,7 +191,7 @@ internal fun ChequeReportScreen(
         item {
             AppCard {
                 Column {
-                    Text("چک‌های وضع‌نشده", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("چک‌های در انتظار", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                     Row(modifier = Modifier.fillMaxWidth().padding(top = 11.dp), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                         PendingChequeTile(
                             icon = Icons.Filled.ArrowDownward,

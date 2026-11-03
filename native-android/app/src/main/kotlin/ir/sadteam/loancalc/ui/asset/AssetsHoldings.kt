@@ -125,7 +125,8 @@ internal fun AccountRow(
             // ۱۱ آبان (تست): «پیامک ir.sadteam.testblu» - سرشماره/بسته‌نامِ فنی زیرِ اسمِ حساب نشان داده
             // می‌شد. حالا نامِ بانک (که کاربر می‌شناسد)؛ حسابِ بی‌بانک «نقدی».
             val meta = account.bankName.ifBlank { null } ?: "نقدی"
-            Text(
+            // تستِ ۱۳ آبان: حسابی که اسمش خودش «نقدی» است زیرش دوباره «نقدی» می‌نوشت.
+            if (!account.name.contains(meta)) Text(
                 meta,
                 color = AppMuted,
                 fontSize = 10.5.sp,
@@ -489,6 +490,12 @@ internal fun DebtsEntryRow(owedToMe: Double, iOwe: Double, privacyMode: Boolean,
                 Text(sub, color = AppMuted, fontSize = 10.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 3.dp))
             }
         }
-        Icon(androidx.compose.material.icons.Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+        // هم‌شکلِ فلشِ ردیفِ حساب (دایره‌ی خاکستری) - تستِ ۱۳ آبان.
+        Box(
+            modifier = Modifier.size(26.dp).clip(CircleShape).background(AppIconFrame),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+        }
     }
 }

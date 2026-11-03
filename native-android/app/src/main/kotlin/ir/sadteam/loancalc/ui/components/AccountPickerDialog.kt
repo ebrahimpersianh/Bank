@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
 import ir.sadteam.loancalc.ui.jibak.faCardTail
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
@@ -49,7 +52,19 @@ fun AccountPickerDialog(
                             .padding(vertical = 10.dp),
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                     ) {
-                        BankBadge(bankName = account.bankName, size = 36.dp)
+                        // تستِ ۱۳ آبان: حسابِ نقدی (بی بانک) «؟» می‌گرفت - حالا آیکونِ خودِ حساب.
+                        if (account.bankName.isNotBlank()) BankBadge(bankName = account.bankName, size = 36.dp)
+                        else androidx.compose.foundation.layout.Box(
+                            modifier = Modifier.size(36.dp).clip(androidx.compose.foundation.shape.CircleShape).background(ir.sadteam.loancalc.ui.theme.AppIconFrame),
+                            contentAlignment = androidx.compose.ui.Alignment.Center,
+                        ) {
+                            androidx.compose.material3.Icon(
+                                ir.sadteam.loancalc.data.accountIconForKey(account.iconKey),
+                                contentDescription = null,
+                                tint = ir.sadteam.loancalc.ui.theme.AppMuted,
+                                modifier = Modifier.size(19.dp),
+                            )
+                        }
                         Column(modifier = Modifier.padding(start = 10.dp)) {
                             Text(account.name, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                             // فریمِ `18`: بانک + ۴ رقمِ آخرِ کارت، تا دو حسابِ یک بانک از هم شناخته شوند.

@@ -42,6 +42,8 @@ fun PhotoAttachmentCard(
     modifier: Modifier = Modifier,
     /** false یعنی بدونِ کارتِ دورش - وقتی خودش داخلِ کارتِ دیگری (تبِ یادداشت/رسید) می‌نشیند. */
     withCard: Boolean = true,
+    /** «رسید» پیش‌فرض است؛ چک «عکسِ چک» می‌گوید (تستِ ۱۳ آبان: «عکس رسید» روی فرمِ چک). */
+    title: String = "عکس رسید",
 ) {
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
@@ -95,12 +97,12 @@ fun PhotoAttachmentCard(
         } else {
             val guard = ir.sadteam.loancalc.ui.subscription.premiumGuard()
             OutlinedButton(onClick = { guard("receipt_photo", "عکسِ رسید") { launchPicker() } }, modifier = Modifier.fillMaxWidth()) {
-                Text("+ افزودن عکس رسید")
+                Text("+ افزودنِ عکس")
             }
         }
     }
     if (withCard) {
-        AppCard(label = "عکس رسید", modifier = modifier) { content() }
+        AppCard(label = title, modifier = modifier) { content() }
     } else {
         Column(modifier = modifier) {
             Text("عکس رسیدهای مربوط به این مورد را اضافه کنید.", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))

@@ -150,7 +150,7 @@ fun chequeStatusLabel(status: String) = when (status) {
     "PASSED" -> "پاس‌شده"
     "BOUNCED" -> "برگشت‌خورده"
     "REFUNDED" -> "مسترد شده"
-    else -> "وضع‌نشده"
+    else -> "در انتظار" // ۱۳ آبان: «وضع‌نشده» برای کاربر نامفهوم بود
 }
 
 /**
@@ -436,7 +436,8 @@ fun ChequeScreen(
                 }
 
                 // ۱۳ آبان (تستِ چک): برای کاربرِ بی‌چک این‌ها همه «۰» بودند - فقط افزودن + حالتِ خالی.
-                if (allCheques.isNotEmpty()) item {
+                // جستجو برای دو-سه چک بی‌معناست - از شش چک به بعد.
+                if (allCheques.size > 5) item {
                     ir.sadteam.loancalc.ui.components.PillSearchField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
@@ -502,7 +503,8 @@ fun ChequeScreen(
                 }
 
                 // ۱۳ آبان (تستِ چک): برای کاربرِ بی‌چک این‌ها همه «۰» بودند - فقط افزودن + حالتِ خالی.
-                if (allCheques.isNotEmpty()) item {
+                // داشبورد تا وقتی هیچ چکی پاس/برگشت نخورده فقط «۰ تومان» است (تستِ ۱۳ آبان).
+                if (allCheques.any { it.status != "PENDING" }) item {
                     ChequeAnalyticsDashboard(stats)
                 }
 
@@ -693,7 +695,7 @@ private fun LiveDateTimeHeader() {
     LaunchedEffect(Unit) {
         while (true) {
             nowMillis = System.currentTimeMillis()
-            delay(1000)
+            delay(30_000) // ۱۳ آبان: ثانیه‌شمار حذف شد - فقط ساعت و دقیقه
         }
     }
     val cal = remember(nowMillis) { Calendar.getInstance().apply { timeInMillis = nowMillis } }
@@ -701,14 +703,9 @@ private fun LiveDateTimeHeader() {
         JalaliCalendar.fromGregorian(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
     }
     val weekDay = faWeekDayNames[JalaliCalendar.dayOfWeekSaturdayFirst(jalali)]
-    val dateText = "${toFa(jalali.y)}/${toFa(String.format(Locale.US, "%02d", jalali.m))}/${toFa(String.format(Locale.US, "%02d", jalali.d))}"
-    val timeText = toFa(
-        String.format(Locale.US, "%02d:%02d:%02d", 
-            cal.get(Calendar.HOUR_OF_DAY),
-            cal.get(Calendar.MINUTE),
-            cal.get(Calendar.SECOND),
-        ),
-    )
+    // تاریخ هم‌شکلِ بقیه‌ی برنامه («۱۲ آبان ۱۴۰۵»)، نه «۱۴۰۵/۰۸/۱۲» (یافته‌ی ۷۷).
+    val dateText = ir.sadteam.loancalc.ui.jibak.toFaDate(jalali.y, jalali.m, jalali.d)
+    val timeText = ir.sadteam.loancalc.ui.jibak.toFaTime(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
 
     // ⚠️ کارتِ نمایشِ تاریخ/ساعته، نه کارتِ **قهرمانِ** صفحه - طبقِ قاعده‌ی «حداکثر یک رنگِ لهجه
     // در هر صفحه» گرادیانِ سبزش برداشته شد و کارتِ سفیدِ معمولی شد.
@@ -724,7 +721,7 @@ private fun LiveDateTimeHeader() {
                 Text(
                     dateText,
                     color = AppText,
-                    fontSize = 22.sp,
+                    fontSize = 19.sp,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -829,7 +826,7 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
             Box(Modifier.width(1.dp).height(40.dp).background(AppLine))
             StatNumber("برگشت‌خورده", stats.bounced, AppDanger, Modifier.weight(1f))
             Box(Modifier.width(1.dp).height(40.dp).background(AppLine))
-            StatNumber("وضع‌نشده", stats.pending, AppMuted, Modifier.weight(1f))
+            StatNumber("در انتظار", stats.pending, AppMuted, Modifier.weight(1f))
         }
 
         HorizontalDivider(color = AppLine, modifier = Modifier.padding(vertical = 12.dp))

@@ -703,7 +703,7 @@ private val RewardNoteInk: Color
 /** یکی از سه کاشیِ «یا از اینجا شروع کن». */
 @Composable
 internal fun RowScope.StarterTile(
-    iconRes: Int,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     subtitle: String,
     onClick: () -> Unit,
@@ -718,11 +718,14 @@ internal fun RowScope.StarterTile(
             .pressScaleClickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 12.dp),
     ) {
-        androidx.compose.foundation.Image(
-            androidx.compose.ui.res.painterResource(iconRes),
-            contentDescription = null,
-            modifier = Modifier.size(36.dp),
-        )
+        // تستِ ۱۳ آبان (یک‌دستی): سه تصویرِ رنگیِ جدا (آبی/قرمز/سبز) - حالا آیکونِ همان تب‌های
+        // نوارِ پایین، همه سبزِ برند.
+        Box(
+            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimaryPill),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(20.dp))
+        }
         Text(
             label,
             color = AppText,

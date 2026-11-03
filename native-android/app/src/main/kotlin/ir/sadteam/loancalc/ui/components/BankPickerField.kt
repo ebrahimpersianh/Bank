@@ -56,6 +56,7 @@ fun BankPickerField(
     includeCreditServices: Boolean = false,
     placeholder: String = "انتخابِ بانک",
 ) {
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     var open by remember { mutableStateOf(false) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -65,7 +66,8 @@ fun BankPickerField(
             .heightIn(min = 56.dp)
             .clip(RoundedCornerShape(14.dp))
             .border(1.dp, AppLine, RoundedCornerShape(14.dp))
-            .clickable { open = true }
+            // تستِ ۱۳ آبان: فوکوسِ کادرِ قبلی بعد از بستنِ برگه برمی‌گشت و صفحه به بالای فرم می‌پرید.
+            .clickable { focusManager.clearFocus(); open = true }
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         BankBadge(bankName = value, size = 38.dp)

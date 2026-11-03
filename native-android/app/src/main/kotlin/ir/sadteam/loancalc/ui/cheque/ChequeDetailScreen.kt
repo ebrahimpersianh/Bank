@@ -121,6 +121,8 @@ fun ChequeDetailScreen(
                 sourceType = "cheque",
                 sourceId = cheque.id.toString(),
             )
+            // تستِ ۱۳ آبان: بعد از «پاس شد» هیچ خبری نمی‌آمد که پول کجا رفت.
+            banner.show(if (cheque.type == "RECEIVED") "به «${account.name}» واریز شد." else "از «${account.name}» کم شد.")
         } else {
             // خواسته‌ی صریحِ کاربر («باید جایی اعلام کنی») - قبلاً وقتی هیچ حسابی نبود، پرداخت
             // بی‌سروصدا تو حسابداری ثبت نمی‌شد و هیچ توضیحی هم داده نمی‌شد.
@@ -232,6 +234,7 @@ fun ChequeDetailScreen(
 
         item {
             PhotoAttachmentCard(
+                title = "عکسِ چک (اختیاری)",
                 photoPath = cheque.photoPath,
                 onPick = { uri -> viewModel.setChequePhoto(cheque, uri) },
                 onRemove = { viewModel.removeChequePhoto(cheque) },
@@ -277,7 +280,8 @@ fun ChequeDetailScreen(
             }
         }
 
-        item {
+        // یادآور برای چکِ پاس/برگشت‌شده بی‌معناست (تستِ ۱۳ آبان).
+        if (cheque.status == ChequeStatus.PENDING.name) item {
             ReminderOverrideCard(
                 currentOffsets = cheque.reminderDayOffsets,
                 onChange = { viewModel.setChequeReminderOffsets(cheque, it) },

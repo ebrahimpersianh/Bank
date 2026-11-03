@@ -126,9 +126,11 @@ internal fun IntroPager(onDone: () -> Unit) {
 
         HorizontalPager(state = pager, modifier = Modifier.weight(1f)) { index ->
             val page = introPages[index]
+            // تستِ ۱۳ آبان: محتوا بالا می‌چسبید و نیمه‌ی پایین خالی بود - حالا وسطِ صفحه.
             Column(
-                modifier = Modifier.fillMaxSize().padding(top = 12.dp),
+                modifier = Modifier.fillMaxSize().padding(vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
                 Image(
                     painterResource(page.image),

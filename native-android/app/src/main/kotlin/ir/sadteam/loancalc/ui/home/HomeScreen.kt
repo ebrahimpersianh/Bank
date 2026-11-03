@@ -33,6 +33,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.Savings
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -350,19 +353,19 @@ fun HomeScreen(
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         StarterTile(
-                            iconRes = ir.sadteam.loancalc.R.drawable.empty_icon_shortcut_budget,
+                            icon = androidx.compose.material.icons.Icons.Outlined.Savings,
                             label = "ساختِ بودجه",
                             subtitle = "هزینه‌ها رو مدیریت کن",
                             onClick = { onNavigateToRoute("budget") },
                         )
                         StarterTile(
-                            iconRes = ir.sadteam.loancalc.R.drawable.empty_icon_shortcut_check,
+                            icon = androidx.compose.material.icons.Icons.Outlined.Description,
                             label = "افزودنِ چک",
                             subtitle = "چک‌ها رو پیگیری کن",
                             onClick = { onNavigateToRoute("cheque") },
                         )
                         StarterTile(
-                            iconRes = ir.sadteam.loancalc.R.drawable.empty_icon_shortcut_loan,
+                            icon = androidx.compose.material.icons.Icons.Outlined.AccountBalance,
                             label = "ثبتِ وام",
                             subtitle = "قسط‌ها رو دنبال کن",
                             onClick = { onNavigateToRoute("loan") },

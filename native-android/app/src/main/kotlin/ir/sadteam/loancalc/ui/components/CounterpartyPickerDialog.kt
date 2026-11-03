@@ -80,7 +80,7 @@ fun CounterpartyPickerDialog(
                 fontSize = 11.sp,
                 modifier = Modifier.padding(top = 2.dp, bottom = 12.dp),
             )
-            PillSearchField(value = query, onValueChange = { query = it }, placeholder = "جستجو یا اسمِ دوستِ تازه")
+            PillSearchField(value = query, onValueChange = { query = it }, placeholder = "جستجو یا اسمِ تازه")
 
             LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp).padding(top = 8.dp, bottom = 12.dp)) {
                 if (query.isNotBlank() && !exactMatch) {
@@ -131,7 +131,7 @@ fun CounterpartyPickerDialog(
                 if (filtered.isEmpty() && query.isBlank()) {
                     item(key = "empty") {
                         Text(
-                            "هنوز دوستی اضافه نکردی - اسمش را بالا بنویس.",
+                            "هنوز کسی را اضافه نکردی - اسمش را بالا بنویس.",
                             color = AppMuted,
                             fontSize = 12.sp,
                             modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),

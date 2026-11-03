@@ -118,6 +118,8 @@ fun AddEditChequeScreen(
     var showCounterpartyPicker by remember { mutableStateOf(false) }
     val counterparties by debtViewModel.counterparties.collectAsState()
     val selectedCounterparty = counterparties.firstOrNull { it.id == counterpartyId }
+    // تستِ ۱۳ آبان: بعد از بستنِ برگه‌ی انتخاب، فوکوس به کادرِ مبلغ برمی‌گشت و صفحه به بالا می‌پرید.
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
 
     // یافته‌ی ۴۲ (همان دسته در فرمِ چک): برگشت با فرمِ دست‌خورده اول می‌پرسد.
     val chequeSignature = listOf<Any?>(type, amountText, chequeNumber, sayadId, bankName, branchName, ownerName, notes,
@@ -190,7 +192,7 @@ fun AddEditChequeScreen(
                 // suffix داخلِ خودِ فیلده.
                 OutlinedTextField(
                     value = amountText,
-                    onValueChange = { amountText = cleanNum(it) },
+                    onValueChange = { amountText = cleanNum(it).take(13) }, // تستِ ۱۳ آبان: «۲۵ تریلیون» پذیرفته می‌شد
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
@@ -213,6 +215,7 @@ fun AddEditChequeScreen(
             // داخلی اپ کپی می‌شه و مسیرش موقتاً تو state خودِ فرم می‌مونه تا موقعِ «ذخیره چک» مستقیم
             // با خودِ چک ذخیره بشه؛ برای ویرایش (existing != null) رفتار عیناً مثل قبل (ChequeDetailScreen).
             PhotoAttachmentCard(
+                title = "عکسِ چک (اختیاری)",
                 photoPath = photoPath,
                 onPick = { uri ->
                     viewModel.pickPhotoForNewCheque(uri) { newPath ->
@@ -245,7 +248,7 @@ fun AddEditChequeScreen(
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = { showCalendarPicker = true }) {
-                        Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
+                        Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم", tint = AppMuted)
                     }
                 }
             }
@@ -256,7 +259,7 @@ fun AddEditChequeScreen(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         AppCard(label = "طرفِ چک") {
                             OutlinedButton(
-                                onClick = { showCounterpartyPicker = true },
+                                onClick = { focusManager.clearFocus(); showCounterpartyPicker = true },
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Text(selectedCounterparty?.name ?: "انتخابِ شخص")

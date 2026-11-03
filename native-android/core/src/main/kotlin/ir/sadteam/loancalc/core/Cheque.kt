@@ -9,7 +9,7 @@ enum class ChequeType(val label: String) {
 
 /** وضعیت چک - پیش‌فرض «وضع‌نشده»، بعداً به یکی از سه حالت دیگه تغییر می‌کنه. */
 enum class ChequeStatus(val label: String) {
-    PENDING("وضع‌نشده"),
+    PENDING("در انتظار"),
     PASSED("پاس‌شده"),
     BOUNCED("برگشت‌خورده"),
     REFUNDED("مسترد شده"),
