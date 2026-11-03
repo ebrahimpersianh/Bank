@@ -19,7 +19,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -31,6 +36,9 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 
 // ⚠️ سومین کپیِ نامِ ماه حذف شد - `faMonthName`. (بندِ «یک زبانِ بصری»ِ README.)
 private val InlineWheelItemHeight = 34.dp
+
+/** بعد از این‌قدر بی‌کاری، چرخونه‌ی اینلاین دوباره قفل می‌شود تا اسکرولِ صفحه را ندزدد. */
+private const val InlineWheelIdleLockMillis = 4_000L
 
 /**
  * انتخاب تاریخ شمسی به‌صورت اینلاین، چرخونه‌ای (spinner) - قبلاً سه دراپ‌داون بود؛ کاربر چندبار
@@ -53,13 +61,22 @@ fun InlineJalaliDateRow(
     val days = remember(maxDay) { (1..maxDay).toList() }
     val safeDay = day.coerceAtMost(maxDay)
 
+    // یافته‌ی ۴۱: قفل تا لمس (جزئیات در [WheelColumn]). قابِ سبز = باز.
+    var active by remember { mutableStateOf(false) }
+    var poke by remember { mutableIntStateOf(0) }
+    LaunchedEffect(active, poke) {
+        if (active) { kotlinx.coroutines.delay(InlineWheelIdleLockMillis); active = false }
+    }
+    val unlock: () -> Unit = { active = true; poke++ }
+    val changed: (Int, Int, Int) -> Unit = { y, m, d -> poke++; onDateChange(y, m, d) }
+
     // قابِ سطحِ دوم + برچسبِ ستون‌ها (بازطراحیِ ۸ مهر): چرخونه‌ی بی‌قاب وسطِ فرم گم می‌شد.
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
             .background(AppSurface2)
-            .border(1.dp, AppLine, RoundedCornerShape(18.dp))
+            .border(if (active) 1.5.dp else 1.dp, if (active) AppPrimary else AppLine, RoundedCornerShape(18.dp))
             .padding(horizontal = 10.dp, vertical = 8.dp),
     ) {
     Row(Modifier.fillMaxWidth().padding(bottom = 2.dp)) {
@@ -72,21 +89,25 @@ fun InlineJalaliDateRow(
             WheelColumn(
                 items = days.map { toFa(it) },
                 selectedIndex = days.indexOf(safeDay).coerceAtLeast(0),
-                onCentered = { onDateChange(year, month, days[it]) },
+                onCentered = { changed(year, month, days[it]) },
                 modifier = Modifier.weight(1f),
                 itemHeight = InlineWheelItemHeight,
                 visibleRows = 3,
+                scrollEnabled = active,
+                onUnlock = unlock,
             )
             WheelColumn(
                 items = remember { (1..12).map { faMonthName(it) } },
                 selectedIndex = month - 1,
                 onCentered = { idx ->
                     val newMax = JalaliCalendar.daysInMonth(year, idx + 1)
-                    onDateChange(year, idx + 1, safeDay.coerceAtMost(newMax))
+                    changed(year, idx + 1, safeDay.coerceAtMost(newMax))
                 },
                 modifier = Modifier.weight(1.3f),
                 itemHeight = InlineWheelItemHeight,
                 visibleRows = 3,
+                scrollEnabled = active,
+                onUnlock = unlock,
             )
             WheelColumn(
                 items = years.map { toFa(it) },
@@ -94,11 +115,13 @@ fun InlineJalaliDateRow(
                 onCentered = { idx ->
                     val y = years[idx]
                     val newMax = JalaliCalendar.daysInMonth(y, month)
-                    onDateChange(y, month, safeDay.coerceAtMost(newMax))
+                    changed(y, month, safeDay.coerceAtMost(newMax))
                 },
                 modifier = Modifier.weight(1f),
                 itemHeight = InlineWheelItemHeight,
                 visibleRows = 3,
+                scrollEnabled = active,
+                onUnlock = unlock,
             )
         }
     }

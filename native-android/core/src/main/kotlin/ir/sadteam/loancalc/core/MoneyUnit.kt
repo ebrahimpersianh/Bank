@@ -14,7 +14,7 @@ object CoreMoneyUnit {
     val label: String get() = if (rial) "ریال" else "تومان"
 }
 
-private val MONEY_IN_TEXT = Regex("([0-9۰-۹][0-9۰-۹٬,]*)(\s+)(تومان|ریال)")
+private val MONEY_IN_TEXT = Regex("([0-9۰-۹][0-9۰-۹٬,]*)(\\s+)(تومان|ریال)")
 
 /**
  * ۱۱ آبان (تست): متنِ پیام‌ها لحظه‌ی ساختن با واحدِ همان موقع نوشته می‌شود («۶۰٬۰۰۰ تومان»)؛ بعد از
