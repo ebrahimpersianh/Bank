@@ -87,6 +87,17 @@ object Setup {
         )
     }
 
+    /** تنظیماتِ اعلانِ همین برنامه. */
+    fun openNotificationSettings(c: Context) {
+        openFirst(
+            c,
+            listOf(
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, c.packageName),
+                appDetails(c),
+            ),
+        )
+    }
+
     private fun appDetails(c: Context) =
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${c.packageName}"))
 

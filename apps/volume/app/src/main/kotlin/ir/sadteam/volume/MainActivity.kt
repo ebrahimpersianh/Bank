@@ -108,10 +108,6 @@ class MainActivity : Activity() {
             Setup.overlayOk(this),
         ) { startActivity(Setup.overlayIntent(this)) }
         row(
-            "اعلانِ کوچکِ ثابت", "اندروید فقط با این اعلان می‌گذارد دکمه همیشه بماند.",
-            Setup.notifOk(this),
-        ) { if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1) }
-        row(
             "بدونِ محدودیتِ باتری", "تا گوشی برای صرفه‌جویی، دکمه را نبندد.",
             Setup.batteryOk(this),
         ) { Setup.openBattery(this, preferList = batteryTaps++ > 0) }
@@ -132,6 +128,18 @@ class MainActivity : Activity() {
                 autostartSeen.edit().putBoolean("popup_opened", true).apply()
                 Setup.openXiaomiPopup(this)
             }
+        }
+        // ۱۳ آبان (کاربر: «اون دوتا اعلان بالا نیان»): اعلانِ خودمان را می‌شود خاموش کرد و دکمه می‌ماند؛
+        // اعلانِ «Android System» مالِ خودِ گوشی است و فقط با نگه‌داشتنش خاموش می‌شود.
+        val hideDone = autostartSeen.getBoolean("hide_opened", false)
+        row(
+            "پنهان کردنِ اعلان‌ها",
+            "در صفحه‌ای که باز می‌شود اعلان‌های «ولوم» را خاموش کن؛ دکمه سرِ جایش می‌ماند. " +
+                "اعلانِ «Android System… displaying over other apps» را هم در کشوی اعلان‌ها نگه دار (نزن!) و خاموشش کن.",
+            hideDone, manual = true,
+        ) {
+            autostartSeen.edit().putBoolean("hide_opened", true).apply()
+            Setup.openNotificationSettings(this)
         }
         val on = prefs.enabled && Setup.overlayOk(this)
         main.text = if (on) "خاموش کردنِ دکمه" else "روشن کردنِ دکمه"
