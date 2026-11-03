@@ -104,6 +104,13 @@ fun LoanCalcTheme(
             background = palette.bg,
             surface = palette.surface,
             surfaceVariant = palette.surface2,
+            // ۱۳ آبان: منوهای کشویی/برگه‌های متریال از surfaceContainer* رنگ می‌گیرند و پیش‌فرضش
+            // بنفشِ کم‌رنگ بود - ده منوی برنامه رنگِ جیبک نداشتند.
+            surfaceContainer = palette.surface,
+            surfaceContainerLow = palette.surface,
+            surfaceContainerHigh = palette.surface,
+            surfaceContainerHighest = palette.surface2,
+            surfaceTint = Color.Transparent,
             primary = palette.primary,
             secondary = palette.goldInk,
             onBackground = palette.text,
@@ -116,6 +123,13 @@ fun LoanCalcTheme(
             background = palette.bg,
             surface = palette.surface,
             surfaceVariant = palette.surface2,
+            // ۱۳ آبان: منوهای کشویی/برگه‌های متریال از surfaceContainer* رنگ می‌گیرند و پیش‌فرضش
+            // بنفشِ کم‌رنگ بود - ده منوی برنامه رنگِ جیبک نداشتند.
+            surfaceContainer = palette.surface,
+            surfaceContainerLow = palette.surface,
+            surfaceContainerHigh = palette.surface,
+            surfaceContainerHighest = palette.surface2,
+            surfaceTint = Color.Transparent,
             primary = palette.primary,
             secondary = palette.goldInk,
             onBackground = palette.text,

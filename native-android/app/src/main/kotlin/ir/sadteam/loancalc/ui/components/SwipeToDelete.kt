@@ -126,7 +126,7 @@ fun SwipeToDeleteRow(
             },
         ) {
             content()
-            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, containerColor = ir.sadteam.loancalc.ui.theme.AppSurface) {
                 DropdownMenuItem(
                     text = { Text("حذف", color = AppDanger) },
                     leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, tint = AppDanger) },

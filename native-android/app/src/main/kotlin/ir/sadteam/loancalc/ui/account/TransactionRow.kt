@@ -134,7 +134,7 @@ fun CompactTransactionRow(
                 AutoShrinkText(
                     maskIfPrivate(
                         masked,
-                        rialToToman(tx.amount.toLong()).let { if (isIn) it else -it }.toFaSignedMoney(),
+                        rialToToman(tx.amount.toLong()).let { if (isIn) it else -it }.toFaSignedMoney() + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                     ),
                     color = if (tx.confirmed) ink else AppMuted,
                     maxFontSize = 13.sp,

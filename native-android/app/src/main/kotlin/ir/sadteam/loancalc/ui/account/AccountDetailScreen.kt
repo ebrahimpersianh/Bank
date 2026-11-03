@@ -478,7 +478,7 @@ private fun MonthSumPill(
             AutoShrinkText(
                 maskIfPrivate(
                     masked,
-                    rialToToman(amount.toLong()).let { if (positive) it else -it }.toFaSignedMoney(),
+                    rialToToman(amount.toLong()).let { if (positive) it else -it }.toFaSignedMoney() + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                 ),
                 color = Color.White,
                 maxFontSize = 12.sp,
