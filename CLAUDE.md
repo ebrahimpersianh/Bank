@@ -79,6 +79,10 @@
 - ⏳ طرح‌های ذخیره‌شده: `design/2026-10-16/NOTES.md` (سبک‌کردنِ کارتِ بالای خانه منتظرِ طرحِ جی). `ExactReminderAlarm` هنوز روی گوشیِ واقعی تست نشده.
 - جزئیاتِ فنیِ قدیمی‌تر (حالتِ ساده، `SlowMainWatcher`، `PersistentTabs`، کلیدِ SSH و…): `CLAUDE-ARCHIVE.md` ← «جداشده از CLAUDE.md».
 
+## برنامه‌ی جدا: «ولوم» (۱۳ آبان)
+- `apps/volume/` (کاتلین، بی وابستگی): دکمه‌ی شناورِ صدا برای گوشیِ خودِ کاربر (دکمه‌های کناری‌اش خراب است). ربطی به جیبک ندارد؛ `ir.sadteam.volume`.
+- بیلد **فقط روی گیت‌هاب** (`build-volume-app.yml`، دستی؛ کاربر گفت لپ‌تاپ نه). کلیدِ امضا در کشِ Actions (`volume-signing-key-v1`) - داخلِ مخزن/سکرت نیست. آخرین: `volume-3`.
+
 ## graphify
 
 This project has a code knowledge graph at graphify-out/ (Kotlin app + Kotlin/Ktor server, code only; docs/design are excluded via `.graphifyignore`).
