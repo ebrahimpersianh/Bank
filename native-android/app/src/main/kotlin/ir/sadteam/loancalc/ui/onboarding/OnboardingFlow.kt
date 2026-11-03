@@ -705,7 +705,7 @@ private fun FirstAccountStep(
             .verticalScroll(rememberScrollState()),
     ) {
         StepHeader(
-            title = "اولین حساب‌کتابت رو بساز",
+            title = "اولین حسابت رو بساز",
             subtitle = "مثلاً پولِ نقدِ توی جیبت. موجودیِ الانش رو وارد کن.",
             image = ir.sadteam.loancalc.R.drawable.jibak_onb_account,
         )

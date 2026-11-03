@@ -91,7 +91,7 @@ fun BadgeRetroSheet(badges: List<Badge>, onDismiss: () -> Unit) {
                         horizontalArrangement = Arrangement.spacedBy(3.dp),
                     ) {
                         Text(
-                            "+${toFa(badge.coins)}",
+                            ir.sadteam.loancalc.ui.jibak.isoSigned(true, toFa(badge.coins)),
                             color = AppMuted,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.ExtraBold,

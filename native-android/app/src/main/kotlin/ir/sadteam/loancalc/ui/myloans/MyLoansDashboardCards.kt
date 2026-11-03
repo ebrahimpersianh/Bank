@@ -482,7 +482,8 @@ internal fun LoansIncomeCard(
                         value = amountText,
                         onValueChange = { amountText = cleanNum(it) },
                         visualTransformation = ThousandsSeparatorTransformation(),
-                        label = { Text("مبلغ ماهانه (${ir.sadteam.loancalc.ui.jibak.unitFa()})") },
+                        label = { Text("مبلغ ماهانه") },
+                        suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, 
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)

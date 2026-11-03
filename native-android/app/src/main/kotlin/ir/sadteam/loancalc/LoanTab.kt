@@ -30,6 +30,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -171,6 +173,8 @@ internal fun LoanTab(
     deepLinkLoanId: Long?,
     onDeepLinkConsumed: () -> Unit,
     onOpenSettings: () -> Unit = {},
+    /** «وام» در نوارِ پایین است (چیدمانِ کاربر) - تبِ ریشه، پس فلشِ برگشت ندارد (یافته‌ی ۲۰). */
+    isRootTab: Boolean = false,
 ) {
     var subTab by remember { mutableStateOf(LoanSubTab.MY_LOANS) }
     // خواسته‌ی کاربر (۲۶ شهریور): دکمه‌ی «+»ِ «وام‌های من» دیگر مستقیم فرمِ دستی را باز نمی‌کند،
@@ -214,9 +218,9 @@ internal fun LoanTab(
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = { if (addMode) leaveAddMode() else onBack() }) {
+            if (addMode || !isRootTab) IconButton(onClick = { if (addMode) leaveAddMode() else onBack() }) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
-            }
+            } else Spacer(Modifier.width(8.dp))
             // فریمِ `27a`: عنوانِ ۱۸ با وزنِ ۹۰۰، و دکمه‌ی افزودن سمتِ مقابل تو قابِ ۳۲ی سبز.
             Text(
                 if (addMode) "افزودنِ وام" else "وام",

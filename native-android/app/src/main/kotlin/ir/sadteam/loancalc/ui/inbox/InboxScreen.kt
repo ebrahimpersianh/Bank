@@ -428,7 +428,7 @@ private fun SourceDialog(
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("رفتن به حساب‌کتاب", color = AppBg, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+                        Text("رفتن به حساب", color = AppBg, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
                     }
                 }
                 Box(

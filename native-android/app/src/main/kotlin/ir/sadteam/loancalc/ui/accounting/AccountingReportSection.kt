@@ -704,7 +704,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
         }
         if (showCustomReport) {
         item {
-            AppCard(label = "حساب‌کتاب") {
+            AppCard(label = "حساب") {
                 AccountingDropdown(
                     options = listOf<Pair<Long?, String>>(null to "همه‌ی حساب‌ها") + accounts.map { it.id to it.name },
                     selected = selectedAccountId,

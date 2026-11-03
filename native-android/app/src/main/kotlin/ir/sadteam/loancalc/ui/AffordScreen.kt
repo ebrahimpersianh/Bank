@@ -364,6 +364,7 @@ private fun RateFinderCard() {
             )
             OutlinedTextField(
                 value = amountText,
+                label = { Text("مبلغ وام") },
                 onValueChange = { raw ->
                     val digits = cleanNum(raw)
                     val n = digits.toLongOrNull() ?: 0L
@@ -375,7 +376,7 @@ private fun RateFinderCard() {
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("مبلغ وام (${ir.sadteam.loancalc.ui.jibak.unitFa()})", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             (cleanNum(amountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
                 Text(
                     "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(t.toDouble())} تومان",
@@ -393,6 +394,7 @@ private fun RateFinderCard() {
             )
             OutlinedTextField(
                 value = installmentText,
+                label = { Text("مبلغ هر قسط") },
                 onValueChange = { raw ->
                     val digits = cleanNum(raw)
                     val n = digits.toLongOrNull() ?: 0L
@@ -406,7 +408,7 @@ private fun RateFinderCard() {
                     .padding(top = 8.dp),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("مبلغ هر قسط (${ir.sadteam.loancalc.ui.jibak.unitFa()})", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             (cleanNum(installmentText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
                 Text(
                     "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(t.toDouble())} تومان",

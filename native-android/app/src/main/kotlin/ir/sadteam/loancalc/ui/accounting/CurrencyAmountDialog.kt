@@ -93,7 +93,7 @@ fun CurrencyAmountDialog(
                 OutlinedTextField(
  textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = rate, onValueChange = { rate = cleanNum(it).take(10) },
-                    label = { Text("نرخِ هر $name (${ir.sadteam.loancalc.ui.jibak.unitFa()})") }, singleLine = true, shape = AppFieldShape, colors = appFieldColors(),
+                    label = { Text("نرخِ هر $name") }, suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, singleLine = true, shape = AppFieldShape, colors = appFieldColors(),
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(),
                     supportingText = { Text(if (prices.containsKey(code)) "نرخِ روز؛ اگر به نرخِ دیگری خریدی عوضش کن" else "نرخِ روزِ این ارز را نداریم؛ دستی بزن") },

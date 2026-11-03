@@ -264,8 +264,8 @@ internal fun PeriodStatRow(
             value = count.toFa(),
             unit = "عدد",
             footer = when {
-                countDelta > 0 -> "+${countDelta.toFa()} از دوره‌ی قبل"
-                countDelta < 0 -> "−${(-countDelta).toFa()} از دوره‌ی قبل"
+                countDelta > 0 -> ir.sadteam.loancalc.ui.jibak.isoSigned(true, countDelta.toFa()) + " از دوره‌ی قبل" // یافته‌ی ۱۲: «۱+» در RTL
+                countDelta < 0 -> ir.sadteam.loancalc.ui.jibak.isoSigned(false, (-countDelta).toFa()) + " از دوره‌ی قبل"
                 else -> "بی‌تغییر"
             },
             footerTint = AppMuted,

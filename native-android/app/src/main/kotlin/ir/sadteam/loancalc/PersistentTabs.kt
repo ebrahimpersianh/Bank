@@ -205,6 +205,7 @@ internal fun PersistentTabs(
                                 deepLinkLoanId = deepLinkLoanId,
                                 onDeepLinkConsumed = { deepLinkViewModel.consume() },
                                 onOpenSettings = { showSettings = true },
+                                isRootTab = navSlots.any { it.route == LOAN_ROUTE },
                             )
                         }
                     }

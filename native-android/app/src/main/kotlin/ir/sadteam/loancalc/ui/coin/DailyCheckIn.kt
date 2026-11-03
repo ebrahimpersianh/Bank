@@ -123,7 +123,7 @@ fun DailyCheckInHost(viewModel: DailyCheckInViewModel = hiltViewModel()) {
                     (1..7).forEach { d -> DaySlot(d, res.dayInWeek, Modifier.weight(1f)) }
                 }
                 Text(
-                    "+${toFa(res.coins)} سکه",
+                    ir.sadteam.loancalc.ui.jibak.isoSigned(true, toFa(res.coins)) + " سکه",
                     color = AppPrimaryInk,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.Black,

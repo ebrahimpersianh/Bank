@@ -252,7 +252,7 @@ fun SavingsGoalScreen(
             tone = ConfirmTone.DESTRUCTIVE,
             title = "«${goal.title}» حذف شود؟",
             consequence = "خودِ هدف و عددی که برایش ثبت کرده‌ای پاک می‌شود. " +
-                "هیچ تراکنشی در حساب‌کتاب‌هایت دست نمی‌خورد.",
+                "هیچ تراکنشی در حساب‌هایت دست نمی‌خورد.",
             actionLabel = "حذف کن",
             onConfirm = { viewModel.deleteGoal(goal); pendingDelete = null },
             onDismiss = { pendingDelete = null },
@@ -599,7 +599,7 @@ private fun ContributeDialog(
                     )
                 }
                 Text(
-                    "هیچ تراکنشی ساخته نمی‌شود و موجودیِ حساب‌کتاب‌هایت دست نمی‌خورد.",
+                    "هیچ تراکنشی ساخته نمی‌شود و موجودیِ حساب‌هایت دست نمی‌خورد.",
                     color = AppMuted,
                     fontSize = 10.5.sp,
                     lineHeight = 18.sp,

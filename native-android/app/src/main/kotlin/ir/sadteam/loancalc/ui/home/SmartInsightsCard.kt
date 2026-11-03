@@ -89,7 +89,7 @@ fun SmartInsightsCard(insights: List<SmartInsights.Insight>, onOpen: (SmartInsig
         val more = minOf(all.size, 3) - visible.size
         if (more > 0 || expanded) {
             Text(
-                if (expanded) "کمتر" else "+${ir.sadteam.loancalc.core.toFa(more)} پیشنهادِ دیگر",
+                if (expanded) "کمتر" else ir.sadteam.loancalc.ui.jibak.isoSigned(true, ir.sadteam.loancalc.core.toFa(more)) + " پیشنهادِ دیگر",
                 color = AppPrimaryInk,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,

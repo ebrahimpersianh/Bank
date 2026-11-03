@@ -514,13 +514,13 @@ fun ResultScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         PrivacyCrossfade(privacyMode) { masked ->
                             Text(
-                                maskIfPrivate(masked, amountToman(animatedInstallment)),
+                                maskIfPrivate(masked, amountToman(animatedInstallment)) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
                                 color = AppText,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
                             )
                         }
-                        Text("قسط ماهانه (${ir.sadteam.loancalc.ui.jibak.unitFa()})", fontSize = 12.5.sp, color = AppMuted)
+                        Text("قسط ماهانه", fontSize = 12.5.sp, color = AppMuted)
                     }
                 }
             }

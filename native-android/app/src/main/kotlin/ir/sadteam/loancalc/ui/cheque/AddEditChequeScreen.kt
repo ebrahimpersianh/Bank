@@ -176,7 +176,7 @@ fun AddEditChequeScreen(
             }
         }
         item {
-            AppCard(label = "مبلغ (${ir.sadteam.loancalc.ui.jibak.unitFa()})") {
+            AppCard(label = "مبلغ") {
                 // هم‌الگو با بقیه‌ی فیلدهای مبلغِ اپ (وام/درآمد): جداکننده‌ی هزارگان تو خودِ فیلد +
                 // معادلِ حروفی تومانی زیرش - قبلاً این یکی فرمتِ ساده‌ی بدونِ کاما داشت. واحدِ «ریال»
                 // به‌جای این‌که تو لیبلِ بالای باکس باشه، حالا هم‌الگو با بقیه‌ی فیلدهای مبلغِ اپ،
@@ -320,11 +320,12 @@ fun AddEditChequeScreen(
                                     singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                             }
                         }
-                        AppCard(label = "مانده قبلی (${ir.sadteam.loancalc.ui.jibak.unitFa()})") {
+                        AppCard(label = "مانده قبلی") {
                             OutlinedTextField(
                                 value = previousBalanceText,
                                 visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                 onValueChange = { previousBalanceText = cleanNumDecimal(it) },
+                                suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, 
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
@@ -335,11 +336,12 @@ fun AddEditChequeScreen(
                                 modifier = Modifier.padding(top = 4.dp),
                             )
                         }
-                        AppCard(label = "واریزی (${ir.sadteam.loancalc.ui.jibak.unitFa()})") {
+                        AppCard(label = "واریزی") {
                             OutlinedTextField(
                                 value = depositAmountText,
                                 visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                 onValueChange = { depositAmountText = cleanNumDecimal(it) },
+                                suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, 
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
@@ -351,11 +353,11 @@ fun AddEditChequeScreen(
                             )
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            AppCard(label = "جمع (${ir.sadteam.loancalc.ui.jibak.unitFa()})", modifier = Modifier.weight(1f)) {
-                                Text(fmt(sumVal), color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                            AppCard(label = "جمع", modifier = Modifier.weight(1f)) {
+                                Text(fmt(sumVal) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             }
-                            AppCard(label = "مانده (${ir.sadteam.loancalc.ui.jibak.unitFa()})", modifier = Modifier.weight(1f)) {
-                                Text(fmt(remainingVal), color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                            AppCard(label = "مانده", modifier = Modifier.weight(1f)) {
+                                Text(fmt(remainingVal) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                         // ⚠️ شناسه‌ی صیادی، دسته‌چک، و یادداشت عمداً اینجان نه رو صفحه‌ی اصلیِ فرم -

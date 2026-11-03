@@ -419,7 +419,7 @@ fun NewTransactionSheet(
                     // ⚠️ `Category` آیکونِ **دسته‌بندی** است و ردیفِ حساب هم همان را داشت،
                     // پس دو ردیفِ متفاوتِ همین شیت آیکونِ یکسان می‌گرفتند.
                     icon = Icons.Filled.AccountBalanceWallet,
-                    text = accounts.firstOrNull { it.id == accountId }?.name ?: "حساب‌کتاب",
+                    text = accounts.firstOrNull { it.id == accountId }?.name ?: "حساب",
                     filled = accountId != null,
                     onClick = { picking = AccountSlot.MAIN },
                 )
@@ -603,10 +603,10 @@ internal fun validate(
     toAccountId: Long?,
 ): String? = when {
     amount <= 0.0 -> "مبلغ رو وارد کن"
-    kind == NewTxKind.TRANSFER && fromAccountId == null -> "حساب‌کتابِ مبدا رو انتخاب کن"
-    kind == NewTxKind.TRANSFER && toAccountId == null -> "حساب‌کتابِ مقصد رو انتخاب کن"
+    kind == NewTxKind.TRANSFER && fromAccountId == null -> "حسابِ مبدا رو انتخاب کن"
+    kind == NewTxKind.TRANSFER && toAccountId == null -> "حسابِ مقصد رو انتخاب کن"
     kind == NewTxKind.TRANSFER && fromAccountId == toAccountId -> "مبدا و مقصد نمی‌تونن یکی باشن"
-    kind != NewTxKind.TRANSFER && accountId == null -> "حساب‌کتاب رو انتخاب کن"
+    kind != NewTxKind.TRANSFER && accountId == null -> "حساب رو انتخاب کن"
     else -> null
 }
 
@@ -667,7 +667,7 @@ private fun AccountSlotTile(
                 )
             }
             Text(
-                account?.name ?: "حساب‌کتاب",
+                account?.name ?: "حساب",
                 color = if (account != null) AppText else AppMuted,
                 fontSize = 11.5.sp,
                 modifier = Modifier.padding(top = 6.dp),

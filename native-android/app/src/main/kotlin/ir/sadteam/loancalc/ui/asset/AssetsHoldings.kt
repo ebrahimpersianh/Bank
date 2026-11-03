@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material3.Icon
 import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.runtime.Composable
@@ -448,5 +449,46 @@ internal fun MyAssetsSection(
                 }
             }
         }
+    }
+}
+
+/**
+ * ردیفِ ورود به «طلب و بدهی» در تبِ دارایی (یافته‌ی ۴۵). هم‌قالبِ [AccountRow] تا ردیفی از
+ * همان خانواده خوانده شود، نه کارتی تازه. خالی که باشد هم می‌آید - کارش «پیدا شدن» است.
+ */
+@Composable
+internal fun DebtsEntryRow(owedToMe: Double, iOwe: Double, privacyMode: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(AppRadius.card)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(1.dp, shape, clip = false)
+            .clip(shape)
+            .background(AppSurface)
+            .border(1.dp, AppLine, shape)
+            .pressScaleClickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 11.dp),
+    ) {
+        Box(
+            modifier = Modifier.size(40.dp).clip(CircleShape).background(AppIconFrame),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(androidx.compose.material.icons.Icons.Outlined.Handshake, contentDescription = null, tint = AppMuted, modifier = Modifier.size(21.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text("طلب و بدهی", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+            val unit = ir.sadteam.loancalc.ui.jibak.unitFa()
+            PrivacyCrossfade(privacyMode) { masked ->
+                val sub = if (owedToMe <= 0.0 && iOwe <= 0.0) "چه کسی به تو بدهکار است، به چه کسی بدهکاری"
+                else listOfNotNull(
+                    if (owedToMe > 0.0) "طلبت ${maskIfPrivate(masked, owedToMe.rialToFaCompact())} $unit" else null,
+                    if (iOwe > 0.0) "بدهی‌ات ${maskIfPrivate(masked, iOwe.rialToFaCompact())} $unit" else null,
+                ).joinToString(" | ")
+                Text(sub, color = AppMuted, fontSize = 10.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 3.dp))
+            }
+        }
+        Icon(androidx.compose.material.icons.Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
     }
 }

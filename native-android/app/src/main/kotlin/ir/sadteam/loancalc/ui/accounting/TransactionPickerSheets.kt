@@ -59,13 +59,13 @@ fun AccountPickerSheet(
     val privacy = ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current
     JibakAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("حساب‌کتاب‌ها", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
+        title = { Text("حساب‌ها", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
         text = {
             if (accounts.isEmpty()) {
                 EmptyState(
                     icon = Icons.Filled.Add,
-                    title = "هنوز حساب‌کتابی نساختی",
-                    description = "اول یه حساب‌کتاب (کارت بانکی یا نقدی) بساز تا بتونی تراکنش ثبت کنی.",
+                    title = "هنوز حسابی نساختی",
+                    description = "اول یه حساب (کارت بانکی یا نقدی) بساز تا بتونی تراکنش ثبت کنی.",
                 )
             } else {
                 LazyColumn(

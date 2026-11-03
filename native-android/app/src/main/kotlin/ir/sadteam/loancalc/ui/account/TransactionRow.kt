@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.ui.graphics.graphicsLayer
@@ -80,7 +80,8 @@ fun CompactTransactionRow(
     val originLabel = tx.originLabel
     val origin = originLabel?.takeIf { it.isNotBlank() } ?: "دستی"
     val icon: ImageVector = when {
-        originLabel == null -> Icons.Filled.Add
+        // یافته‌ی ۱۸: «+» شبیهِ دکمه‌ی افزودن بود؛ مداد = «دستی نوشته شده».
+        originLabel == null -> Icons.Filled.Edit
         originLabel.startsWith("پیامک") -> Icons.Filled.ChatBubble
         else -> Icons.Filled.Notifications
     }
@@ -107,7 +108,7 @@ fun CompactTransactionRow(
             if (onDang != null) DangWiggleButton(onDang)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    tx.description.ifBlank { if (isIn) "واریز" else "برداشت" },
+                    tx.description.ifBlank { tx.category?.takeIf { it.isNotBlank() } ?: if (isIn) "واریز" else "برداشت" },
                     color = AppText,
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Bold,

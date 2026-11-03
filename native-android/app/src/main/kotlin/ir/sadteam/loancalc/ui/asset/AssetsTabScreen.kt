@@ -123,6 +123,12 @@ fun AssetsTabScreen(
         (-rows.sumOf { if (it.type == ir.sadteam.loancalc.core.DebtType.OWED_TO_ME.name) it.amount else -it.amount }).coerceAtLeast(0.0)
     }
     val liabilities = loanRemaining + iOwe
+    val owedToMe = debts.filter { !it.settled }.groupBy { it.counterpartyId }.values.sumOf { rows ->
+        rows.sumOf { if (it.type == ir.sadteam.loancalc.core.DebtType.OWED_TO_ME.name) it.amount else -it.amount }.coerceAtLeast(0.0)
+    }
+    // یافته‌ی ۴۵: «طلب و بدهی» فقط در کشوی میان‌بر بود و تقریباً پیدا نمی‌شد. جای مفهومی‌اش
+    // همین تبِ داراییست (طلب دارایی است، بدهی تعهد) - ردیفی زیرِ حساب‌ها.
+    var showDebts by rememberSaveable { mutableStateOf(false) }
     val transactions by accountViewModel.transactions.collectAsState()
     val assets by assetViewModel.assets.collectAsState()
     val trades by assetViewModel.trades.collectAsState()
@@ -174,6 +180,12 @@ fun AssetsTabScreen(
             // آخر، چون خودش سه لایه‌ی داخلی داره که BackHandlerِ خودش می‌بنده.
             else -> showPrices = false
         }
+    }
+
+    if (showDebts) {
+        BackHandler { showDebts = false }
+        ir.sadteam.loancalc.ui.debt.DebtScreen(onBack = { showDebts = false })
+        return
     }
 
     // امروزِ جلالی - مبنای نمودارِ روند.
@@ -323,7 +335,8 @@ fun AssetsTabScreen(
             if (accounts.isNotEmpty() && query.isBlank()) {
                 item(key = "accounts-header") {
                     SectionHeader(
-                        title = "حساب‌های بانکی",
+                        // یافته‌ی ۱۶: حسابِ «نقدی» زیرِ «حساب‌های بانکی» می‌نشست.
+                        title = if (accounts.all { it.type == ACCOUNT_TYPE_BANK }) "حساب‌های بانکی" else "حساب‌ها",
                         icon = Icons.Filled.AccountBalance,
                         count = accounts.size,
                         actionLabel = "مدیریتِ حساب‌ها",
@@ -339,6 +352,10 @@ fun AssetsTabScreen(
                         onClick = { detailAccount = account.id },
                     )
                 }
+            }
+
+            if (query.isBlank()) item(key = "debts-row") {
+                DebtsEntryRow(owedToMe = owedToMe, iOwe = iOwe, privacyMode = privacyMode, onClick = { showDebts = true })
             }
 
             // 🐞 (۱۵ مهر) کلیدِ ثابت: بی کلید، با اولین حرف فهرستِ حساب‌ها بالای این ردیف حذف می‌شد،

@@ -172,7 +172,7 @@ fun AddEditAccountScreen(
                     Icon(Icons.Filled.ArrowForward, contentDescription = "انصراف", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Text(
-                    if (existing == null) "افزودن حساب‌کتاب" else "ویرایش حساب‌کتاب",
+                    if (existing == null) "افزودن حساب" else "ویرایش حساب",
                     color = AppText,
                     fontSize = 16.sp,
                     modifier = Modifier.padding(start = 4.dp),
@@ -180,7 +180,7 @@ fun AddEditAccountScreen(
             }
         }
         item {
-            AppCard(label = "نوع حساب‌کتاب") {
+            AppCard(label = "نوع حساب") {
                 SegmentedToggle(
                     options = listOf("کارت بانکی", "منبع دیگر"),
                     selectedIndex = if (accountType == ACCOUNT_TYPE_BANK) 0 else 1,
@@ -236,7 +236,7 @@ fun AddEditAccountScreen(
             }
         }
         item {
-            AppCard(label = if (accountType == ACCOUNT_TYPE_BANK) "اسم حساب‌کتاب" else "اسم منبع") {
+            AppCard(label = if (accountType == ACCOUNT_TYPE_BANK) "اسم حساب" else "اسم منبع") {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -458,7 +458,7 @@ fun AddEditAccountScreen(
                         val initialBalance = tomanToRial(initialBalanceText.toLongOrNull() ?: 0L).toDouble()
                         val isBank = accountType == ACCOUNT_TYPE_BANK
                         error = when {
-                            name.trim().isEmpty() -> if (isBank) "اسم حساب‌کتاب رو وارد کن" else "اسم منبع رو وارد کن"
+                            name.trim().isEmpty() -> if (isBank) "اسم حساب رو وارد کن" else "اسم منبع رو وارد کن"
                             isBank && bankName.trim().isEmpty() -> "اسم بانک رو وارد کن"
                             // 🚨 سرشماره‌ی تکراری چک نمی‌شد: دو حساب با یک سرشماره یعنی
                             // `BankSmsReceiver` نمی‌داند تراکنش را روی **کدام** حساب
@@ -509,7 +509,7 @@ fun AddEditAccountScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("ذخیره حساب‌کتاب")
+                    Text("ذخیره حساب")
                 }
                 OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
                     Text("انصراف")

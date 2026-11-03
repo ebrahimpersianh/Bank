@@ -80,7 +80,7 @@ fun SharedSmsDialog(
 
     AccountPickerDialog(
         accounts = accounts,
-        title = "روی کدام حساب‌کتاب ثبت شود؟",
+        title = "روی کدام حساب ثبت شود؟",
         onDismiss = onDone,
         onSelect = { account ->
             val today = JalaliCalendar.today()

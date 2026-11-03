@@ -309,7 +309,7 @@ fun SmsImportScreen(
         ConfirmDialog(
             tone = ConfirmTone.HEAVY_CHANGE,
             title = "${toFa(rows.size)} پیام یک‌جا ثبت شود؟",
-            consequence = "همه‌ی پیام‌های مبلغ‌دارِ این فرستنده به یک حساب‌کتاب اضافه می‌شوند. " +
+            consequence = "همه‌ی پیام‌های مبلغ‌دارِ این فرستنده به یک حساب اضافه می‌شوند. " +
                 "هر کدام را بعداً می‌توانی جدا ویرایش یا حذف کنی.",
             actionLabel = "ثبت کن",
             onConfirm = {
@@ -329,7 +329,7 @@ fun SmsImportScreen(
     bulkAccountPickFor?.let { rows ->
         AccountPickerDialog(
             accounts = accounts,
-            title = "روی کدام حساب‌کتاب ثبت شوند؟",
+            title = "روی کدام حساب ثبت شوند؟",
             onDismiss = { bulkAccountPickFor = null },
             onSelect = { account ->
                 addAllFromSender(accountViewModel, account.id, rows)
@@ -365,7 +365,7 @@ fun SmsImportScreen(
         } else {
             AccountPickerDialog(
                 accounts = accounts,
-                title = "روی کدام حساب‌کتاب ثبت شود؟",
+                title = "روی کدام حساب ثبت شود؟",
                 onDismiss = { pending = null },
                 onSelect = { account ->
                     val today = smsJalali(sms.dateMs)

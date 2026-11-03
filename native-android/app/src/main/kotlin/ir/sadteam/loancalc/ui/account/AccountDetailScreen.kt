@@ -338,9 +338,7 @@ fun AccountDetailScreen(
                         CompactTransactionRow(
                             tx = tx,
                             onClick = { editingTx = tx },
-                            onDang = if (tx.type == "WITHDRAWAL" && tx.confirmed && ir.sadteam.loancalc.data.countsInReports(tx)) {
-                                { splitTx = tx }
-                            } else null,
+                            // یافته‌ی ۱۸: آدمکِ لرزانِ دنگ روی هر ردیف بی‌توضیح بود؛ «تقسیمِ دنگ» در پنجره‌ی همان تراکنش است.
                         )
                     }
                 }
@@ -506,6 +504,8 @@ private fun MonthBar(year: Int, month: Int, hasNext: Boolean, onChange: (Int, In
             color = AppText,
             fontSize = 13.sp,
             fontWeight = FontWeight.Black,
+            // یافته‌ی ۱۹: عنوان چسبیده به فلشِ راست بود و فلشِ چپ تهِ ردیف - حالا وسطِ دو فلش.
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.weight(1f),
         )
         IconButton(onClick = { if (month == 12) onChange(year + 1, 1) else onChange(year, month + 1) }, enabled = hasNext) {

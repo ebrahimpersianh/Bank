@@ -244,7 +244,7 @@ private fun BudgetSection(
                             )
                             if (savedSoFar > 0) {
                                 Text(
-                                    "+${fmt(savedSoFar)} ذخیره",
+                                    ir.sadteam.loancalc.ui.jibak.isoSigned(true, fmt(savedSoFar)) + " ذخیره",
                                     color = Color.White,
                                     fontSize = 9.5.sp,
                                     fontWeight = FontWeight.Black,
@@ -609,13 +609,13 @@ internal fun NewBudgetSheet(
     if (showAccountPicker) {
         JibakAlertDialog(
             onDismissRequest = { showAccountPicker = false },
-            title = { Text("حساب‌کتاب‌ها", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
+            title = { Text("حساب‌ها", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     TextButton(
                         onClick = { selectedAccountId = null; showAccountPicker = false },
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text("همه حساب‌کتاب‌ها", modifier = Modifier.fillMaxWidth()) }
+                    ) { Text("همه حساب‌ها", modifier = Modifier.fillMaxWidth()) }
                     accounts.forEach { acc ->
                         TextButton(
                             onClick = { selectedAccountId = acc.id; showAccountPicker = false },
@@ -653,7 +653,7 @@ internal fun NewBudgetSheet(
         )
     }
 
-    val accountLabel = accounts.firstOrNull { it.id == selectedAccountId }?.name ?: "همه حساب‌کتاب‌ها"
+    val accountLabel = accounts.firstOrNull { it.id == selectedAccountId }?.name ?: "همه حساب‌ها"
 
     JibakAlertDialog(
         onDismissRequest = onDismiss,
