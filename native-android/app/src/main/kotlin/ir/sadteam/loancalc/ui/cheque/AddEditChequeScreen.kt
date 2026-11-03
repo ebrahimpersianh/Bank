@@ -192,7 +192,7 @@ fun AddEditChequeScreen(
                 val amountVal = amountText.toLongOrNull() ?: 0L
                 if (amountVal > 0) {
                     AutoShrinkText(
-                        text = "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(amountVal.toDouble())} تومان",
+                        text = ir.sadteam.loancalc.ui.jibak.amountWordsCaption(amountVal.toDouble()),
                         color = AppMuted,
                         maxFontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
@@ -298,12 +298,12 @@ fun AddEditChequeScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         }
-                        AppCard(label = "طرف حساب") {
+                        AppCard(label = "طرفِ چک") {
                             OutlinedButton(
                                 onClick = { showCounterpartyPicker = true },
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
-                                Text(selectedCounterparty?.name ?: "انتخاب یا ساختِ طرفِ‌حساب")
+                                Text(selectedCounterparty?.name ?: "انتخابِ شخص")
                             }
                         }
 
@@ -419,7 +419,7 @@ fun AddEditChequeScreen(
                             chequeNumber.trim().isEmpty() -> "شماره چک رو وارد کن"
                             bankName.trim().isEmpty() -> "اسم بانک رو وارد کن"
                             ownerName.trim().isEmpty() -> "این فیلد رو وارد کن"
-                            counterpartyId == null -> "طرفِ‌حساب رو انتخاب کن"
+                            counterpartyId == null -> "طرفِ چک را انتخاب کن"
                             else -> null
                         }
                         if (error != null && amount > 0) showMoreInfo = true
@@ -496,6 +496,7 @@ fun AddEditChequeScreen(
                 }
             },
             onDismiss = { showCounterpartyPicker = false },
+            title = "چک با چه کسی است؟",
         )
     }
     SuccessCheckmarkOverlay(visible = savedOk, onFinished = onSaved)

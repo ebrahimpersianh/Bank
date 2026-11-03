@@ -313,7 +313,7 @@ fun AddManualLoanScreen(
                 val instToman = cleanNum(installmentText).toLongOrNull() ?: 0L
                 if (instToman > 0) {
                     Text(
-                        "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(instToman.toDouble())} تومان",
+                        ir.sadteam.loancalc.ui.jibak.amountWordsCaption(instToman.toDouble()),
                         color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 4.dp),

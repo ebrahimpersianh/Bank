@@ -224,7 +224,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                     val payDisplay = amountText.toLongOrNull() ?: 0L
                     if (payDisplay > 0) {
                         Text(
-                            "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(payDisplay.toDouble())} تومان",
+                            ir.sadteam.loancalc.ui.jibak.amountWordsCaption(payDisplay.toDouble()),
                             color = AppMuted, fontSize = 11.sp,
                         )
                     }

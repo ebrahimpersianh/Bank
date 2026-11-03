@@ -64,7 +64,8 @@ fun PillSearchField(
             Modifier.size(44.dp).clip(CircleShape).background(primary.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center,
         ) { Icon(Icons.Filled.Search, contentDescription = null, tint = primary, modifier = Modifier.size(22.dp)) }
-        Box(Modifier.padding(horizontal = 12.dp).width(2.dp).height(24.dp).background(primary))
+        // یافته‌ی ۴۹/۶۳: خطِ سبزِ کنارِ ذره‌بین شبیهِ مکان‌نمای دوم بود - فقط فاصله.
+        Spacer(Modifier.width(10.dp))
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             if (value.isEmpty()) Text(placeholder, color = AppMuted, fontSize = 14.sp, maxLines = 1)
             BasicTextField(
@@ -77,7 +78,6 @@ fun PillSearchField(
             )
         }
         if (value.isNotEmpty()) {
-            Box(Modifier.padding(horizontal = 10.dp).width(1.dp).height(24.dp).background(AppLine))
             Box(
                 Modifier.size(44.dp).clip(CircleShape).background(AppChipBg).clickable { onValueChange("") },
                 contentAlignment = Alignment.Center,

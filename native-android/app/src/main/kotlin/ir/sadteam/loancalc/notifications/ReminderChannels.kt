@@ -102,7 +102,7 @@ object ReminderChannels {
                 "یادآورِ روزانه",
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = "یادآوریِ ثبتِ دخل‌وخرج و پیامِ بازگشت"
+                description = "یادآوریِ ثبتِ درآمد‌وخرج و پیامِ بازگشت"
                 enableVibration(false)
             },
         )

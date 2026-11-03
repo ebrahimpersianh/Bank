@@ -230,12 +230,12 @@ private fun WelcomeStep(onNext: () -> Unit) {
         }
         StepHeader(
             title = "به جیبک خوش اومدی",
-            subtitle = "دخل و خرجت رو ساده ثبت کن، وام و چک و بودجه‌ت رو یک‌جا داشته باش.",
+            subtitle = "درآمد و خرجت رو ساده ثبت کن، وام و چک و بودجه‌ت رو یک‌جا داشته باش.",
             image = ir.sadteam.loancalc.R.drawable.jibak_onb_welcome,
         )
         Spacer(Modifier.height(28.dp))
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            WelcomeBullet("ثبتِ سریعِ دخل و خرج")
+            WelcomeBullet("ثبتِ سریعِ درآمد و خرج")
             WelcomeBullet("بودجه‌بندی و گزارشِ ماهانه")
             WelcomeBullet("یادآوریِ قسط، چک و سررسید")
             WelcomeBullet("پشتیبان‌گیریِ امن از اطلاعاتت")
@@ -357,7 +357,7 @@ private fun ReminderStep(onChoose: (Boolean) -> Unit, onNext: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         StepHeader(
             title = "یادت بندازم؟",
-            subtitle = "هر روز یه یادآوریِ کوتاه می‌فرستم تا ثبتِ دخل‌وخرج از یادت نره.",
+            subtitle = "هر روز یه یادآوریِ کوتاه می‌فرستم تا ثبتِ درآمد‌وخرج از یادت نره.",
         )
         Spacer(Modifier.height(28.dp))
         AppCard(modifier = Modifier.fillMaxWidth()) {
@@ -738,7 +738,7 @@ private fun FirstAccountStep(
         // هشدارِ ثبت‌شده در قرص‌های هیروِ تبِ دارایی، همان‌جا که «موجودی اولیه» پرسیده می‌شود:
         // این عدد **نقطه‌ی شروع** است، نه موجودیِ همیشگی؛ بعدش با تراکنش‌ها جابه‌جا می‌شود.
         Text(
-            "این عدد فقط رقمِ شروع است - بعد از آن با دخل و خرج‌هایی که ثبت می‌کنی جابه‌جا می‌شود.",
+            "این عدد فقط رقمِ شروع است - بعد از آن با درآمد و خرج‌هایی که ثبت می‌کنی جابه‌جا می‌شود.",
             color = AppMuted,
             fontSize = 11.sp,
             lineHeight = 19.sp,

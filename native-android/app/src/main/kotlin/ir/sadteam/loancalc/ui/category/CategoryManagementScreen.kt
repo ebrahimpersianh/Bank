@@ -228,7 +228,7 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
             // تبِ خرج/دخل با رنگِ متفاوت (خواسته‌ی صریحِ کاربر): خرج قرمز، دخل سبز. رنگِ تاگل با
             // خودِ تبِ فعال عوض می‌شه - همون الگوی شیتِ «تراکنش جدید».
             SegmentedToggle(
-                options = listOf("خرج", "دخل"),
+                options = listOf("خرج", "درآمد"),
                 selectedIndex = if (type == TransactionType.WITHDRAWAL) 0 else 1,
                 onSelect = { type = if (it == 0) TransactionType.WITHDRAWAL else TransactionType.DEPOSIT },
                 selectedColor = if (type == TransactionType.WITHDRAWAL) AppDanger else AppPrimary,

@@ -190,7 +190,7 @@ fun ChequeDetailScreen(
 
         if (counterparty != null) {
             item {
-                AppCard(label = "طرف حساب") {
+                AppCard(label = "طرفِ چک") {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             AvatarView(

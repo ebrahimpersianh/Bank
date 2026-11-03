@@ -409,3 +409,10 @@ fun displayToToman(amount: Double): Double = amount * unitDivD / 10.0
 /** حروفیِ مبلغ برای زیرِ کادرِ ورودی - **همیشه به تومان** (خواسته‌ی کاربر): ورودی در واحدِ نمایش است. */
 fun numberToWordsTomanFa(displayAmount: Double): String =
     ir.sadteam.loancalc.core.numberToWordsFa(displayToToman(displayAmount))
+
+/**
+ * کپشنِ حروفیِ زیرِ کادرِ مبلغ. حروف همیشه تومان است؛ یافته‌ی ۸۷: با واحدِ ریال، عددِ بزرگِ
+ * «۵۰٬۰۰۰٬۰۰۰» و زیرش «پنج میلیون تومان» گیج می‌کرد - حالا «معادلِ پنج میلیون تومان».
+ */
+fun amountWordsCaption(displayAmount: Double): String =
+    (if (MoneyUnit.rial) "معادلِ " else "") + numberToWordsTomanFa(displayAmount) + " تومان"

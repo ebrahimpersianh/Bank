@@ -262,7 +262,7 @@ private fun RuleCard(
                             .padding(horizontal = 9.dp, vertical = 4.dp),
                     ) {
                         Text(
-                            if (rule.txType == TransactionType.WITHDRAWAL.name) "خرج" else "دخل",
+                            if (rule.txType == TransactionType.WITHDRAWAL.name) "خرج" else "درآمد",
                             color = AppMuted,
                             fontSize = 9.5.sp,
                             fontWeight = FontWeight.ExtraBold,
@@ -392,7 +392,7 @@ private fun RuleSheet(
                     )
                 }
                 SegmentedToggle(
-                    options = listOf("مهم نیست", "خرج", "دخل"),
+                    options = listOf("مهم نیست", "خرج", "درآمد"),
                     selectedIndex = typeIndex,
                     onSelect = { typeIndex = it },
                     modifier = Modifier.padding(top = 10.dp),
@@ -561,7 +561,7 @@ private fun SmsTestDialog(
                         }
                         if (r != null) {
                             TestResultRow("مبلغ", "${rialToToman(r.amountRial).toFaMoney()} ${ir.sadteam.loancalc.ui.jibak.unitFa()}")
-                            TestResultRow("نوع", if (r.isWithdrawal) "خرج" else "دخل", if (r.isWithdrawal) AppDangerInk else AppPrimaryInk)
+                            TestResultRow("نوع", if (r.isWithdrawal) "خرج" else "درآمد", if (r.isWithdrawal) AppDangerInk else AppPrimaryInk)
                             TestResultRow(
                                 "حساب",
                                 r.accountName ?: r.cardSuffix?.let { "کارتِ ${faCardTail(it)} (ثبت‌نشده)" } ?: "نامشخص",

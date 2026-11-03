@@ -407,7 +407,7 @@ fun BankLoanScreen(
                     if (tomanVal > 0) {
                         // همیشه تک‌خطی - اگه جا نشه فونت کوچیک می‌شه، نه این‌که به خط دوم بشکنه.
                         AutoShrinkText(
-                            text = "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(tomanVal.toDouble())} تومان",
+                            text = ir.sadteam.loancalc.ui.jibak.amountWordsCaption(tomanVal.toDouble()),
                             color = AppMuted,
                             maxFontSize = 11.5.sp,
                             modifier = Modifier.padding(top = 4.dp),

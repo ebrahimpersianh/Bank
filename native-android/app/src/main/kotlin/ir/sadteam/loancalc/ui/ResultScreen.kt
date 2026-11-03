@@ -371,7 +371,7 @@ fun ResultScreen(
                         // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد.
                         (cleanNum(editAmountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
                             Text(
-                                "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(t.toDouble())} تومان",
+                                ir.sadteam.loancalc.ui.jibak.amountWordsCaption(t.toDouble()),
                                 color = AppMuted,
                                 fontSize = 11.5.sp,
                                 modifier = Modifier.padding(top = 4.dp),
@@ -552,7 +552,7 @@ fun ResultScreen(
         item {
             StaggerIn(1) {
                 Text(
-                    text = "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(rialToToman(result.installment.toLong()).toDouble())} تومان",
+                    text = ir.sadteam.loancalc.ui.jibak.amountWordsCaption(rialToToman(result.installment.toLong()).toDouble()),
                     color = AppMuted,
                     fontSize = 13.5.sp,
                     textAlign = TextAlign.Center,

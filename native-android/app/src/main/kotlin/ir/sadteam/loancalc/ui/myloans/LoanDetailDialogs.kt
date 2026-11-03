@@ -192,7 +192,7 @@ internal fun LoanEditMetaDialog(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         editMetaAmountText.toLongOrNull()?.takeIf { it > 0 }?.let {
-                            Text("${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(it.toDouble())} تومان", color = AppMuted, fontSize = 11.sp)
+                            Text(ir.sadteam.loancalc.ui.jibak.amountWordsCaption(it.toDouble()), color = AppMuted, fontSize = 11.sp)
                         }
                         OutlinedTextField(
                             value = editMetaNText,

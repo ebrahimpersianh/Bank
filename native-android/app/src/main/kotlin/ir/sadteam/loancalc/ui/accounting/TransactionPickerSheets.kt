@@ -115,7 +115,7 @@ fun CategoryPickerSheet(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                if (isIncome) "دسته‌بندیِ دخل" else "دسته‌بندیِ خرج",
+                if (isIncome) "دسته‌بندیِ درآمد" else "دسته‌بندیِ خرج",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
             )

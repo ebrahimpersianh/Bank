@@ -238,7 +238,7 @@ fun AccountDetailScreen(
                         val amountToman = amountText.toLongOrNull() ?: 0L
                         if (amountToman > 0) {
                             Text(
-                                "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(amountToman.toDouble())} تومان",
+                                ir.sadteam.loancalc.ui.jibak.amountWordsCaption(amountToman.toDouble()),
                                 color = AppMuted,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 4.dp),

@@ -191,7 +191,7 @@ fun AffordScreen(
                         Text(
                             maskIfPrivate(
                                 masked,
-                                "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(rialToToman(liveMax.toLong()).toDouble())} تومان",
+                                ir.sadteam.loancalc.ui.jibak.amountWordsCaption(rialToToman(liveMax.toLong()).toDouble()),
                             ),
                             color = AppMuted,
                             fontSize = 11.sp,
@@ -224,7 +224,7 @@ fun AffordScreen(
                     val tomanVal = cleanNum(payText).toLongOrNull() ?: 0L
                     if (tomanVal > 0) {
                         Text(
-                            text = "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(tomanVal.toDouble())} تومان",
+                            text = ir.sadteam.loancalc.ui.jibak.amountWordsCaption(tomanVal.toDouble()),
                             color = AppMuted,
                             fontSize = 11.5.sp,
                             modifier = Modifier.padding(top = 4.dp),
@@ -379,7 +379,7 @@ private fun RateFinderCard() {
                 suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             (cleanNum(amountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
                 Text(
-                    "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(t.toDouble())} تومان",
+                    ir.sadteam.loancalc.ui.jibak.amountWordsCaption(t.toDouble()),
                     color = AppMuted,
                     fontSize = 11.sp,
                     modifier = Modifier.padding(top = 4.dp),
@@ -411,7 +411,7 @@ private fun RateFinderCard() {
                 suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             (cleanNum(installmentText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
                 Text(
-                    "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(t.toDouble())} تومان",
+                    ir.sadteam.loancalc.ui.jibak.amountWordsCaption(t.toDouble()),
                     color = AppMuted,
                     fontSize = 11.sp,
                     modifier = Modifier.padding(top = 4.dp),

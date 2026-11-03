@@ -225,7 +225,7 @@ fun DebtScreen(
 
     pendingDelete?.let { counterparty ->
         ConfirmDeleteDialog(
-            title = "حذفِ طرف‌حساب",
+            title = "حذفِ این شخص",
             text = "«${counterparty.name}» و همه‌ی ردیف‌های طلب/بدهیش حذف بشه؟",
             onConfirm = { viewModel.deleteCounterparty(counterparty); openedCounterpartyId = null },
             onDismiss = { pendingDelete = null },
@@ -480,7 +480,7 @@ private fun DebtList(
                 ir.sadteam.loancalc.ui.components.PillSearchField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = "جستجو تو طرف‌حساب‌ها...",
+                    placeholder = "جستجوی اسم...",
                 )
             }
             item {
@@ -496,11 +496,11 @@ private fun DebtList(
             item {
                 EmptyState(
                     icon = Icons.Filled.Handshake,
-                    title = if (counterparties.isEmpty()) "هنوز طرفِ‌حسابی نداری" else "چیزی پیدا نشد",
+                    title = if (counterparties.isEmpty()) "هنوز کسی را اضافه نکردی" else "چیزی پیدا نشد",
                     description = if (counterparties.isEmpty()) {
                         "طلب یا بدهیِ خودت با یه شخص رو اینجا ثبت کن تا فراموش نشه."
                     } else {
-                        "طرفِ‌حسابی با این شرط پیدا نشد."
+                        "کسی با این شرط پیدا نشد."
                     },
                 )
             }
@@ -550,7 +550,7 @@ private fun DebtList(
         modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 14.dp, vertical = 16.dp),
     ) {
         Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-        Text("افزودنِ طرفِ‌حساب", modifier = Modifier.padding(start = 6.dp))
+        Text("افزودنِ شخص", modifier = Modifier.padding(start = 6.dp))
     }
 
     AddCounterpartySheet(
@@ -639,7 +639,7 @@ private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Uni
                     Modifier.size(42.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimary.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Filled.Handshake, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp)) }
-                Text("طرفِ‌حسابِ جدید", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f).padding(start = 10.dp))
+                Text("شخصِ جدید", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f).padding(start = 10.dp))
                 IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = "بستن", tint = AppMuted) }
             }
             OutlinedTextField(
@@ -682,7 +682,7 @@ private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Uni
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             )
             amount.toLongOrNull()?.takeIf { it > 0 }?.let {
-                Text("${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(it.toDouble())} تومان", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+                Text(ir.sadteam.loancalc.ui.jibak.amountWordsCaption(it.toDouble()), color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
             }
             if ((amount.toLongOrNull() ?: 0L) > 0) {
                 Text("تاریخ", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 12.dp))
@@ -783,10 +783,10 @@ private fun CounterpartyDetail(
                     }
                 }
                 IconButton(onClick = { showEdit = true }) {
-                    Icon(Icons.Filled.Edit, contentDescription = "ویرایشِ طرف‌حساب")
+                    Icon(Icons.Filled.Edit, contentDescription = "ویرایشِ شخص")
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Filled.Delete, contentDescription = "حذفِ طرف‌حساب", tint = AppDanger)
+                    Icon(Icons.Filled.Delete, contentDescription = "حذفِ این شخص", tint = AppDanger)
                 }
             }
         }
@@ -993,7 +993,7 @@ private fun EditCounterpartyDialog(
 
     JibakAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("ویرایشِ طرف‌حساب") },
+        title = { Text("ویرایشِ شخص") },
         text = {
             Column {
                 OutlinedTextField(

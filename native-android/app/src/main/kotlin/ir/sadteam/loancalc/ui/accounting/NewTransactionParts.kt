@@ -157,7 +157,7 @@ internal fun NewTxAmountCard(
                 // می‌دید و باید حدس می‌زد عددی که تایپ می‌کند کدام است. این تنها جای
                 // باقی‌مانده‌ی برنامه بود که ورودی ریالی می‌گرفت. ستونِ دیتابیس ریال می‌ماند؛
                 // `tomanToRial` در لبه‌ی ثبت تبدیل می‌کند.
-                Text("مبلغ · ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                Text("مبلغ (${ir.sadteam.loancalc.ui.jibak.unitFa()})", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                 BasicTextField(
                     value = amountText,
                     // خطا با اولین اصلاح پاک می‌شود، نه با ثبتِ بعدی: پیامِ «مبلغ رو وارد کن»
@@ -179,12 +179,14 @@ internal fun NewTxAmountCard(
                         .padding(top = 4.dp),
                     decorationBox = { inner ->
                         Box(contentAlignment = Alignment.Center) {
+                            // یافته‌ی ۸۳: «۰»ِ کم‌رنگِ ۳۴پیکسلی شبیهِ یک نقطه/دکمه بود و کاربر نمی‌فهمید
+                            // مبلغ کجاست. حالا راهنمای صریح، در اندازه‌ای که با عدد اشتباه نشود.
                             if (amountText.isEmpty()) {
                                 Text(
-                                    "۰",
-                                    color = AppMuted.copy(alpha = 0.5f),
-                                    fontSize = 34.sp,
-                                    fontWeight = FontWeight.Black,
+                                    "مبلغ را بنویس",
+                                    color = AppMuted.copy(alpha = 0.7f),
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
                                 )
                             }
                             inner()
@@ -195,7 +197,7 @@ internal fun NewTxAmountCard(
                 if (toman > 0) {
                     Text(
                         // دیگر تقسیم بر ده لازم نیست - خودِ فیلد تومان است.
-                        "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(toman.toDouble())} تومان",
+                        ir.sadteam.loancalc.ui.jibak.amountWordsCaption(toman.toDouble()),
                         color = AppMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -633,7 +635,9 @@ internal fun NewTxBottomBar(
 
         AccentPillButton(
             text = "ثبت · ${toFa(GamificationRepository.Reward.DAILY_LOG)} سکه",
-            accent = accent,
+            // یافته‌ی ۸۵: دکمه‌ی اصلیِ «ثبت» برای خرج **قرمز** بود (رنگِ خطر). نوع را قرص‌ها و رنگِ
+            // عدد می‌گویند؛ کنشِ اصلی همیشه سبزِ برند است.
+            accent = ir.sadteam.loancalc.ui.theme.AppPrimary,
             onClick = { submit(true) },
             modifier = Modifier.weight(1f),
         )

@@ -104,7 +104,7 @@ enum class SearchKind(val label: String, val icon: ImageVector) {
     LOAN("وام", Icons.Filled.Payments),
     CHEQUE("چک", Icons.Filled.Description),
     ACCOUNT("حساب", Icons.Filled.AccountBalance),
-    PERSON("طرف‌حساب", Icons.Filled.Person),
+    PERSON("شخص", Icons.Filled.Person),
     BILL("قبض", Icons.Filled.Receipt),
     NOTE("یادداشت", Icons.Filled.StickyNote2),
     DEBT("طلب/بدهی", Icons.Filled.Handshake),
@@ -406,7 +406,7 @@ private fun SearchIntro() {
         SearchMessage(
             icon = Icons.Filled.Search,
             title = "دنبالِ چی می‌گردی؟",
-            body = "اسم، بانک، طرف‌حساب، شرح، مبلغ، شماره‌ی چک یا کارت را بنویس.",
+            body = "اسم، بانک، شرح، مبلغ، شماره‌ی چک یا کارت را بنویس.",
             padded = false,
         )
         Text(

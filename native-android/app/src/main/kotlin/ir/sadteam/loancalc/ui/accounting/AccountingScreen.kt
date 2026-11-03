@@ -440,7 +440,7 @@ private fun MainSection(
                     icon = Icons.Outlined.AccountBalanceWallet,
                     title = if (searchQuery.isBlank()) "هنوز تراکنشی ثبت نشده" else "چیزی پیدا نشد",
                     description = if (searchQuery.isBlank()) {
-                        "دخل و خرجِ روزمره‌ت که با دسته‌بندی ثبت بشه، همین‌جا می‌بینیشون."
+                        "درآمد و خرجِ روزمره‌ت که با دسته‌بندی ثبت بشه، همین‌جا می‌بینیشون."
                     } else {
                         "تراکنشی با این توضیح/دسته پیدا نشد."
                     },

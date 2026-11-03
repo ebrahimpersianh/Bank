@@ -492,7 +492,7 @@ internal fun LoansIncomeCard(
                     val incomeToman = amountText.toLongOrNull() ?: 0L
                     if (incomeToman > 0) {
                         AutoShrinkText(
-                            text = "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(incomeToman.toDouble())} تومان",
+                            text = ir.sadteam.loancalc.ui.jibak.amountWordsCaption(incomeToman.toDouble()),
                             color = AppMuted,
                             maxFontSize = 11.sp,
                         )

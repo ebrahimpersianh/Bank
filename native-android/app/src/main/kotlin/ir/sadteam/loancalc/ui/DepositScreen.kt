@@ -200,7 +200,7 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                     val tomanVal = cleanNum(amountText).toLongOrNull() ?: 0L
                     if (tomanVal > 0) {
                         Text(
-                            text = "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(tomanVal.toDouble())} تومان",
+                            text = ir.sadteam.loancalc.ui.jibak.amountWordsCaption(tomanVal.toDouble()),
                             color = AppMuted,
                             fontSize = 11.5.sp,
                             modifier = Modifier.padding(top = 4.dp),

@@ -470,7 +470,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
             StaggerIn(1) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     SegmentedToggle(
-                        options = listOf("دخل", "خرج"),
+                        options = listOf("درآمد", "خرج"),
                         selectedIndex = if (showExpenseTab) 1 else 0,
                         onSelect = { index -> showExpenseTab = index == 1 },
                         selectedColor = if (showExpenseTab) AppDanger else AppPrimary,
@@ -498,9 +498,9 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                                 fontWeight = FontWeight.Black,
                                 modifier = Modifier.padding(top = 10.dp),
                             )
-                            Text("اختلاف دخل و خرج", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+                            Text("اختلاف درآمد و خرج", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
                             Spacer(modifier = Modifier.height(10.dp))
-                            IncomeExpenseLegendRow(color = AppPrimary, label = "دخل", amount = dayIncome)
+                            IncomeExpenseLegendRow(color = AppPrimary, label = "درآمد", amount = dayIncome)
                             IncomeExpenseLegendRow(color = AppDanger, label = "خرج", amount = dayExpense)
                         }
                         // سهمِ دخل روی مسیرِ قرمز (خرج) - همون CategoryDonut/Canvas+Animatableِ موجودِ
@@ -520,7 +520,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
             StaggerIn(3) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        "${if (showExpenseTab) "خرج" else "دخل"} ${toFa(viewDate.d)} ${faMonthNamesAccounting[viewDate.m - 1]} ${toFa(viewDate.y)}",
+                        "${if (showExpenseTab) "خرج" else "درآمد"} ${toFa(viewDate.d)} ${faMonthNamesAccounting[viewDate.m - 1]} ${toFa(viewDate.y)}",
                         color = AppMuted,
                         fontSize = 12.sp,
                     )
@@ -599,7 +599,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                             CategoryDonut(slices = donutSlices) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
-                                        if (showExpenseTab) "کلِ خرج" else "کلِ دخل",
+                                        if (showExpenseTab) "کلِ خرج" else "کلِ درآمد",
                                         color = AppMuted,
                                         fontSize = 10.sp,
                                     )

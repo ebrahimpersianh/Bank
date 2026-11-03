@@ -527,7 +527,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_NUDGES)
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(ReminderChannels.largeIcon(applicationContext, R.drawable.notif_no_spend))
-            .setContentTitle("دخل‌وخرج امروز یادت نره")
+            .setContentTitle("درآمد‌وخرج امروز یادت نره")
             .setContentText("امروز هنوز هیچ تراکنشی ثبت نکردی - یه سر بزن به «جیبک»")
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
@@ -537,7 +537,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         NotificationManagerCompat.from(applicationContext).notify(DAILY_EXPENSE_REMINDER_NOTIFICATION_ID, notification)
         inboxRepository.post(
             kind = InboxMessageEntity.Kind.STREAK_REMINDER,
-            title = "دخل‌وخرج امروز یادت نره",
+            title = "درآمد‌وخرج امروز یادت نره",
             body = "امروز هنوز هیچ تراکنشی ثبت نکردی - یه سر بزن به «جیبک»",
         )
     }

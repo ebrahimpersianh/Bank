@@ -480,7 +480,7 @@ private fun AddGoalForm(
             suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         if (targetToman > 0.0) {
             Text(
-                "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(targetToman)} تومان",
+                ir.sadteam.loancalc.ui.jibak.amountWordsCaption(targetToman),
                 color = AppMuted,
                 fontSize = 10.sp,
                 modifier = Modifier.padding(top = 4.dp),
@@ -593,7 +593,7 @@ private fun ContributeDialog(
                     suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 if (valid) {
                     Text(
-                        "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(toman)} تومان",
+                        ir.sadteam.loancalc.ui.jibak.amountWordsCaption(toman),
                         color = AppMuted,
                         fontSize = 10.sp,
                     )

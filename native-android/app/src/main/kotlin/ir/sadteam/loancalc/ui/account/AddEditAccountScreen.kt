@@ -411,7 +411,7 @@ fun AddEditAccountScreen(
                 val balanceToman = initialBalanceText.toLongOrNull() ?: 0L
                 if (balanceToman > 0) {
                     Text(
-                        "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(balanceToman.toDouble())} تومان",
+                        ir.sadteam.loancalc.ui.jibak.amountWordsCaption(balanceToman.toDouble()),
                         color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 4.dp),

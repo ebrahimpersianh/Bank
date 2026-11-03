@@ -114,8 +114,9 @@ enum class NewTxKind { EXPENSE, INCOME, TRANSFER }
 @Composable
 private fun accentOf(kind: NewTxKind): Color = when (kind) {
     NewTxKind.EXPENSE -> AppDanger
-    // آبیِ «دخل» خواسته‌ی صریحِ کاربر است (اپِ مرجع)؛ از توکن تا در تمِ تیره هم بچرخد.
-    NewTxKind.INCOME -> AppInfo
+    // یافته‌ی ۸۶ (۱۳ آبان، هدفِ یک‌دستی): درآمد این‌جا آبی بود و در بقیه‌ی برنامه سبز («+ درآمد»).
+    // یک معنا، یک رنگ - سبز. (آبیِ قبلی از اپِ مرجع آمده بود؛ یک‌دستی مقدم است.)
+    NewTxKind.INCOME -> ir.sadteam.loancalc.ui.theme.AppPrimary
     // بنفش (خواسته‌ی کاربر، ۳ مهر): درآمد آبی و خرج قرمز است؛ انتقال نباید با درآمد یکی دیده شود.
     NewTxKind.TRANSFER -> AppPurple
 }
@@ -295,7 +296,7 @@ fun NewTransactionSheet(
             Text(
                 when (kind) {
                     NewTxKind.EXPENSE -> "خرجِ تازه"
-                    NewTxKind.INCOME -> "دخلِ تازه"
+                    NewTxKind.INCOME -> "درآمدِ تازه"
                     NewTxKind.TRANSFER -> "جابجایی"
                 },
                 color = AppText,
@@ -413,8 +414,12 @@ fun NewTransactionSheet(
                     )
                 }
             }
-        } else {
-            AppCard {
+        }
+
+        // یافته‌ی ۸۵: حساب، تاریخ و توضیح هر کدام کارتِ جدا داشتند (شش کارت روی هم) - حالا یک
+        // کارتِ گروه با جداکننده‌ی نازک، همان الگوی ردیف‌های تنظیمات.
+        AppCard {
+            if (kind != NewTxKind.TRANSFER) {
                 SheetRow(
                     // ⚠️ `Category` آیکونِ **دسته‌بندی** است و ردیفِ حساب هم همان را داشت،
                     // پس دو ردیفِ متفاوتِ همین شیت آیکونِ یکسان می‌گرفتند.
@@ -423,31 +428,29 @@ fun NewTransactionSheet(
                     filled = accountId != null,
                     onClick = { picking = AccountSlot.MAIN },
                 )
+                Box(Modifier.fillMaxWidth().padding(vertical = 2.dp).height(1.dp).background(ir.sadteam.loancalc.ui.theme.AppLineRow))
             }
-        }
-
-        AppCard {
+            // یافته‌ی ۸۵: هر دو فلش تهِ ردیف کنارِ هم بودند. حالا مثلِ نوارِ ماه: «قبل» راست،
+            // تاریخ وسط (لمس = تقویم)، «بعد» چپ.
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.CalendarMonth, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
-                Text(
-                    dateLabel(date),
-                    color = AppText,
-                    fontSize = 13.sp,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 8.dp)
-                        .pressScaleClickable(onClick = { showCalendar = true }),
-                )
                 IconButton(onClick = { date = PersianCalendar.addDays(date, -1) }) {
                     Icon(Icons.Filled.ChevronRight, contentDescription = "روز قبل", tint = AppMuted)
+                }
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .pressScaleClickable(onClick = { showCalendar = true }),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Icon(Icons.Filled.CalendarMonth, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+                    Text(dateLabel(date), color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
                 }
                 IconButton(onClick = { date = PersianCalendar.addDays(date, 1) }) {
                     Icon(Icons.Filled.ChevronLeft, contentDescription = "روز بعد", tint = AppMuted)
                 }
             }
-        }
-
-        AppCard {
+            Box(Modifier.fillMaxWidth().padding(vertical = 2.dp).height(1.dp).background(ir.sadteam.loancalc.ui.theme.AppLineRow))
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Notes, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
                 OutlinedTextField(

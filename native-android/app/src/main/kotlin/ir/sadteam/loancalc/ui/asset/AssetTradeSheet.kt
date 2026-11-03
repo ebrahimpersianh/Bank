@@ -229,7 +229,7 @@ fun AssetTradeSheet(
                     suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 if (picked != null && toman > 0L) {
                     Text(
-                        "${ir.sadteam.loancalc.ui.jibak.numberToWordsTomanFa(toman.toDouble())} تومان",
+                        ir.sadteam.loancalc.ui.jibak.amountWordsCaption(toman.toDouble()),
                         color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 4.dp),
