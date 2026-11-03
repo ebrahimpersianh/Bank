@@ -185,7 +185,7 @@ fun PermissionGateScreen(
             textAlign = TextAlign.Center,
         )
         Text(
-            "لطفاً این دسترسی‌ها رو فعال کن:",
+            "لطفاً این دسترسی‌ها را فعال کن:",
             color = AppMuted,
             fontSize = 13.sp,
             modifier = Modifier.padding(top = 6.dp),

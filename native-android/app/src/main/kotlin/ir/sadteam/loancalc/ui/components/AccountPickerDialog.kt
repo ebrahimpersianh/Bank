@@ -31,7 +31,7 @@ fun AccountPickerDialog(
     accounts: List<AccountEntity>,
     onSelect: (AccountEntity) -> Unit,
     onDismiss: () -> Unit,
-    title: String = "از کدوم حساب پرداخت کردی؟",
+    title: String = "از کدام حساب پرداخت کردی؟",
     dismissHint: String? = null,
 ) {
     // بستنِ پنجره = بی‌حساب. اگر فراخوان بخواهد، به کاربر می‌گوید چه اتفاقی افتاد (نه بی‌صدا).

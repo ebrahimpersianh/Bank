@@ -150,7 +150,7 @@ internal fun SmsSettings(
         totalCount = listed.size,
         onToggle = { checked ->
             if (checked && !smsPremium) {
-                ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("sms_auto", "خوندنِ خودکارِ پیامکِ بانک")
+                ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("sms_auto", "خواندنِ خودکارِ پیامکِ بانک")
             } else if (!checked) {
                 smsAutoImportViewModel.disable()
             } else if (permissionGranted) {

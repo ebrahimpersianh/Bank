@@ -238,7 +238,7 @@ fun ReminderSettingsScreen(
                         icon = Icons.Filled.Event,
                         tone = SettingsTone.RED,
                         title = "یادآوری سررسید",
-                        subtitle = "برای اقساط و چک‌های نزدیک به سررسید یه نوتیف بده",
+                        subtitle = "برای اقساط و چک‌های نزدیک به سررسید یک نوتیف بده",
                         checked = enabled,
                         onCheckedChange = { checked ->
                             if (!checked) {
@@ -332,7 +332,7 @@ fun ReminderSettingsScreen(
             AppCard(label = "زمان‌بندیِ پیش‌فرض") {
                 Column {
                     Text(
-                        "چند روز قبل از سررسید خبر بده؟ چندتا رو می‌شه با هم انتخاب کرد.",
+                        "چند روز قبل از سررسید خبر بده؟ چند مورد را می‌شود با هم انتخاب کرد.",
                         color = AppMuted,
                         fontSize = 12.sp,
                         lineHeight = 19.sp,
@@ -373,7 +373,7 @@ fun ReminderSettingsScreen(
                     title = "ارسالِ نوتیفِ آزمایشی",
                     icon = Icons.Filled.NotificationsActive,
                     tone = SettingsTone.BLUE,
-                    status = "همین الان یه نمونه بفرست",
+                    status = "همین الان یک نمونه بفرست",
                     onClick = { fireTestNotification() },
                 )
             }
@@ -383,7 +383,7 @@ fun ReminderSettingsScreen(
         item {
             SettingsDisclosure(title = "راهنمای یادآوری") {
                 SettingsParagraph(
-                    "هر وام یا چک می‌تونه از تنظیمِ اختصاصیِ خودش (تو صفحه‌ی جزئیاتش) زمان‌بندیِ پیش‌فرض رو رد کنه.",
+                    "هر وام یا چک می‌تواند از تنظیمِ اختصاصیِ خودش (تو صفحه‌ی جزئیاتش) زمان‌بندیِ پیش‌فرض را رد کند.",
                 )
                 SettingsParagraph(
                     "صدا و ویبره‌ی یادآورها را اندروید نگه می‌دارد، نه برنامه - از آن‌جا " +
@@ -391,7 +391,7 @@ fun ReminderSettingsScreen(
                 )
                 SettingsParagraph(
                     "بدونِ نیاز به صبرکردن (چک‌کردنِ روزانه تا ۲۴ ساعت طول می‌کشه)، با نوتیفِ آزمایشی همین الان " +
-                        "مطمئن می‌شی درست کار می‌کنه. صدا و ویبره‌اش همان چیزی است که در تنظیماتِ اعلانِ گوشی " +
+                        "مطمئن می‌شوی درست کار می‌کند. صدا و ویبره‌اش همان چیزی است که در تنظیماتِ اعلانِ گوشی " +
                         "برای این کانال انتخاب شده.",
                 )
             }
@@ -416,7 +416,7 @@ private fun sendTestReminderNotification(context: android.content.Context) {
         .setSmallIcon(R.drawable.ic_notification)
         .setLargeIcon(ReminderChannels.largeIcon(context))
         .setContentTitle("یادآوریِ آزمایشی")
-        .setContentText("این یه نوتیفِ نمونه‌ست - دقیقاً با همین صدا/ویبره، یادآوریِ واقعیِ سررسید هم میاد")
+        .setContentText("این یک نوتیفِ نمونه است - دقیقاً با همین صدا/ویبره، یادآوریِ واقعیِ سررسید هم می‌آید")
         .setAutoCancel(true)
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
         .build()

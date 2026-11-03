@@ -419,7 +419,7 @@ fun MyLoansScreen(
             }.getOrNull()
             withContext(Dispatchers.Main) {
                 if (json == null) {
-                    banner.show("فایل قابل خوندن نبود")
+                    banner.show("فایل قابل خواندن نبود")
                 } else {
                     viewModel.importBackup(json) { ok ->
                         val message = if (ok) "بازیابی شد" else "فایل معتبر نیست"
@@ -609,8 +609,8 @@ fun MyLoansScreen(
                                 EmptyState(
                                     icon = Icons.Filled.CheckCircle,
                                     title = "هنوز وامی تسویه نشده",
-                                    description = "وقتی آخرین قسطِ یه وام رو پرداخت کنی، " +
-                                        "خودکار میاد همین‌جا.",
+                                    description = "وقتی آخرین قسطِ یک وام را پرداخت کنی، " +
+                                        "خودکار می‌آید همین‌جا.",
                                 )
                             } else {
                                 // بازطراحیِ ChatGPT (۷ مهر، دورِ دوم).
@@ -619,7 +619,7 @@ fun MyLoansScreen(
                                         illustration = ir.sadteam.loancalc.R.drawable.jibak_home_insight,
                                         tint = ir.sadteam.loancalc.ui.theme.AppPrimaryPill.copy(alpha = 0.55f), // یک‌دست با بقیه‌ی کارت‌های خالی
                                         title = "هنوز وامی ثبت نکردی",
-                                        description = "وام‌هات رو اینجا نگه دار تا قسط‌ها، سررسیدها و پرداخت‌ها رو راحت مدیریت کنی.",
+                                        description = "وام‌هات را این‌جا نگه دار تا قسط‌ها، سررسیدها و پرداخت‌ها را راحت مدیریت کنی.",
                                         action = "افزودنِ وام",
                                         onAction = { onAddLoanClick() },
                                     )

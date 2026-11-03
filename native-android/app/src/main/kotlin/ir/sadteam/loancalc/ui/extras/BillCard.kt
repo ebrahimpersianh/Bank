@@ -102,8 +102,9 @@ internal fun BillCard(
                 }
                 val (label, ink, bg) = when {
                     paid -> Triple("پرداخت شد", AppTxIn, AppTxIn.copy(alpha = 0.13f))
-                    overdue -> Triple("گذشته", AppDanger, AppDangerPill)
-                    due -> Triple("موعدِ نزدیک", AppDanger, AppDangerPill)
+                    overdue -> Triple("موعد گذشته", AppDanger, AppDangerPill)
+                    // ۱۳ آبان: «نزدیک» هشدار است نه خطا - قرمز فقط برای موعدِ گذشته.
+                    due -> Triple("موعدِ نزدیک", ir.sadteam.loancalc.ui.theme.AppWarningInk, ir.sadteam.loancalc.ui.theme.AppWarningInk.copy(alpha = 0.12f))
                     else -> Triple("در انتظار", AppMuted, AppSurface2)
                 }
                 Text(

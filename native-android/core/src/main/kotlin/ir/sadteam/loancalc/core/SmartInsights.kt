@@ -65,7 +65,7 @@ object SmartInsights {
         if (totalBalance != null && upcomingDues7d > 0 && upcomingDues7d > totalBalance) {
             out += Insight(
                 "dues_${today.y}_${today.m}_${today.d / 7}", Kind.DUES_OVER_BALANCE,
-                "هفته‌ی بعد پولت کم میاد",
+                "هفته‌ی بعد پولت کم می‌آید",
                 "تا ۷ روزِ آینده ${toman(upcomingDues7d)} ${CoreMoneyUnit.label} قسط و چک داری ولی موجودیِ حساب‌هات " +
                     // علامتِ منفی در متنِ راست‌به‌چپ سمتِ اشتباه می‌افتاد؛ با کلمه گفته می‌شود.
                     if (totalBalance < 0) "${toman(-totalBalance)} ${CoreMoneyUnit.label} منفیه." else "${toman(totalBalance)} ${CoreMoneyUnit.label}ه.",
@@ -113,7 +113,7 @@ object SmartInsights {
                 out += Insight(
                     "surplus_${today.y}_${today.m}", Kind.SAVE_SURPLUS,
                     "ماهِ قبل پول اضافه آوردی",
-                    "ماهِ قبل ${toman(surplus)} ${CoreMoneyUnit.label} کمتر از درآمدت خرج کردی. بخشی‌ش رو بذار برای هدفِ پس‌اندازت.",
+                    "ماهِ قبل ${toman(surplus)} ${CoreMoneyUnit.label} کمتر از درآمدت خرج کردی. بخشی‌اش را برای هدفِ پس‌اندازت کنار بگذار.",
                 )
             }
         }
@@ -147,7 +147,7 @@ object SmartInsights {
             if (inAll && amount > 0 && existingRecurringNames.none { norm(it) == desc }) {
                 out += Insight(
                     "recurring_$desc", Kind.RECURRING,
-                    "«${list.first().description}» هر ماه تکرار می‌شه",
+                    "«${list.first().description}» هر ماه تکرار می‌شود",
                     "سه ماهِ اخیر هر ماه حدودِ ${toman(amount)} ${CoreMoneyUnit.label} برای این پرداختی. پرداختِ تکراری بسازم تا یادت بندازه؟",
                     payload = list.first().description,
                 )

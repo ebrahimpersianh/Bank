@@ -203,7 +203,7 @@ private fun BudgetSection(
                         MonthNavArrow(icon = Icons.Filled.ChevronLeft, contentDescription = "ماهِ بعد") { stepMonth(1) }
                     }
                     Text(
-                        if (isCurrentMonth) "امروز می‌تونی خرج کنی" else "خرجِ این ماه",
+                        if (isCurrentMonth) "امروز می‌توانی خرج کنی" else "خرجِ این ماه",
                         color = HeroMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -314,7 +314,7 @@ private fun BudgetSection(
                         EmptyState(
                             icon = Icons.Outlined.PieChart,
                             title = "هنوز بودجه‌ای تعیین نکردی",
-                            description = "برای هر دسته‌ی هزینه یه سقفِ ماهانه بذار تا خرجت رو زیرِ نظر داشته باشی. با دکمه‌ی + پایینِ صفحه شروع کن.",
+                            description = "برای هر دسته‌ی هزینه یک سقفِ ماهانه بگذار تا خرجت را زیرِ نظر داشته باشی. با دکمه‌ی + پایینِ صفحه شروع کن.",
                         )
                         // میان‌برِ همون FABِ پایین - دو پرخرج‌ترینِ دسته‌ی بی‌بودجه، تپ همون
                         // NewBudgetSheet رو با دسته‌ی پیش‌انتخاب‌شده باز می‌کنه. قابلیتِ جدید نیست.

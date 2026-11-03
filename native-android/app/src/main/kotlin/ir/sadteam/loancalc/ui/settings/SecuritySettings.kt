@@ -255,8 +255,8 @@ internal fun SecuritySettings(
     // جمله‌ی سوم مهم‌ترینه: بی اون، کاربرِ فراموش‌کار فکر می‌کنه داده‌ش رفته و اپ رو پاک می‌کنه.
     SettingsDisclosure(title = "قفلِ برنامه چه کاری می‌کند؟") {
         SettingsParagraph(
-            "قفلِ برنامه فقط جلوی بازشدنِ برنامه رو همین گوشی رو می‌گیره. داده‌هات رو سرور با " +
-                "حسابِ کاربریت محافظت می‌شه، نه با این رمز. اگه رمز رو فراموش کنی، با ورودِ " +
+            "قفلِ برنامه فقط جلوی بازشدنِ برنامه روی همین گوشی را می‌گیرد. داده‌هات روی سرور با " +
+                "حسابِ کاربریت محافظت می‌شود، نه با این رمز. اگر رمز را فراموش کنی، با ورودِ " +
                 "دوباره به حساب بازش می‌کنی.",
         )
     }
@@ -306,7 +306,7 @@ private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     fun next() {
         val f = first
         when {
-            pin.length < 4 -> error = "PIN باید حداقل ۴ رقم باشه"
+            pin.length < 4 -> error = "PIN باید حداقل ۴ رقم باشد"
             f == null -> { first = pin; pin = ""; error = null }
             f == pin -> onConfirm(pin)
             else -> { first = null; pin = ""; error = "دو PIN یکی نبود؛ از اول بزن." }

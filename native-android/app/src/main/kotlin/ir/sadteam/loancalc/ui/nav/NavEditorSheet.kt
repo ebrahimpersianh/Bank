@@ -164,7 +164,7 @@ fun NavEditorSheet(
             Spacer(Modifier.height(6.dp))
             Text(
                 "برای باز کردن این بخش، روی هر دکمه‌ی نوار پایین یک لحظه نگه‌دار. " +
-                    "اینجا مقصد را بکش یا اول جایش را بزن و بعد مقصدش را انتخاب کن؛ تغییر همان لحظه پایین صفحه دیده می‌شود.",
+                    "این‌جا مقصد را بکش یا اول جایش را بزن و بعد مقصدش را انتخاب کن؛ تغییر همان لحظه پایین صفحه دیده می‌شود.",
                 color = AppMuted,
                 fontSize = 11.5.sp,
                 lineHeight = 19.sp,
@@ -231,7 +231,7 @@ fun NavEditorSheet(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "هرچه اینجا نباشد در کشو می‌مانَد",
+                    "هرچه این‌جا نباشد در کشو می‌مانَد",
                     color = AppLabel,
                     fontSize = 10.sp,
                     modifier = Modifier.weight(1f),

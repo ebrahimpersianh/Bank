@@ -364,7 +364,7 @@ class DueDateReminderWorker @AssistedInject constructor(
     private fun dayLabel(daysLeft: Int): String = when (daysLeft) {
         0 -> "امروز"
         1 -> "فردا"
-        else -> "${toFa(daysLeft.toString())} روز دیگه"
+        else -> "${toFa(daysLeft.toString())} روز دیگر"
     }
 
     private suspend fun notifyLoan(loan: LoanEntity, m: Int, daysLeft: Int, privacyMode: Boolean) {
@@ -391,9 +391,9 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setContentTitle(if (privacyMode) "یادآوریِ قسط" else "یادآوری قسط ${loan.name}")
             .setContentText(
                 if (privacyMode) {
-                    "قسط شماره ${toFa(m)} $whenLabel سررسید می‌شه"
+                    "قسط شماره ${toFa(m)} $whenLabel سررسید می‌شود"
                 } else {
-                    "قسط شماره ${toFa(m)} وام «${loan.name}» $whenLabel سررسید می‌شه"
+                    "قسط شماره ${toFa(m)} وام «${loan.name}» $whenLabel سررسید می‌شود"
                 },
             )
             .setContentIntent(pendingIntent)
@@ -408,7 +408,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         inboxRepository.post(
             kind = InboxMessageEntity.Kind.SYSTEM,
             title = "یادآوریِ قسط",
-            body = "قسط شماره ${toFa(m)} وام «${loan.name}» $whenLabel سررسید می‌شه",
+            body = "قسط شماره ${toFa(m)} وام «${loan.name}» $whenLabel سررسید می‌شود",
         )
     }
 
@@ -436,9 +436,9 @@ class DueDateReminderWorker @AssistedInject constructor(
             // (لاتین می‌ماند) ولی این‌جا اصلاً نشان داده نمی‌شود.
             .setContentText(
                 if (privacyMode) {
-                    "یک چک $whenLabel سررسید می‌شه"
+                    "یک چک $whenLabel سررسید می‌شود"
                 } else {
-                    "چک شماره ${cheque.chequeNumber} (${cheque.bankName}) $whenLabel سررسید می‌شه"
+                    "چک شماره ${cheque.chequeNumber} (${cheque.bankName}) $whenLabel سررسید می‌شود"
                 },
             )
             .setContentIntent(pendingIntent)
@@ -453,7 +453,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         inboxRepository.post(
             kind = InboxMessageEntity.Kind.SYSTEM,
             title = "یادآوریِ چک",
-            body = "چک شماره ${cheque.chequeNumber} (${cheque.bankName}) $whenLabel سررسید می‌شه",
+            body = "چک شماره ${cheque.chequeNumber} (${cheque.bankName}) $whenLabel سررسید می‌شود",
         )
     }
 
@@ -476,12 +476,12 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setContentTitle("یادآوریِ پرداختِ تکراری")
             .setContentText(
                 if (privacyMode) {
-                    "«${payment.name}» $whenLabel سررسید می‌شه"
+                    "«${payment.name}» $whenLabel سررسید می‌شود"
                 } else {
                     // واحد **تومان** و رقمِ فارسی (بندِ ۲ی README + لایه‌ی ارقام). ستون ریال
                     // است پس تبدیل همین لبه.
                     "«${payment.name}» (${fmt(rialToToman(payment.amount.toLong()).toDouble()).faDigits()} ${ir.sadteam.loancalc.core.CoreMoneyUnit.label}) " +
-                        "$whenLabel سررسید می‌شه"
+                        "$whenLabel سررسید می‌شود"
                 },
             )
             .setContentIntent(openAppIntent(notificationId))
@@ -495,7 +495,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         inboxRepository.post(
             kind = InboxMessageEntity.Kind.SYSTEM,
             title = "یادآوریِ پرداختِ تکراری",
-            body = "«${payment.name}» $whenLabel سررسید می‌شه",
+            body = "«${payment.name}» $whenLabel سررسید می‌شود",
         )
     }
 
@@ -527,8 +527,8 @@ class DueDateReminderWorker @AssistedInject constructor(
         val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_NUDGES)
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(ReminderChannels.largeIcon(applicationContext, R.drawable.notif_no_spend))
-            .setContentTitle("درآمد‌وخرج امروز یادت نره")
-            .setContentText("امروز هنوز هیچ تراکنشی ثبت نکردی - یه سر بزن به «جیبک»")
+            .setContentTitle("درآمد‌وخرج امروز یادت نرود")
+            .setContentText("امروز هنوز هیچ تراکنشی ثبت نکردی - یک سر بزن به «جیبک»")
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -537,8 +537,8 @@ class DueDateReminderWorker @AssistedInject constructor(
         NotificationManagerCompat.from(applicationContext).notify(DAILY_EXPENSE_REMINDER_NOTIFICATION_ID, notification)
         inboxRepository.post(
             kind = InboxMessageEntity.Kind.STREAK_REMINDER,
-            title = "درآمد‌وخرج امروز یادت نره",
-            body = "امروز هنوز هیچ تراکنشی ثبت نکردی - یه سر بزن به «جیبک»",
+            title = "درآمد‌وخرج امروز یادت نرود",
+            body = "امروز هنوز هیچ تراکنشی ثبت نکردی - یک سر بزن به «جیبک»",
         )
     }
 
@@ -562,7 +562,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         fun t(rial: Double) = ir.sadteam.loancalc.core.toFa(ir.sadteam.loancalc.core.fmt(Math.round(rial / ir.sadteam.loancalc.core.CoreMoneyUnit.div).toDouble()))
         val title = "خلاصه‌ی هفته‌ی تو"
         val body = if (privacyMode) {
-            "خلاصه‌ی خرج‌های این هفته آماده‌ست - یه سر بزن."
+            "خلاصه‌ی خرج‌های این هفته آماده است - یک سر بزن."
         } else buildString {
             append("این هفته ${t(w.spend)} ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} خرج کردی")
             if (w.prevSpend > 0) {

@@ -121,7 +121,7 @@ internal fun BackupRestoreRow(onBackup: () -> Unit, onRestore: () -> Unit) {
         JibakAlertDialog(
             onDismissRequest = { showSheet = false },
             title = { Text("پشتیبان‌گیری و بازیابیِ وام‌ها") },
-            text = { Text("یه فایلِ پشتیبان از همه‌ی وام‌هات بساز، یا یه فایلِ قبلی رو برگردون.") },
+            text = { Text("یک فایلِ پشتیبان از همه‌ی وام‌هات بساز، یا یک فایلِ قبلی را برگردان.") },
             confirmButton = {
                 TextButton(onClick = {
                     showSheet = false

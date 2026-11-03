@@ -85,7 +85,7 @@ internal fun ResultSaveSection(
             if (!saved) {
                 AppCard(label = "تعداد اقساط پرداخت‌شده (اختیاری)", modifier = Modifier.padding(bottom = 10.dp)) {
                     Text(
-                        "اگه این وام از قبل هست و چندتا قسطش رو پرداخت کردی، اینجا بنویس",
+                        "اگر این وام از قبل هست و چند قسطش را پرداخت کردی، این‌جا بنویس",
                         color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(bottom = 8.dp),
@@ -115,7 +115,7 @@ internal fun ResultSaveSection(
                             }
                             gateState == null -> Unit
                             gateState != GateState.LOGGED_IN ->
-                                saveMessage = "برای ذخیره‌ی وام دوم اول باید وارد بشی — از تب «وام‌های من» وارد شو"
+                                saveMessage = "برای ذخیره‌ی وام دوم اول باید وارد شوی — از تب «وام‌های من» وارد شو"
                             else ->
                                 saveMessage = "برای ذخیره‌ی بیش از یک وام باید اشتراک بگیری — از تب «وام‌های من»"
                         }

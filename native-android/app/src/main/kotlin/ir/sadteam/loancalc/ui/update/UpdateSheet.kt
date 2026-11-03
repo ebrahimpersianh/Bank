@@ -72,12 +72,12 @@ fun BoxScope.ExpirySheet(visible: Boolean, daysLeft: Int, onRenew: () -> Unit, o
     BottomNoticeSheet(
         visible = visible,
         header = "اشتراکِ جیبک",
-        subtitle = if (daysLeft <= 0) "اشتراکت امروز تموم می‌شه" else "${ir.sadteam.loancalc.core.toFa(daysLeft)} روز تا پایانِ اشتراک",
+        subtitle = if (daysLeft <= 0) "اشتراکت امروز تمام می‌شود" else "${ir.sadteam.loancalc.core.toFa(daysLeft)} روز تا پایانِ اشتراک",
         boxTitle = "بعد از پایانِ اشتراک",
         lines = listOf(
-            "اطلاعاتت روی گوشی سرِ جاش می‌مونه",
-            "پیامکِ خودکار، پشتیبانِ سرور، بودجه و گزارشِ کامل قفل می‌شن",
-            "اطلاعاتِ ابری تا ۹۰ روز نگه داشته می‌شه",
+            "اطلاعاتت روی گوشی سرِ جایش می‌ماند",
+            "پیامکِ خودکار، پشتیبانِ سرور، بودجه و گزارشِ کامل قفل می‌شوند",
+            "اطلاعاتِ ابری تا ۹۰ روز نگه داشته می‌شود",
         ),
         action = "تمدیدِ اشتراک",
         onAction = onRenew,

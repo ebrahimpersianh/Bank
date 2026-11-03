@@ -126,13 +126,13 @@ fun ChequeDetailScreen(
         } else {
             // خواسته‌ی صریحِ کاربر («باید جایی اعلام کنی») - قبلاً وقتی هیچ حسابی نبود، پرداخت
             // بی‌سروصدا تو حسابداری ثبت نمی‌شد و هیچ توضیحی هم داده نمی‌شد.
-            banner.show("این چک تو حسابداری ثبت نشد - برای اینکه خودکار ثبت بشه، از تبِ «دارایی» یه حساب بساز.")
+            banner.show("این چک تو حسابداری ثبت نشد - برای اینکه خودکار ثبت شود، از تبِ «دارایی» یک حساب بساز.")
         }
     }
     if (pendingPassStatus && accounts.isNotEmpty()) {
         AccountPickerDialog(
             accounts = accounts,
-            title = if (cheque.type == "RECEIVED") "به کدوم حساب واریز شد؟" else "از کدوم حساب پرداخت کردی؟",
+            title = if (cheque.type == "RECEIVED") "به کدام حساب واریز شد؟" else "از کدام حساب پرداخت کردی؟",
             onSelect = { account -> commitPass(account); pendingPassStatus = false },
             onDismiss = { pendingPassStatus = false },
         )
@@ -336,7 +336,7 @@ fun ChequeDetailScreen(
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
             title = "حذف چک",
-            text = "چکِ شماره‌ی «${toFa(cheque.chequeNumber)}» حذف بشه؟ اگه پاس شده بود، تراکنشش هم از حساب برمی‌گرده. این کار قابلِ‌برگشت نیست.",
+            text = "چکِ شماره‌ی «${toFa(cheque.chequeNumber)}» حذف شود؟ اگر پاس شده بود، تراکنشش هم از حساب برمی‌گردد. این کار قابلِ‌برگشت نیست.",
             onConfirm = onDelete,
             onDismiss = { showDeleteConfirm = false },
         )

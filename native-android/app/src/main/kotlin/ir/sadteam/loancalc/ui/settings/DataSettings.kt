@@ -146,7 +146,7 @@ internal fun DataSettings(
                     Text(
                         "اطلاعاتِ فعلیِ برنامه با " +
                             (if (source == "cloud") "آخرین نسخه‌ی روی سرور" else "نسخه‌ی ${lastBackupLabel ?: "ذخیره‌شده"}") +
-                            " جایگزین می‌شه.",
+                            " جایگزین می‌شود.",
                         lineHeight = 21.sp,
                     )
                     // کادرِ هشدارِ نارنجی (فریمِ `19`) - پیامدِ برگشت‌ناپذیر از متنِ عادی جدا دیده شود.
@@ -163,7 +163,7 @@ internal fun DataSettings(
                     ) {
                         Icon(Icons.Filled.Warning, contentDescription = null, tint = AppWarningInk, modifier = Modifier.size(18.dp))
                         Text(
-                            "هر چیزی که بعد از اون نسخه ثبت کردی از بین می‌ره و برنمی‌گرده.",
+                            "هر چیزی که بعد از آن نسخه ثبت کردی از بین می‌رود و برنمی‌گردد.",
                             color = AppWarningInk,
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
@@ -182,7 +182,7 @@ internal fun DataSettings(
                             when {
                                 ok && source == "cloud" -> "بازیابی از سرور ابری انجام شد"
                                 ok -> "بازیابی از پشتیبان خودکار انجام شد"
-                                source == "cloud" -> "پشتیبانی رو سرور ابری پیدا نشد"
+                                source == "cloud" -> "پشتیبانی روی سرور ابری پیدا نشد"
                                 else -> "پشتیبانی برای بازیابی پیدا نشد"
                             },
                             isSuccess = ok,

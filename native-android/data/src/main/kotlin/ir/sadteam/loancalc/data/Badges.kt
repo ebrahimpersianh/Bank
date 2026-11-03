@@ -12,14 +12,14 @@ package ir.sadteam.loancalc.data
  * ⚠️ [code] تو دیتابیس ذخیره می‌شه - **هیچ‌وقت عوضش نکن**، فقط کدِ تازه اضافه کن.
  */
 enum class Badge(val code: String, val label: String, val coins: Int, val hint: String) {
-    FIRST_STEP("first_step", "اولین قدم", 25, "اولین تراکنشت رو ثبت کن"),
-    BUDGETER("budgeter", "بودجه‌گذار", 25, "برای یه دسته بودجه بذار"),
+    FIRST_STEP("first_step", "اولین قدم", 25, "اولین تراکنشت را ثبت کن"),
+    BUDGETER("budgeter", "بودجه‌گذار", 25, "برای یک دسته بودجه بگذار"),
     FULL_WEEK("full_week", "هفته‌ی کامل", 50, "هفت روزِ پشتِ‌سرهم تراکنش ثبت کن"),
     CAUTIOUS("cautious", "محتاط", 50, "هفت روزِ پشتِ‌سرهم کمتر از میانگینت خرج کن"),
-    UNDER_BUDGET("under_budget", "زیرِ بودجه", 100, "یه ماهِ کامل از هیچ بودجه‌ای رد نشو"),
-    CLEAN_DESK("clean_desk", "میزِ پاک", 100, "یه ماه همه‌ی تراکنش‌هات دسته‌ی درست داشته باشن"),
-    GOAL_REACHED("goal_reached", "هدف‌رس", 100, "به یه هدفِ پس‌انداز برس"),
-    LOAN_CLOSED("loan_closed", "وامِ بسته", 150, "آخرین قسطِ یه وام رو پرداخت کن"),
+    UNDER_BUDGET("under_budget", "زیرِ بودجه", 100, "یک ماهِ کامل از هیچ بودجه‌ای رد نشو"),
+    CLEAN_DESK("clean_desk", "میزِ پاک", 100, "یک ماه همه‌ی تراکنش‌هات دسته‌ی درست داشته باشند"),
+    GOAL_REACHED("goal_reached", "هدف‌رس", 100, "به یک هدفِ پس‌انداز برس"),
+    LOAN_CLOSED("loan_closed", "وامِ بسته", 150, "آخرین قسطِ یک وام را پرداخت کن"),
     STEADY_MONTH("steady_month", "ماهِ منظم", 150, "سی روزِ پشتِ‌سرهم تراکنش ثبت کن"),
     COLLECTION_STARRY_NIGHT("collection_starry_night", "شبِ پرستاره", 75, "تمِ ون‌گوگ و پس‌زمینه‌ی چرخش شب را بگیر"),
     ;

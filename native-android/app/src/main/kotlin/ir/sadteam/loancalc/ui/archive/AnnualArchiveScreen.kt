@@ -65,7 +65,7 @@ fun AnnualArchiveScreen(onBack: () -> Unit, accountViewModel: AccountViewModel =
                 }
             }
             if (years.isEmpty()) {
-                item { EmptyState(icon = Icons.Outlined.Archive, title = "هنوز آرشیوی نداری", description = "با ثبت تراکنش‌ها، خلاصهٔ هر سال اینجا نگه‌داری می‌شود.") }
+                item { EmptyState(icon = Icons.Outlined.Archive, title = "هنوز آرشیوی نداری", description = "با ثبت تراکنش‌ها، خلاصهٔ هر سال این‌جا نگه‌داری می‌شود.") }
             } else {
                 years.forEach { (year, rows) ->
                     val income = rows.filter { it.type == TransactionType.DEPOSIT.name }.sumOf { it.amount }

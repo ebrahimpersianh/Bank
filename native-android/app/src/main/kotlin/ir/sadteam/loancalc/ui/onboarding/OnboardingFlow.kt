@@ -224,8 +224,8 @@ private fun ThemeStep(onPick: (String) -> Unit, onNext: () -> Unit) {
     var picked by remember { mutableStateOf("light") }
     Column(modifier = Modifier.fillMaxSize()) {
         StepHeader(
-            title = "تمِ برنامه رو انتخاب کن",
-            subtitle = "هر وقت خواستی می‌تونی از تنظیمات عوضش کنی.",
+            title = "تمِ برنامه را انتخاب کن",
+            subtitle = "هر وقت خواستی می‌توانی از تنظیمات عوضش کنی.",
         )
         Spacer(Modifier.height(28.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -312,7 +312,7 @@ private fun ReminderStep(onChoose: (Boolean) -> Unit, onNext: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         StepHeader(
             title = "یادت بندازم؟",
-            subtitle = "هر روز یه یادآوریِ کوتاه می‌فرستم تا ثبتِ درآمد‌وخرج از یادت نره.",
+            subtitle = "هر روز یک یادآوریِ کوتاه می‌فرستم تا ثبتِ درآمد‌وخرج از یادت نرود.",
         )
         Spacer(Modifier.height(28.dp))
         AppCard(modifier = Modifier.fillMaxWidth()) {
@@ -481,7 +481,7 @@ private fun BankReadingPermissionsStep(onNext: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        "اینجا برنامه نمی‌تواند خودش روشنش کند - سه قدمِ کوتاه با خودت است:",
+                        "این‌جا برنامه نمی‌تواند خودش روشنش کند - سه قدمِ کوتاه با خودت است:",
                         color = AppMuted,
                         fontSize = 12.sp,
                         lineHeight = 20.sp,
@@ -660,8 +660,8 @@ private fun FirstAccountStep(
             .verticalScroll(rememberScrollState()),
     ) {
         StepHeader(
-            title = "اولین حسابت رو بساز",
-            subtitle = "مثلاً پولِ نقدِ توی جیبت. موجودیِ الانش رو وارد کن.",
+            title = "اولین حسابت را بساز",
+            subtitle = "مثلاً پولِ نقدِ توی جیبت. موجودیِ فعلی‌اش را وارد کن.",
             image = ir.sadteam.loancalc.R.drawable.jibak_onb_account,
         )
         Spacer(Modifier.height(24.dp))

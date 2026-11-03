@@ -203,13 +203,13 @@ internal fun LoanEditMetaDialog(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         Text(
-                            "چون هنوز هیچ قسطی پرداخت نشده، عوض‌کردنِ این دوتا کلِ جدولِ اقساط رو از نو می‌سازه.",
+                            "چون هنوز هیچ قسطی پرداخت نشده، عوض‌کردنِ این دو کلِ جدولِ اقساط را از نو می‌سازد.",
                             color = AppMuted,
                             fontSize = 11.sp,
                         )
                     } else {
                         Text(
-                            "چون قبلاً حداقل یه قسط پرداخت شده، مبلغ/تعدادِ اقساط دیگه قابلِ‌ویرایش نیست.",
+                            "چون قبلاً حداقل یک قسط پرداخت شده، مبلغ/تعدادِ اقساط دیگر قابلِ‌ویرایش نیست.",
                             color = AppMuted,
                             fontSize = 11.sp,
                         )
@@ -360,12 +360,12 @@ internal fun LoanApplyAllAmountDialog(
         JibakAlertDialog(
             onDismissRequest = { applyAllPromptAmount = null },
             title = { Text("اعمال به همه‌ی اقساط") },
-            text = { Text("می‌خوای این مبلغ رو برای همه‌ی اقساط اعمال کنی؟") },
+            text = { Text("می‌خواهی این مبلغ را برای همه‌ی اقساط اعمال کنی؟") },
             confirmButton = {
                 TextButton(onClick = {
                     applyAllPromptAmount?.let { viewModel.setAllRowsInstallment(loan, it) }
                     applyAllPromptAmount = null
-                }) { Text("بله، رو همه اعمال کن") }
+                }) { Text("بله، روی همه اعمال کن") }
             },
             dismissButton = {
                 TextButton(onClick = { applyAllPromptAmount = null }) { Text("نه") }
@@ -730,7 +730,7 @@ internal fun LoanDeleteConfirmDialog(
         ConfirmDialog(
             tone = ConfirmTone.DESTRUCTIVE,
             title = "حذف وام",
-            consequence = "وامِ «${loan.name}» و همه‌ی قسط‌ها و عکس‌هایش حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            consequence = "وامِ «${loan.name}» و همه‌ی قسط‌ها و عکس‌هایش حذف شود؟ این کار قابلِ‌برگشت نیست.",
             actionLabel = "حذف وام",
             onConfirm = { showDeleteConfirm = false; showDeletePaymentsAsk = true },
             onDismiss = { showDeleteConfirm = false },

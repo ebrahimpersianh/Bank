@@ -239,7 +239,7 @@ fun ChequeScreen(
             }.getOrNull()
             withContext(Dispatchers.Main) {
                 if (json == null) {
-                    banner.show("فایل قابل خوندن نبود")
+                    banner.show("فایل قابل خواندن نبود")
                 } else {
                     viewModel.importBackup(json) { ok ->
                         val message = if (ok) "بازیابی چک انجام شد" else "فایل معتبر نیست"
@@ -514,9 +514,9 @@ fun ChequeScreen(
                             icon = Icons.Outlined.ReceiptLong,
                             image = ir.sadteam.loancalc.R.drawable.empty_illu_cheque,
                             title = "هنوز چکی ثبت نشده",
-                            description = "چک‌های دریافتی و پرداختیت رو اینجا ثبت کن تا قبل از " +
-                                "سررسیدِ هرکدوم یادآوری بگیری و امتیازِ ریسکِ برگشتِ هر شخص " +
-                                "رو ببینی.",
+                            description = "چک‌های دریافتی و پرداختیت را این‌جا ثبت کن تا قبل از " +
+                                "سررسیدِ هرکدام یادآوری بگیری و امتیازِ ریسکِ برگشتِ هر شخص " +
+                                "را ببینی.",
                         )
                     }
                 } else {
@@ -675,7 +675,7 @@ private fun ChequeCard(
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
             title = "حذف چک",
-            text = "چکِ شماره‌ی «${toFa(cheque.chequeNumber)}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            text = "چکِ شماره‌ی «${toFa(cheque.chequeNumber)}» حذف شود؟ این کار قابلِ‌برگشت نیست.",
             onConfirm = onDelete,
             onDismiss = { showDeleteConfirm = false },
         )

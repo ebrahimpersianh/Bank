@@ -80,7 +80,7 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
     pendingDelete?.let { note ->
         ConfirmDeleteDialog(
             title = "حذفِ یادداشت",
-            text = "این یادداشت حذف بشه؟",
+            text = "این یادداشت حذف شود؟",
             onConfirm = { viewModel.deleteNote(note) },
             onDismiss = { pendingDelete = null },
         )
@@ -191,7 +191,7 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                 EmptyState(
                     icon = Icons.Filled.EditNote,
                     title = "هنوز یادداشتی نداری",
-                    description = "پرداخت‌های مهم مثلِ اجاره و قسط رو یادداشت کن تا سرِ موعد یادآوری کنیم.",
+                    description = "پرداخت‌های مهم مثلِ اجاره و قسط را یادداشت کن تا سرِ موعد یادآوری کنیم.",
                     actionLabel = if (showAdd) null else "+ افزودنِ یادداشت",
                     onAction = { showAdd = true },
                 )

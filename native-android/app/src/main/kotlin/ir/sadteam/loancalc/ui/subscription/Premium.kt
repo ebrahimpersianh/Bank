@@ -129,7 +129,7 @@ fun PremiumPaywallHost() {
                 }
                 Text("این بخش مالِ اشتراکه", color = ir.sadteam.loancalc.ui.theme.AppText, fontSize = 19.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black)
                 Text(
-                    "«$feature» با اشتراکِ جیبک باز می‌شه. اطلاعاتی که قبلاً ثبت کردی سرِ جاشه و " +
+                    "«$feature» با اشتراکِ جیبک باز می‌شود. اطلاعاتی که قبلاً ثبت کردی سرِ جایش است و " +
                         "همیشه می‌بینیش - فقط برای افزودنِ مورد تازه اشتراک لازمه.",
                     color = ir.sadteam.loancalc.ui.theme.AppMuted,
                     fontSize = 13.5.sp,

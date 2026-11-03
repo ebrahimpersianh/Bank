@@ -71,13 +71,13 @@ private const val RESEND_COOLDOWN_SECONDS = 60
 
 private val requestOtpErrors = mapOf(
     "too_soon" to "کمی صبر کن، کد قبلی هنوز معتبره",
-    "rate_limited" to "درخواستِ زیادی از این اینترنت رسیده؛ چند دقیقه‌ی دیگه دوباره بزن",
-    "sms_send_failed" to "پیامک ارسال نشد؛ چند لحظه‌ی دیگه دوباره امتحان کن",
+    "rate_limited" to "درخواستِ زیادی از این اینترنت رسیده؛ چند دقیقه‌ی دیگر دوباره بزن",
+    "sms_send_failed" to "پیامک ارسال نشد؛ چند لحظه‌ی دیگر دوباره امتحان کن",
     "invalid_phone" to "شماره‌ی موبایل درست نیست",
     "network" to "به اینترنت وصل نشد؛ اینترنت یا فیلترشکن را چک کن و دوباره بزن",
 )
 private val verifyOtpErrors = mapOf(
-    "wrong_code" to "کد اشتباهه",
+    "wrong_code" to "کد اشتباه است",
     "code_expired" to "کد منقضی شده، دوباره درخواست بده",
     "too_many_attempts" to "تعداد تلاش‌ها بیش از حده، دوباره کد بگیر",
 )
@@ -140,7 +140,7 @@ fun LoginScreen(
 
     fun sendOtp() {
         if (phone.length != 10 || !phone.startsWith("9")) {
-            error = "شماره رو به‌صورت ۹xxxxxxxxx (بعد از +۹۸) وارد کن"
+            error = "شماره را به‌صورت ۹xxxxxxxxx (بعد از +۹۸) وارد کن"
             return
         }
         error = null
@@ -381,7 +381,7 @@ fun LoginScreen(
                     Icon(Icons.Filled.Edit, contentDescription = "ویرایشِ شماره", tint = AppPrimary, modifier = Modifier.size(18.dp))
                 }
                 Text(
-                    "کدِ تاییدی که پیامک شد رو وارد کن",
+                    "کدِ تاییدی که پیامک شد را وارد کن",
                     color = AppMuted,
                     fontSize = 12.5.sp,
                     modifier = Modifier.padding(bottom = 18.dp),
@@ -515,7 +515,7 @@ private fun SyncConflictPrompt(onKeepCloud: () -> Unit, onKeepDevice: () -> Unit
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            "یه نسخه‌ی دیگه از «وام‌های من» تو فضای ابری ذخیره شده. می‌خوای همون نسخه جایگزین اطلاعات این گوشی بشه؟",
+            "یک نسخه‌ی دیگر از «وام‌های من» تو فضای ابری ذخیره شده. می‌خواهی همان نسخه جایگزین اطلاعات این گوشی شود؟",
             color = AppText,
             fontSize = 14.sp,
         )
@@ -525,7 +525,7 @@ private fun SyncConflictPrompt(onKeepCloud: () -> Unit, onKeepDevice: () -> Unit
                 .fillMaxWidth()
                 .padding(top = 20.dp),
         ) {
-            Text("بله، نسخه‌ی ابری رو بیار")
+            Text("بله، نسخه‌ی ابری را بیاور")
         }
         OutlinedButton(
             onClick = onKeepDevice,

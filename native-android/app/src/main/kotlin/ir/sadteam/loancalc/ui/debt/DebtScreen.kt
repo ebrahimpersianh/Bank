@@ -227,7 +227,7 @@ fun DebtScreen(
     pendingDelete?.let { counterparty ->
         ConfirmDeleteDialog(
             title = "حذفِ این شخص",
-            text = "«${counterparty.name}» و همه‌ی ردیف‌های طلب/بدهیش حذف بشه؟",
+            text = "«${counterparty.name}» و همه‌ی ردیف‌های طلب/بدهیش حذف شود؟",
             onConfirm = { viewModel.deleteCounterparty(counterparty); openedCounterpartyId = null },
             onDismiss = { pendingDelete = null },
         )
@@ -506,7 +506,7 @@ private fun DebtList(
                     icon = Icons.Filled.Handshake,
                     title = if (counterparties.isEmpty()) "هنوز کسی را اضافه نکردی" else "چیزی پیدا نشد",
                     description = if (counterparties.isEmpty()) {
-                        "طلب یا بدهیِ خودت با یه شخص رو اینجا ثبت کن تا فراموش نشه."
+                        "طلب یا بدهیِ خودت با یک شخص را این‌جا ثبت کن تا فراموش نشود."
                     } else {
                         "کسی با این شرط پیدا نشد."
                     },
@@ -916,7 +916,7 @@ private fun CounterpartyDetail(
                 EmptyState(
                     icon = Icons.Filled.Handshake,
                     title = "هنوز ردیفی ثبت نشده",
-                    description = "اولین طلب یا بدهیت با «${counterparty.name}» رو ثبت کن.",
+                    description = "اولین طلب یا بدهیت با «${counterparty.name}» را ثبت کن.",
                 )
             }
         } else if (debts.isNotEmpty()) {
@@ -976,7 +976,7 @@ private fun CounterpartyDetail(
     confirmDeleteDebt?.let { debt ->
         ConfirmDeleteDialog(
             title = "حذفِ ردیف",
-            text = "این ردیفِ «${fmt((debt.amount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}» حذف بشه؟",
+            text = "این ردیفِ «${fmt((debt.amount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}» حذف شود؟",
             onConfirm = { onDeleteDebt(debt) },
             onDismiss = { confirmDeleteDebt = null },
         )

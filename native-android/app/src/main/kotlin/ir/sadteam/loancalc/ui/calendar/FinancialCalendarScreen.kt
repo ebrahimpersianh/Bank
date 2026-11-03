@@ -316,7 +316,7 @@ fun FinancialCalendarScreen(
                 ) {
                     Text(
                         selectedDate?.let { "سررسیدهای ${toFa(it.d)} ${faMonthName(it.m)} ${toFa(it.y)}" }
-                            ?: "یه روز رو از تقویم انتخاب کن",
+                            ?: "یک روز را از تقویم انتخاب کن",
                         color = AppText, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
                         modifier = Modifier.padding(bottom = 8.dp),
                     )

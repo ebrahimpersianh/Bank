@@ -368,17 +368,17 @@ fun AddManualLoanScreen(
                         val paidCount = paidCountText.toIntOrNull() ?: 0
 
                         error = when {
-                            name.trim().isEmpty() -> "اسم وام رو وارد کن"
-                            bank.trim().isEmpty() -> "اسم بانک یا فروشنده رو وارد کن"
-                            installment <= 0 -> "مبلغ قسط رو وارد کن"
-                            n <= 0 -> "تعداد کل اقساط رو وارد کن"
-                            editingLoan == null && paidCount > n -> "تعداد پرداخت‌شده نمی‌تونه از کل اقساط بیشتر باشه"
+                            name.trim().isEmpty() -> "اسم وام را وارد کن"
+                            bank.trim().isEmpty() -> "اسم بانک یا فروشنده را وارد کن"
+                            installment <= 0 -> "مبلغ قسط را وارد کن"
+                            n <= 0 -> "تعداد کل اقساط را وارد کن"
+                            editingLoan == null && paidCount > n -> "تعداد پرداخت‌شده نمی‌تواند از کل اقساط بیشتر باشد"
                             // باگِ رفع‌شده (مورد ۲۳): این گارد قبلاً فقط مسیرِ ساختنِ وامِ جدید رو
                             // چک می‌کرد، نه مسیرِ ویرایش - کاربر می‌تونست n رو کمتر از تعدادِ
                             // اقساطِ ازقبل‌پرداخت‌شده بذاره، که تشخیصِ «تسویه‌شده»/داشبورد رو خراب
                             // می‌کرد.
                             editingLoan != null && n < editingLoan.paidCount ->
-                                "تعداد کل اقساط نمی‌تونه از تعدادِ اقساطِ ازقبل‌پرداخت‌شده (${toFa(editingLoan.paidCount)}) کمتر باشه"
+                                "تعداد کل اقساط نمی‌تواند از تعدادِ اقساطِ ازقبل‌پرداخت‌شده (${toFa(editingLoan.paidCount)}) کمتر باشد"
                             else -> null
                         }
                         if (error == null) {

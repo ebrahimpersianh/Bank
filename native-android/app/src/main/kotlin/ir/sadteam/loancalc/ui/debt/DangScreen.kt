@@ -406,19 +406,19 @@ fun DangCreateScreen(
         }
 
                     error = when {
-                        totalAmount <= 0 -> "مبلغِ کل رو وارد کن"
-                        participants.value.size < 2 -> "حداقل یه شرکت‌کننده‌ی دیگه اضافه کن"
+                        totalAmount <= 0 -> "مبلغِ کل را وارد کن"
+                        participants.value.size < 2 -> "حداقل یک شرکت‌کننده‌ی دیگر اضافه کن"
                         method == DangMethod.PERCENTAGE &&
                             participants.value.sumOf { it.percentageText.toDoubleOrNull() ?: 0.0 }.toInt() != 100 ->
-                            "جمعِ درصدها باید ۱۰۰٪ بشه"
+                            "جمعِ درصدها باید ۱۰۰٪ شود"
                         method == DangMethod.CUSTOM &&
                             participants.value.sumOf { it.customAmountText.toLongOrNull()?.toDouble() ?: 0.0 } != totalAmount ->
-                            "جمعِ مبلغ‌های دلخواه باید با مبلغِ کل برابر باشه"
+                            "جمعِ مبلغ‌های دلخواه باید با مبلغِ کل برابر باشد"
                         method == DangMethod.ITEMIZED &&
                             items.value.sumOf { it.amountText.toLongOrNull()?.toDouble() ?: 0.0 } != totalAmount ->
-                            "جمعِ قلم‌ها باید با مبلغِ کل برابر باشه"
+                            "جمعِ قلم‌ها باید با مبلغِ کل برابر باشد"
                         method == DangMethod.ITEMIZED && items.value.any { it.sharedByIndices.isEmpty() } ->
-                            "هر قلم باید حداقل یه شرکت‌کننده داشته باشه"
+                            "هر قلم باید حداقل یک شرکت‌کننده داشته باشد"
                         else -> null
                     }
                     if (error != null) return@LaunchedEffect
@@ -612,7 +612,7 @@ fun DangCreateScreen(
                     if (method == DangMethod.PERCENTAGE) {
                         val sum = participants.value.sumOf { it.percentageText.toDoubleOrNull() ?: 0.0 }
                         Text(
-                            "جمعِ درصدها: ${toFa(sum.toInt())}٪ (باید ۱۰۰٪ باشه)",
+                            "جمعِ درصدها: ${toFa(sum.toInt())}٪ (باید ۱۰۰٪ باشد)",
                             color = if (sum.toInt() == 100) AppPrimary else AppDanger,
                             fontSize = 11.sp,
                         )
@@ -645,7 +645,7 @@ fun DangCreateScreen(
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("حالتِ مهمانی/مناسبت", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        Text("از میانگینِ ماهانه‌ی گزارش حذف می‌شه", color = AppMuted, fontSize = 11.sp)
+                        Text("از میانگینِ ماهانه‌ی گزارش حذف می‌شود", color = AppMuted, fontSize = 11.sp)
                     }
                     Switch(checked = isEventMode, onCheckedChange = { isEventMode = it })
                 }

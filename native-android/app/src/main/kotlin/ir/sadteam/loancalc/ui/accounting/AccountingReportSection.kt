@@ -267,7 +267,7 @@ private fun ReportMonthHero(
         // هفت میله ارتفاعِ صفر می‌گیرن و یه نوارِ ۴۰ پیکسلیِ خالی مثلِ سوراخ وسطِ کارت می‌مونه.
         if (monthlySpend.none { it > 0.0 }) {
             Text(
-                "هنوز خرجی ثبت نکردی - با اولین تراکنش، روندِ ماه‌ها همین‌جا ساخته می‌شه",
+                "هنوز خرجی ثبت نکردی - با اولین تراکنش، روندِ ماه‌ها همین‌جا ساخته می‌شود",
                 color = Color.White.copy(alpha = 0.85f),
                 fontSize = 10.5.sp,
                 fontWeight = FontWeight.Bold,
@@ -793,7 +793,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                 EmptyState(
                     icon = Icons.Outlined.AccountBalanceWallet,
                     title = "تراکنشی تو این بازه نیست",
-                    description = "بازه یا حساب رو عوض کن تا تراکنش‌های اون بازه اینجا دیده بشه.",
+                    description = "بازه یا حساب را عوض کن تا تراکنش‌های آن بازه این‌جا دیده شود.",
                 )
             }
         }

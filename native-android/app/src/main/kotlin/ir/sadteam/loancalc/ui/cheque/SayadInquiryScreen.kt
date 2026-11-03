@@ -147,7 +147,7 @@ fun SayadInquiryScreen(sayadId: String?, onBack: () -> Unit) {
                         },
                         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     ) {
-                        Text(if (sayadId.isNullOrBlank()) "باز کردن پیامک (شناسه رو خودت پر کن)" else "ارسال پیامک استعلام")
+                        Text(if (sayadId.isNullOrBlank()) "باز کردن پیامک (شناسه را خودت پر کن)" else "ارسال پیامک استعلام")
                     }
                 }
             }
@@ -174,7 +174,7 @@ fun SayadInquiryScreen(sayadId: String?, onBack: () -> Unit) {
                         }
                     }
                     Text(
-                        "امکان اسکن کد QR چک و استعلام سریع (لطفاً اپلیکیشن مورد نظر رو نصب کنید)",
+                        "امکان اسکن کد QR چک و استعلام سریع (لطفاً اپلیکیشن مورد نظر را نصب کنید)",
                         color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 8.dp),

@@ -333,9 +333,9 @@ internal fun MonthBudgetCard(
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
                     if (leftover >= 0) {
-                        "با این روند، ${maskIfPrivate(masked, leftover.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} تا آخرِ ماه می‌مونه"
+                        "با این روند، ${maskIfPrivate(masked, leftover.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} تا آخرِ ماه می‌ماند"
                     } else {
-                        "با این روند، ${maskIfPrivate(masked, (-leftover).rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} کم میاری"
+                        "با این روند، ${maskIfPrivate(masked, (-leftover).rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} کم می‌آوری"
                     },
                     color = if (leftover >= 0) AppPrimaryInk else AppDangerInk,
                     fontSize = 11.sp,

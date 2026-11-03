@@ -117,7 +117,7 @@ internal fun NoBudgetCard(onCreate: () -> Unit) {
             illustration = ir.sadteam.loancalc.R.drawable.empty_illu_budget,
             tint = AppPrimaryPill.copy(alpha = 0.55f),
             title = "هنوز بودجه‌ای تعیین نشده",
-            description = "برای دسته‌های مهمت سقفِ ماهانه بذار و از خرج‌هات بهتر باخبر باش.",
+            description = "برای دسته‌های مهمت سقفِ ماهانه بگذار و از خرج‌هات بهتر باخبر باش.",
             action = "ساختنِ بودجه",
             onAction = onCreate,
         )
@@ -417,7 +417,7 @@ internal fun MonthTotalCard(
             Icon(Icons.Filled.Lightbulb, contentDescription = null, tint = GoldInk, modifier = Modifier.size(16.dp))
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    "با این روند ${maskIfPrivate(masked, projectedLeft.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} تا آخرِ ماه می‌مونه.",
+                    "با این روند ${maskIfPrivate(masked, projectedLeft.rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} تا آخرِ ماه می‌ماند.",
                     color = AppMuted,
                     fontSize = 10.5.sp,
                     fontWeight = FontWeight.Bold,

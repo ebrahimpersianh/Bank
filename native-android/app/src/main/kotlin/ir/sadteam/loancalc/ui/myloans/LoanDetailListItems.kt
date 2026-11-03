@@ -234,7 +234,7 @@ internal fun LazyListScope.loanTabZeroItems(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                if (selectedBulkMs.isEmpty()) "چندتا قسطِ پرداخت‌نشده رو انتخاب کن" else "${toFa(selectedBulkMs.size)} قسط انتخاب شده",
+                                if (selectedBulkMs.isEmpty()) "چند قسطِ پرداخت‌نشده را انتخاب کن" else "${toFa(selectedBulkMs.size)} قسط انتخاب شده",
                                 color = AppMuted,
                                 fontSize = 12.sp,
                             )

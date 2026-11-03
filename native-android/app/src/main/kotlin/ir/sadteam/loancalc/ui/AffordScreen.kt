@@ -356,9 +356,9 @@ private fun RateFinderCard() {
             .padding(14.dp),
     ) {
         Column {
-            Text("یا برعکس: نرخ سود رو پیدا کن", color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text("یا برعکس: نرخ سود را پیدا کن", color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Text(
-                "مبلغ وام و قسطی که می‌دی رو بگو، نرخ سودش رو حساب می‌کنم",
+                "مبلغ وام و قسطی که می‌دهی را بگو، نرخ سودش را حساب می‌کنم",
                 color = AppMuted,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
@@ -448,9 +448,9 @@ private fun RateFinderCard() {
                     val found = RateFinderCalculator.findRate(principal.toDouble(), installment.toDouble(), months)
                     if (found == null) {
                         error = if (installment * months < principal) {
-                            "مبلغ کل قسط‌ها از مبلغ وام کمتره؛ عددها رو چک کن"
+                            "مبلغ کل قسط‌ها از مبلغ وام کمتر است؛ عددها را چک کن"
                         } else {
-                            "هر سه مقدار رو وارد کن"
+                            "هر سه مقدار را وارد کن"
                         }
                         result = null
                     } else {

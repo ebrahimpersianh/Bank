@@ -18,7 +18,7 @@ fun biometricAvailable(context: Context): Boolean =
 fun showBiometricPrompt(activity: FragmentActivity, onSuccess: () -> Unit, onError: (String) -> Unit) {
     val promptInfo = BiometricPrompt.PromptInfo.Builder()
         .setTitle("ورود با اثر انگشت")
-        .setSubtitle("برای ادامه هویتت رو تایید کن")
+        .setSubtitle("برای ادامه هویتت را تایید کن")
         .setNegativeButtonText("لغو")
         .setAllowedAuthenticators(AUTHENTICATORS)
         .build()

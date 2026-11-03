@@ -141,7 +141,7 @@ fun DangListScreen(
                 EmptyState(
                     icon = Icons.Filled.Celebration,
                     title = "هنوز دنگی ثبت نشده",
-                    description = "هزینه‌ی یه مهمونی یا خریدِ گروهی رو اینجا بینِ چند نفر تقسیم کن.",
+                    description = "هزینه‌ی یک مهمانی یا خریدِ گروهی را این‌جا بینِ چند نفر تقسیم کن.",
                     actionLabel = "+ دنگِ جدید",
                     onAction = onAddNew,
                 )
@@ -451,7 +451,7 @@ fun DangDetailScreen(
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
             title = "حذفِ دنگ",
-            text = "دنگِ «${event.title}» و سهمِ همه‌ی شرکت‌کننده‌ها حذف بشه؟",
+            text = "دنگِ «${event.title}» و سهمِ همه‌ی شرکت‌کننده‌ها حذف شود؟",
             onConfirm = onDelete,
             onDismiss = { showDeleteConfirm = false },
         )

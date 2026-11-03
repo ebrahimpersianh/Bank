@@ -86,7 +86,7 @@ fun RatePromptDialog(
                 textAlign = TextAlign.Center,
             )
             Text(
-                "یه امتیازِ ۵ ستاره تو استور خیلی به ما کمک می‌کنه.",
+                "یک امتیازِ ۵ ستاره تو استور خیلی به ما کمک می‌کند.",
                 color = AppMuted,
                 fontSize = 13.5.sp,
                 lineHeight = 24.sp,
@@ -145,7 +145,7 @@ fun RatePromptDialog(
                         .padding(vertical = 13.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("دیگه نپرس", color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                    Text("دیگر نپرس", color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

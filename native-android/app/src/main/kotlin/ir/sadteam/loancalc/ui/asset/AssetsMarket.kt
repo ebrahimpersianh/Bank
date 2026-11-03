@@ -286,14 +286,14 @@ internal fun MarketGridRow(
             .padding(horizontal = 9.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        AssetBadge(symbol, category, 28.dp)
-        Column(modifier = Modifier.weight(1f).padding(start = 7.dp)) {
+        AssetBadge(symbol, category, 32.dp)
+        Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     name,
                     color = AppText,
-                    fontSize = 12.sp,
-                    lineHeight = 15.sp,
+                    fontSize = 13.sp,
+                    lineHeight = 16.sp,
                     fontWeight = FontWeight.Black,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -306,23 +306,22 @@ internal fun MarketGridRow(
             }
         }
         Box(modifier = Modifier.width(46.dp).padding(horizontal = 2.dp), contentAlignment = Alignment.Center) { trend() }
+        // ۱۳ آبان (گشتِ کامل): قابِ رنگیِ دورِ قیمت ردیف را شلوغ می‌کرد → قیمتِ ساده و درشت‌تر، هم‌تراز به چپ.
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.End,
             modifier = Modifier
-                .width(84.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(AppPrimary.copy(alpha = 0.06f))
+                .width(100.dp)
                 .padding(horizontal = 3.dp, vertical = 4.dp),
         ) {
             // «۶۹۰٫۹ میلیون تو…» نصفه می‌شد - حالا فونت کوچک می‌شود تا کلِ قیمت جا شود.
             ir.sadteam.loancalc.ui.components.AutoShrinkText(
                 text = price?.let { "$it ${ir.sadteam.loancalc.ui.jibak.unitFa()}" } ?: "—",
                 color = if (price == null) AppMuted else AppText,
-                maxFontSize = 11.sp,
+                maxFontSize = 12.5.sp,
                 minFontSize = 9.5.sp,
                 fontWeight = FontWeight.Black,
             )
-            if (secondLine != null) Text(secondLine, color = AppMuted, fontSize = 9.5.sp, maxLines = 1)
+            if (secondLine != null) Text(secondLine, color = AppMuted, fontSize = 10.5.sp, maxLines = 1)
         }
         Box(modifier = Modifier.width(58.dp).padding(start = 4.dp), contentAlignment = Alignment.Center) { trailing() }
     }

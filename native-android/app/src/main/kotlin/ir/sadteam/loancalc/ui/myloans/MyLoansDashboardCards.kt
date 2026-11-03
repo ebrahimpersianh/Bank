@@ -215,7 +215,7 @@ internal fun LoansHeroCard(
                     Text(
                         // عدد وسطِ جمله، نه آخرش: «٪» تهِ جمله‌ی فارسی بعد از «·» برعکس چیده می‌شد («٪۱۰۹»).
                         if (over) "قسط‌ها ${toFa((incomeRatio * 100).roundToInt())}٪ درآمدت است؛ بیشتر از درآمد"
-                        else "${toFa((incomeRatio * 100).roundToInt())}٪ از درآمدت صرفِ اقساط می‌شه",
+                        else "${toFa((incomeRatio * 100).roundToInt())}٪ از درآمدت صرفِ اقساط می‌شود",
                         color = Color.White,
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Black,
@@ -452,7 +452,7 @@ internal fun LoansIncomeCard(
                     incomePendingDelete?.let { income ->
                         ConfirmDeleteDialog(
                             title = "حذف منبع درآمد",
-                            text = "منبعِ درآمدِ «${income.label}» حذف بشه؟",
+                            text = "منبعِ درآمدِ «${income.label}» حذف شود؟",
                             onConfirm = { onDeleteIncome(income) },
                             onDismiss = { incomePendingDelete = null },
                         )
@@ -552,7 +552,7 @@ internal fun LoansIncomeCard(
                     }
                     Column(modifier = Modifier.padding(start = 12.dp)) {
                         Text(
-                            "از درآمدت صرف اقساط می‌شه",
+                            "از درآمدت صرف اقساط می‌شود",
                             color = AppMuted,
                             fontSize = 12.sp,
                         )

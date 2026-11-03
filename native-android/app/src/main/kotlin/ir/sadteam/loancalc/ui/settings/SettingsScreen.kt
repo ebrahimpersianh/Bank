@@ -298,18 +298,11 @@ private fun SettingsMainContent(
                 .padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(AppRadius.icon))
-                    .background(AppSurface)
-                    .border(1.dp, AppLine, RoundedCornerShape(14.dp))
-                    .pressScaleClickable(onClick = onBack),
-                contentAlignment = Alignment.Center,
-            ) {
+            // ۱۳ آبان (گشتِ کامل): فلشِ قاب‌دار فقط این‌جا بود؛ بقیه‌ی صفحه‌ها فلشِ ساده دارند.
+            androidx.compose.material3.IconButton(onClick = onBack, modifier = Modifier.size(44.dp)) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
             }
-            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+            Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                 Text("تنظیمات", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
                 Text(
                     "مدیریت حساب و شخصی‌سازی برنامه",

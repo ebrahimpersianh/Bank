@@ -155,7 +155,7 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                     Column(modifier = Modifier.padding(start = 4.dp)) {
                         Text("پشتیبانی", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black)
                         Text(
-                            "چی درست کار نکرد؟ هرچه دقیق‌تر، زودتر درست می‌شود.",
+                            "چه درست کار نکرد؟ هرچه دقیق‌تر، زودتر درست می‌شود.",
                             color = AppMuted,
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
@@ -167,8 +167,8 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
             item {
                 SettingsHero(
                     icon = Icons.Filled.BugReport,
-                    title = "حرفت رو بزن",
-                    subtitle = "مشکل، ایده‌ی طراحی یا پیشنهاد - اگه به بهتر شدنِ جیبک کمک کنه، هدیه‌ی اشتراک می‌گیری.",
+                    title = "حرفت را بزن",
+                    subtitle = "مشکل، ایده‌ی طراحی یا پیشنهاد - اگر به بهتر شدنِ جیبک کمک کند، هدیه‌ی اشتراک می‌گیری.",
                 )
             }
 
@@ -407,7 +407,7 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                         }
                         Text(
                             "💚 ممنون که وقت گذاشتی! پیامت به دستمون رسید و به‌زودی نتیجه‌اش توی «پیام‌های جیبک» " +
-                                "بهت اطلاع داده می‌شه. اگه به بهتر شدنِ جیبک کمک کنه، هدیه‌ی اشتراک هم می‌گیری.",
+                                "بهت اطلاع داده می‌شود. اگر به بهتر شدنِ جیبک کمک کند، هدیه‌ی اشتراک هم می‌گیری.",
                             color = AppMuted,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,

@@ -651,7 +651,7 @@ internal fun HomeEmptyHero(onAddFirst: () -> Unit) {
         illustration = ir.sadteam.loancalc.R.drawable.empty_illu_wallet,
         tint = ir.sadteam.loancalc.ui.theme.AppPrimaryPill.copy(alpha = 0.55f),
         title = "شروعِ مدیریتِ مالی",
-        description = "اولین ثبتت رو انجام بده تا جیبک کم‌کم الگوی خرج‌هات رو بشناسه.",
+        description = "اولین ثبتت را انجام بده تا جیبک کم‌کم الگوی خرج‌هات را بشناسد.",
         action = "ثبتِ اولین خرج",
         onAction = onAddFirst,
         guideKey = "add_tx",
@@ -685,7 +685,7 @@ internal fun FirstRewardNote() {
             modifier = Modifier.size(40.dp),
         )
         Text(
-            "با اولین ثبت ۱۰ سکه می‌گیری و روزهای فعالت روشن می‌شه",
+            "با اولین ثبت ۱۰ سکه می‌گیری و روزهای فعالت روشن می‌شود",
             color = RewardNoteInk,
             fontSize = 12.sp,
             fontWeight = FontWeight.Black,

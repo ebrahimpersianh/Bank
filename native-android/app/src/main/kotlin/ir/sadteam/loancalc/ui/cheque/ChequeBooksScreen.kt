@@ -230,10 +230,10 @@ fun ChequeBooksScreen(
                                 val start = startText.toLongOrNull()
                                 val end = endText.toLongOrNull()
                                 error = when {
-                                    owner.trim().isEmpty() -> "اسم مالک رو وارد کن"
-                                    bank.trim().isEmpty() -> "اسم بانک رو وارد کن"
-                                    start == null || end == null -> "بازه‌ی سریال رو کامل وارد کن"
-                                    end < start -> "شماره پایان باید بزرگ‌تر از شروع باشه"
+                                    owner.trim().isEmpty() -> "اسم مالک را وارد کن"
+                                    bank.trim().isEmpty() -> "اسم بانک را وارد کن"
+                                    start == null || end == null -> "بازه‌ی سریال را کامل وارد کن"
+                                    end < start -> "شماره پایان باید بزرگ‌تر از شروع باشد"
                                     else -> null
                                 }
                                 if (error == null) {
@@ -274,7 +274,7 @@ fun ChequeBooksScreen(
     bookPendingDelete?.let { book ->
         ConfirmDeleteDialog(
             title = "حذف دسته‌چک",
-            text = "دسته‌چکِ «${book.ownerName} - ${book.bankName}» حذف بشه؟",
+            text = "دسته‌چکِ «${book.ownerName} - ${book.bankName}» حذف شود؟",
             onConfirm = { onDelete(book) },
             onDismiss = { bookPendingDelete = null },
         )

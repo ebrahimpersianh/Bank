@@ -249,7 +249,7 @@ internal fun InstallmentDetailScreen(
         ConfirmDialog(
             tone = ConfirmTone.DESTRUCTIVE,
             title = "حذفِ عکسِ رسید",
-            consequence = "این عکس از گوشی پاک می‌شه و برنمی‌گرده.",
+            consequence = "این عکس از گوشی پاک می‌شود و برنمی‌گردد.",
             actionLabel = "حذفِ عکس",
             onConfirm = { pendingPhotoDelete = null; onRemovePhoto(path) },
             onDismiss = { pendingPhotoDelete = null },

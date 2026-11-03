@@ -43,7 +43,7 @@ internal fun ToolsSettings(onOpenTool: (String) -> Unit) {
     SettingsGroup {
         SettingsRowItem("تقویمِ مالی", Icons.Filled.DateRange, SettingsTone.BLUE, status = "سررسیدِ اقساط و چک‌ها روی تقویم") { onOpenTool("calendar") }
         SettingsDivider()
-        SettingsRowItem("هدف‌های پس‌انداز", Icons.Filled.Savings, SettingsTone.GREEN, status = "پول کنار بذار و پیشرفتش رو ببین") { onOpenTool("goals") }
+        SettingsRowItem("هدف‌های پس‌انداز", Icons.Filled.Savings, SettingsTone.GREEN, status = "پول کنار بگذار و پیشرفتش را ببین") { onOpenTool("goals") }
     }
     SettingsGroupLabel("بررسی و محاسبه", accent = AppPurple)
     SettingsGroup {

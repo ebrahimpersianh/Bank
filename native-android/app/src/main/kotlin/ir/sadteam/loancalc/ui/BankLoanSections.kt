@@ -500,11 +500,11 @@ internal fun BankLoanActionsSection(
                     // قبلاً `return@GradientButton`ِ خالی بود: تپ روی فیلدِ خالی بی هیچ نشونه‌ای
                     // هیچ‌کاری نمی‌کرد و کاربر فکر می‌کرد دکمه خرابه.
                     if (tomanAmount <= 0) {
-                        formError = "مبلغِ وام رو وارد کن"
+                        formError = "مبلغِ وام را وارد کن"
                         return@GradientButton
                     }
                     if (n <= 0) {
-                        formError = "تعدادِ اقساط باید بیشتر از صفر باشه"
+                        formError = "تعدادِ اقساط باید بیشتر از صفر باشد"
                         return@GradientButton
                     }
                     // 🚨 روشِ قرض‌الحسنه قسطِ اولِ هر سال را کاملاً کارمزدی می‌گیرد، پس با یک قسط

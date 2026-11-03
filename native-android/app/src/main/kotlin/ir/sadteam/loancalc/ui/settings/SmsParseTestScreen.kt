@@ -59,7 +59,7 @@ internal fun SmsParseTestScreen(onBack: () -> Unit) {
         OutlinedTextField(
             value = text,
             onValueChange = { text = it; checked = false },
-            placeholder = { Text("متنِ پیامکِ بانک را اینجا بچسبان") },
+            placeholder = { Text("متنِ پیامکِ بانک را این‌جا بچسبان") },
             modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 100.dp),
             textStyle = LocalTextStyle.current.copy(fontSize = 11.sp, lineHeight = 20.sp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         Text(
@@ -120,8 +120,8 @@ internal fun SmsParseTestScreen(onBack: () -> Unit) {
                 ) {
                     Text("شناسایی نشد", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
                     Text(
-                        "موتور از این متن مبلغ و نوعِ تراکنش درنیاورد. اگه این پیامکِ واقعیِ " +
-                            "بانکته، متنش رو برای ما بفرست تا موتور بهترش کنیم.",
+                        "موتور از این متن مبلغ و نوعِ تراکنش درنیاورد. اگر این پیامکِ واقعیِ " +
+                            "بانکت است، متنش را برای ما بفرست تا موتور بهترش کنیم.",
                         color = AppDangerInk,
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,

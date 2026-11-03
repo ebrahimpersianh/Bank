@@ -100,7 +100,7 @@ fun ParsingRulesScreen(viewModel: ParsingRulesViewModel = hiltViewModel()) {
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            "قاعده‌ها از بالا به پایین بررسی می‌شن و اولین تطبیق برنده‌ست.",
+            "قاعده‌ها از بالا به پایین بررسی می‌شوند و اولین تطبیق برنده است.",
             color = AppMuted,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
@@ -118,7 +118,7 @@ fun ParsingRulesScreen(viewModel: ParsingRulesViewModel = hiltViewModel()) {
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         ) {
             Icon(Icons.Outlined.Science, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text("آزمایشِ تشخیص با یه پیامک", fontWeight = FontWeight.Black)
+            Text("آزمایشِ تشخیص با یک پیامک", fontWeight = FontWeight.Black)
         }
         // فریمِ `29d`: قاعده از روی پیامکِ واقعیِ صندوقِ گوشی - بانکی‌ها اولِ فهرست.
         GradientButton(
@@ -134,8 +134,8 @@ fun ParsingRulesScreen(viewModel: ParsingRulesViewModel = hiltViewModel()) {
             EmptyState(
                 icon = Icons.Outlined.Rule,
                 title = "هنوز قاعده‌ای نیست",
-                description = "لازم نیست خودت بسازی. وقتی سه بار یه فروشنده رو دستی " +
-                    "دسته‌بندی کنی، جیبک خودش قاعده‌ش رو می‌سازه.",
+                description = "لازم نیست خودت بسازی. وقتی سه بار یک فروشنده را دستی " +
+                    "دسته‌بندی کنی، جیبک خودش قاعده‌اش را می‌سازد.",
             )
         } else {
             rules.forEachIndexed { index, rule ->
@@ -299,7 +299,7 @@ private fun RuleCard(
     if (confirmDelete) {
         ConfirmDeleteDialog(
             title = "حذفِ قاعده",
-            text = "قاعده‌ی «${rule.pattern}» حذف بشه؟",
+            text = "قاعده‌ی «${rule.pattern}» حذف شود؟",
             onConfirm = onDelete,
             onDismiss = { confirmDelete = false },
         )
@@ -360,11 +360,11 @@ private fun RuleSheet(
  textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = pattern,
                     onValueChange = { pattern = it },
-                    label = { Text("اگه تو متنِ پیامک این بود") },
+                    label = { Text("اگر تو متنِ پیامک این بود") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 Text(
-                    "بخشی از نامِ فروشنده کافیه - «رفاه» هم «فروشگاه رفاه» رو می‌گیره.",
+                    "بخشی از نامِ فروشنده کافی است - «رفاه» هم «فروشگاه رفاه» را می‌گیرد.",
                     color = AppLabel,
                     fontSize = 11.sp,
                     modifier = Modifier.padding(top = 4.dp),
@@ -434,9 +434,9 @@ private fun RuleSheet(
                     val count = matches
                     Text(
                         when {
-                            pattern.isBlank() -> "متنی بنویس تا بگم با چند تراکنش می‌خوره"
+                            pattern.isBlank() -> "متنی بنویس تا بگویم با چند تراکنش می‌خورد"
                             count == null -> "دارم می‌شمرم..."
-                            count > 0 -> "با ${toFa(count)} تراکنشِ گذشته‌ت می‌خوره"
+                            count > 0 -> "با ${toFa(count)} تراکنشِ گذشته‌ت می‌خورد"
                             else -> "با هیچ تراکنشی نخورد. مطمئنی؟"
                         },
                         color = when {
@@ -513,11 +513,11 @@ private fun SmsTestDialog(
  textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = body,
                     onValueChange = { body = it; tested = false },
-                    label = { Text("متنِ پیامکِ بانکی رو اینجا بچسبون") },
+                    label = { Text("متنِ پیامکِ بانکی را این‌جا بچسبان") },
                     minLines = 3,
                     modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 Text(
-                    "فقط آزمایشه - هیچ تراکنشی ثبت نمی‌شه.",
+                    "فقط آزمایش است - هیچ تراکنشی ثبت نمی‌شود.",
                     color = AppLabel,
                     fontSize = 11.sp,
                     modifier = Modifier.padding(top = 4.dp),

@@ -100,8 +100,8 @@ class ComeBackWorker @AssistedInject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         // متنِ سرور (اگر هست) هم در حالتِ بسته و هم بازِ اعلان - قبلاً حالتِ باز همیشه متنِ پیش‌فرض بود.
-        val title = ir.sadteam.loancalc.data.RemoteApp.config.comeBackTitle?.replace("{days}", toFa(days)) ?: "${toFa(days)} روزه رفتی، وقتشه برگردی"
-        val text = ir.sadteam.loancalc.data.RemoteApp.config.comeBackText?.replace("{days}", toFa(days)) ?: "${toFa(days)} روزه تراکنش ثبت نکردی و نظمِ مالی‌ت در خطره. درآمد‌وخرجت رو ثبت کن و ادامه بده."
+        val title = ir.sadteam.loancalc.data.RemoteApp.config.comeBackTitle?.replace("{days}", toFa(days)) ?: "${toFa(days)} روز است سر نزده‌ای"
+        val text = ir.sadteam.loancalc.data.RemoteApp.config.comeBackText?.replace("{days}", toFa(days)) ?: "${toFa(days)} روز است تراکنشی ثبت نکرده‌ای. درآمد و خرجت را ثبت کن تا حساب‌وکتابت دقیق بماند."
         val notification = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(ReminderChannels.largeIcon(applicationContext))

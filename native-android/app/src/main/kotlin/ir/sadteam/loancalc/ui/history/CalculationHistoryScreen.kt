@@ -111,18 +111,11 @@ fun CalculationHistoryScreen(onBack: () -> Unit, viewModel: CalculationHistoryVi
             modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(AppRadius.icon))
-                    .background(AppSurface)
-                    .border(1.dp, AppLine, RoundedCornerShape(14.dp))
-                    .pressScaleClickable(onClick = onBack),
-                contentAlignment = Alignment.Center,
-            ) {
+            // ۱۳ آبان (گشتِ کامل): فلشِ قاب‌دار فقط این‌جا بود؛ بقیه‌ی صفحه‌ها فلشِ ساده دارند.
+            androidx.compose.material3.IconButton(onClick = onBack, modifier = Modifier.size(44.dp)) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
             }
-            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+            Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                 Text("تاریخچه‌ی محاسبات", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
                 if (history.isNotEmpty()) {
                     Text("${toFa(history.size)} محاسبه", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
@@ -159,14 +152,14 @@ fun CalculationHistoryScreen(onBack: () -> Unit, viewModel: CalculationHistoryVi
                     EmptyState(
                         icon = Icons.Outlined.History,
                         title = "هنوز محاسبه‌ای ثبت نشده",
-                        description = "هر محاسبه‌ای که انجام بدی خودکار اینجا ذخیره می‌شه " +
-                            "تا بعداً بتونی دوباره ببینیش.",
+                        description = "هر محاسبه‌ای که انجام بدهی خودکار این‌جا ذخیره می‌شود " +
+                            "تا بعداً بتوانی دوباره ببینی.",
                     )
                 } else {
                     EmptyState(
                         icon = Icons.Outlined.SearchOff,
                         title = "چیزی پیدا نشد",
-                        description = "با این عبارت محاسبه‌ای پیدا نکردم؛ یه کلمه‌ی دیگه رو امتحان کن.",
+                        description = "با این عبارت محاسبه‌ای پیدا نکردم؛ یک کلمه‌ی دیگر را امتحان کن.",
                     )
                 }
             }

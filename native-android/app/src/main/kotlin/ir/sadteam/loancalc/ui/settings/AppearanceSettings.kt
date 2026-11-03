@@ -224,7 +224,7 @@ internal fun AppearanceSettings(themeViewModel: ThemeViewModel, hapticsViewModel
             title = "لرزشِ لمسی",
             icon = Icons.Filled.Vibration,
             tone = SettingsTone.PURPLE,
-            status = "موقعِ لمسِ دکمه‌ها یه لرزشِ کوتاه",
+            status = "موقعِ لمسِ دکمه‌ها یک لرزشِ کوتاه",
             checked = vibrationEnabled,
             onCheckedChange = { hapticsViewModel.setEnabled(it) },
         )

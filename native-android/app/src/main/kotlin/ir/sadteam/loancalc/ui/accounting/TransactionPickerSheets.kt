@@ -65,7 +65,7 @@ fun AccountPickerSheet(
                 EmptyState(
                     icon = Icons.Filled.Add,
                     title = "هنوز حسابی نساختی",
-                    description = "اول یه حساب (کارت بانکی یا نقدی) بساز تا بتونی تراکنش ثبت کنی.",
+                    description = "اول یک حساب (کارت بانکی یا نقدی) بساز تا بتوانی تراکنش ثبت کنی.",
                 )
             } else {
                 LazyColumn(

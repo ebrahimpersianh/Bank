@@ -442,41 +442,16 @@ private fun StreakRepairCard(days: Int, hoursLeft: Int, price: Int, balance: Int
 
 @Composable
 private fun CoinEventRow(event: CoinEventEntity) {
-    // طرحِ مرجعِ کاربر (۱ مهر): فلش سمتِ راست، عنوان و زمان، مبلغ با «سکه» زیرش، و دایره‌ی
-    // +/− رنگی سمتِ چپ - تا دریافت و خرج از دور و بی خواندنِ عدد فرق کنند.
+    // ۱۳ آبان (گشتِ کامل): فلشِ «<» ردیف را لمس‌شدنی نشان می‌داد ولی کاری نمی‌کرد، دایره‌ی ۴۰ پیکسلی و
+    // «سکه»ِ زیرِ عدد هر ردیف را بلند و سنگین کرده بود → ردیفِ جمع‌وجور: نشانِ کوچکِ +/−، عنوان و زمان،
+    // مبلغ و «سکه» در یک خط. رنگِ نشان هنوز دریافت و خرج را از دور جدا می‌کند.
     val spent = event.amount < 0
     val ink = if (spent) AppDangerInk else AppPrimaryInk
-    AppCard {
+    AppCard(contentPadding = 12.dp) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = null,
-                tint = AppMuted,
-                modifier = Modifier.size(20.dp),
-            )
-            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                Text(coinEventLabel(event.type), color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
-                Text(
-                    formatEventTime(event.createdAt),
-                    color = AppMuted,
-                    fontSize = 11.sp,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                AutoShrinkText(
-                    ir.sadteam.loancalc.ui.jibak.isoSigned(!spent, toFa(kotlin.math.abs(event.amount))),
-                    color = ink,
-                    maxFontSize = 14.sp,
-                    fontWeight = FontWeight.Black,
-                    // 🚨 بی این، «+۱۰» در ستونِ باریک دو خط می‌شد و «۰» زیرش می‌افتاد.
-                )
-                Text("سکه", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-            }
             Box(
                 modifier = Modifier
-                    .padding(start = 12.dp)
-                    .size(40.dp)
+                    .size(32.dp)
                     .clip(RoundedCornerShape(999.dp))
                     .background(if (spent) AppDangerInk.copy(alpha = 0.12f) else AppPrimaryPill),
                 contentAlignment = Alignment.Center,
@@ -485,9 +460,25 @@ private fun CoinEventRow(event: CoinEventEntity) {
                     if (spent) Icons.Filled.Remove else Icons.Filled.Add,
                     contentDescription = if (spent) "خرج" else "دریافت",
                     tint = ink,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(16.dp),
                 )
             }
+            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                Text(coinEventLabel(event.type), color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                Text(
+                    formatEventTime(event.createdAt),
+                    color = AppMuted,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 1.dp),
+                )
+            }
+            Text(
+                ir.sadteam.loancalc.ui.jibak.isoSigned(!spent, toFa(kotlin.math.abs(event.amount))) + " سکه",
+                color = ink,
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+            )
         }
     }
 }

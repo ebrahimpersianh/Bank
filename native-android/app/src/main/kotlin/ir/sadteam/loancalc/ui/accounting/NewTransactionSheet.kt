@@ -589,11 +589,11 @@ internal fun validate(
     fromAccountId: Long?,
     toAccountId: Long?,
 ): String? = when {
-    amount <= 0.0 -> "مبلغ رو وارد کن"
-    kind == NewTxKind.TRANSFER && fromAccountId == null -> "حسابِ مبدا رو انتخاب کن"
-    kind == NewTxKind.TRANSFER && toAccountId == null -> "حسابِ مقصد رو انتخاب کن"
+    amount <= 0.0 -> "مبلغ را وارد کن"
+    kind == NewTxKind.TRANSFER && fromAccountId == null -> "حسابِ مبدا را انتخاب کن"
+    kind == NewTxKind.TRANSFER && toAccountId == null -> "حسابِ مقصد را انتخاب کن"
     kind == NewTxKind.TRANSFER && fromAccountId == toAccountId -> "مبدا و مقصد نمی‌تونن یکی باشن"
-    kind != NewTxKind.TRANSFER && accountId == null -> "حساب رو انتخاب کن"
+    kind != NewTxKind.TRANSFER && accountId == null -> "حساب را انتخاب کن"
     else -> null
 }
 

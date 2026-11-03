@@ -96,7 +96,7 @@ fun LockScreen(
             textAlign = TextAlign.Center,
         )
         Text(
-            "برای ورود به جیبک هویتت رو تایید کن",
+            "برای ورود به جیبک هویتت را تایید کن",
             color = AppMuted,
             fontSize = 13.sp,
             textAlign = TextAlign.Center,
@@ -109,7 +109,7 @@ fun LockScreen(
                 PatternPad(onComplete = { seq ->
                     when (val result = attemptPin(seq)) {
                         is PinAttemptResult.Success -> { error = null; onUnlock() }
-                        is PinAttemptResult.WrongPin -> error = "الگو اشتباهه (${toFa(result.attemptsLeft)} تلاش دیگه مونده)"
+                        is PinAttemptResult.WrongPin -> error = "الگو اشتباه است (${toFa(result.attemptsLeft)} تلاش دیگر مانده)"
                         is PinAttemptResult.LockedOut -> {
                             error = "به دلیل تلاش‌های ناموفق زیاد، موقتاً قفل شدی"
                             lockedOutUntil = System.currentTimeMillis() + result.secondsLeft * 1000
@@ -128,7 +128,7 @@ fun LockScreen(
                     is PinAttemptResult.Success -> { error = null; onUnlock() }
                     is PinAttemptResult.WrongPin -> {
                         pin = ""
-                        error = "PIN اشتباهه (${toFa(result.attemptsLeft)} تلاش دیگه مونده)"
+                        error = "PIN اشتباه است (${toFa(result.attemptsLeft)} تلاش دیگر مانده)"
                     }
                     is PinAttemptResult.LockedOut -> {
                         pin = ""

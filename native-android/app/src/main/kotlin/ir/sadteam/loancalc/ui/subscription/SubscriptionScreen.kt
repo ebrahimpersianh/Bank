@@ -195,7 +195,7 @@ fun SubscriptionScreen(
                     onError = {
                         ir.sadteam.loancalc.data.UsageStats.action("purchase_verify_failed")
                         purchasingProductId = null
-                        error = "تایید خرید ناموفق بود؛ اگه پول کم شده با پشتیبانی تماس بگیر"
+                        error = "تایید خرید ناموفق بود؛ اگر پول کم شده با پشتیبانی تماس بگیر"
                     },
                 )
             },
@@ -321,7 +321,7 @@ fun SubscriptionScreen(
                             )
                             if (expiry != null) {
                                 Text(
-                                    "(${toFa(expiry.daysLeft)} روزِ دیگه)",
+                                    "(${toFa(expiry.daysLeft)} روزِ دیگر)",
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
@@ -350,7 +350,7 @@ fun SubscriptionScreen(
                     Benefit(Icons.Filled.CloudDone, "پشتیبان‌گیریِ ابری", "داده‌هات همیشه امن و در دسترس", SettingsTone.BLUE),
                     Benefit(Icons.Filled.Sms, "ثبتِ خودکار از پیامک", "برداشت و واریز بدونِ تایپِ دستی", SettingsTone.PURPLE),
                     Benefit(Icons.Filled.Receipt, "چک و دسته‌چکِ نامحدود", "با استعلامِ صیادی و یادآوری", SettingsTone.ORANGE),
-                    Benefit(Icons.Filled.Sync, "همگام‌سازی بینِ گوشی‌ها", "با شماره‌ت هرجا همون اطلاعات", SettingsTone.BLUE),
+                    Benefit(Icons.Filled.Sync, "همگام‌سازی بینِ گوشی‌ها", "با شماره‌ت هرجا همان اطلاعات", SettingsTone.BLUE),
                     Benefit(Icons.Filled.Description, "خروجیِ PDF و اکسل", "گزارشِ کامل برای چاپ یا آرشیو", SettingsTone.RED),
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -368,7 +368,7 @@ fun SubscriptionScreen(
             AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
                 Text("انتخابِ اشتراک", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
                 Text(
-                    if (gateState == GateState.LOGGED_IN) "مدتِ موردِ نظرت را انتخاب کن" else "قیمت‌ها را ببین؛ برای خرید اول باید وارد حساب بشی",
+                    if (gateState == GateState.LOGGED_IN) "مدتِ موردِ نظرت را انتخاب کن" else "قیمت‌ها را ببین؛ برای خرید اول باید وارد حساب شوی",
                     color = AppMuted,
                     fontSize = 10.5.sp,
                     fontWeight = FontWeight.Bold,
@@ -376,7 +376,7 @@ fun SubscriptionScreen(
                 )
                 if (subscriptionManager == null) {
                     Text(
-                        "خرید فقط رو نسخه‌ی نصبی اپ (از کافه‌بازار یا مایکت) کار می‌کنه.",
+                        "خرید فقط روی نسخه‌ی نصبی اپ (از کافه‌بازار یا مایکت) کار می‌کند.",
                         color = AppMuted,
                         fontSize = 12.sp,
                     )
@@ -486,7 +486,7 @@ fun SubscriptionScreen(
                     Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
                         val history = purchaseHistory
                         when {
-                            gateState != GateState.LOGGED_IN -> InfoText("برای دیدنِ تاریخچه‌ی خرید باید وارد حسابت بشی.")
+                            gateState != GateState.LOGGED_IN -> InfoText("برای دیدنِ تاریخچه‌ی خرید باید وارد حسابت شوی.")
                             history == null -> InfoText("در حال دریافت…")
                             history.isEmpty() -> InfoText("هنوز خریدی ثبت نشده.")
                             else -> history.forEach { p ->
@@ -514,20 +514,20 @@ fun SubscriptionScreen(
                 }
                 SettingsDivider()
                 SettingsRowItem(
-                    title = "وقتی اشتراکم تموم بشه چی می‌شه؟",
+                    title = "وقتی اشتراکم تمام شود چه می‌شود؟",
                     icon = Icons.Filled.Info,
                     tone = SettingsTone.BLUE,
-                    status = "هیچ داده‌ای پاک نمی‌شه",
+                    status = "هیچ داده‌ای پاک نمی‌شود",
                     onClick = { showExpiryInfo = !showExpiryInfo },
                 )
                 if (showExpiryInfo) {
                     // محتوا عمداً همان چیزی است که در کد واقعاً پشتِ اشتراک است
                     // (MyLoansScreen.canSaveAnotherLoan و AutoBackupWorker).
                     Text(
-                        "هیچ اطلاعاتی پاک نمی‌شه و هر چی ثبت کردی رو همیشه می‌بینی. فقط این‌ها محدود می‌شن: " +
+                        "هیچ اطلاعاتی پاک نمی‌شود و هر چه ثبت کردی را همیشه می‌بینی. فقط این‌ها محدود می‌شوند: " +
                             "ماهی ${toFa(FreeLimits.TX_PER_MONTH)} تراکنش، یک حساب، یک وام و یک چک؛ گزارش فقط خلاصه‌ی ماهِ جاری؛ " +
-                            "و بودجه، دارایی، خوندنِ خودکارِ پیامک، پشتیبانِ سرور، خروجیِ PDF و اکسل، عکسِ رسید، " +
-                            "قبض‌ها، طلب و بدهی، برچسب، تقسیمِ خرید و قفلِ الگویی تا تمدید قفل می‌مونن.",
+                            "و بودجه، دارایی، خواندنِ خودکارِ پیامک، پشتیبانِ سرور، خروجیِ PDF و اکسل، عکسِ رسید، " +
+                            "قبض‌ها، طلب و بدهی، برچسب، تقسیمِ خرید و قفلِ الگویی تا تمدید قفل می‌مانند.",
                         color = AppMuted,
                         fontSize = 11.5.sp,
                         lineHeight = 19.sp,

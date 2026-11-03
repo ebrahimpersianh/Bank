@@ -405,7 +405,7 @@ private fun SearchIntro() {
     Column(Modifier.fillMaxWidth().padding(16.dp)) {
         SearchMessage(
             icon = Icons.Filled.Search,
-            title = "دنبالِ چی می‌گردی؟",
+            title = "دنبالِ چه می‌گردی؟",
             body = "اسم، بانک، شرح، مبلغ، شماره‌ی چک یا کارت را بنویس.",
             padded = false,
         )

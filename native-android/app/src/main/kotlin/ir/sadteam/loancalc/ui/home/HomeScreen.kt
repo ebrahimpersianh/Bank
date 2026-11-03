@@ -361,19 +361,19 @@ fun HomeScreen(
                         StarterTile(
                             icon = androidx.compose.material.icons.Icons.Outlined.Savings,
                             label = "ساختِ بودجه",
-                            subtitle = "هزینه‌ها رو مدیریت کن",
+                            subtitle = "هزینه‌ها را مدیریت کن",
                             onClick = { onNavigateToRoute("budget") },
                         )
                         StarterTile(
                             icon = androidx.compose.material.icons.Icons.Outlined.Description,
                             label = "افزودنِ چک",
-                            subtitle = "چک‌ها رو پیگیری کن",
+                            subtitle = "چک‌ها را پیگیری کن",
                             onClick = { onNavigateToRoute("cheque") },
                         )
                         StarterTile(
                             icon = androidx.compose.material.icons.Icons.Outlined.AccountBalance,
                             label = "ثبتِ وام",
-                            subtitle = "قسط‌ها رو دنبال کن",
+                            subtitle = "قسط‌ها را دنبال کن",
                             onClick = { onNavigateToRoute("loan") },
                         )
                     }

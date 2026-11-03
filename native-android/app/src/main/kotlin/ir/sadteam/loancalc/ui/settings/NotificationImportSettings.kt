@@ -104,7 +104,7 @@ internal fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
     SettingsGroupLabel("اعلانِ اپ‌های بانکی")
     SettingsSwitchRow(
         icon = Icons.Filled.NotificationsActive,
-        title = "خوندنِ خودکارِ اعلانِ بانکی",
+        title = "خواندنِ خودکارِ اعلانِ بانکی",
         subtitle = when {
             revoked -> "اجازه در تنظیماتِ گوشی برداشته شده"
             notifEnabled -> "برای بانک‌هایی که پیامک نمی‌دن و فقط اعلان می‌فرستن"
@@ -121,28 +121,21 @@ internal fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
     if (revoked) {
         AppCard(variant = AppCardVariant.URGENT, modifier = Modifier.padding(top = 8.dp)) {
             Text(
-                "اجازه‌ی خواندنِ اعلان از تنظیماتِ گوشی برداشته شده، پس هیچ تراکنشی خودکار ثبت نمی‌شه.",
+                "اجازه‌ی خواندنِ اعلان از تنظیماتِ گوشی برداشته شده، پس هیچ تراکنشی خودکار ثبت نمی‌شود.",
                 color = AppText,
                 fontSize = 12.sp,
                 lineHeight = 20.sp,
             )
+            // ۱۳ آبان (گشتِ کامل): راهنمای چهارمرحله‌ای با «NOT ALLOWED» و… همیشه دیده می‌شد، حتی با کلیدِ
+            // خاموش - حالا فقط وقتی کاربر کلید را زده و اجازه نیست، داخلِ همین کارت.
+            NotificationPermissionSteps(modifier = Modifier.padding(top = 10.dp))
             GradientButton(
                 onClick = { openListenerSettings() },
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
             ) { Text("درستش کن") }
         }
     }
-    if (!listenerGranted) {
-        AppCard(modifier = Modifier.padding(top = 8.dp)) {
-            NotificationPermissionSteps()
-            GradientButton(
-                onClick = { openListenerSettings() },
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-            ) {
-                Text("بازکردنِ تنظیمات")
-            }
-        }
-    }
+    if (!notifEnabled) return
     // 🔎 آخرین اعلان‌های بانکی و دلیلِ ثبت‌شدن/نشدن - برای وقتی «نخواند» (۱۴ مهر).
     var showNotifLog by remember { mutableStateOf(false) }
     Text(
@@ -249,14 +242,14 @@ private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: M
 
     AppCard(modifier = modifier) {
         Text(
-            "اعلانِ کدوم اپ‌ها خونده بشه؟",
+            "اعلانِ کدام اپ‌ها خوانده شود؟",
             color = AppText,
             fontSize = 13.sp,
             fontWeight = FontWeight.Black,
         )
         Text(
             if (selected.isEmpty()) {
-                "هیچ اپی انتخاب نشده - تا وقتی حداقل یکی رو انتخاب نکنی، هیچ تراکنشی خودکار ثبت نمی‌شه."
+                "هیچ اپی انتخاب نشده - تا وقتی حداقل یکی را انتخاب نکنی، هیچ تراکنشی خودکار ثبت نمی‌شود."
             } else {
                 "${toFa(selected.size)} اپ انتخاب شده."
             },
@@ -299,7 +292,7 @@ private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: M
                         apps.isEmpty() -> "در حالِ خواندنِ فهرستِ اپ‌ها…"
                         query.isNotBlank() -> "اپی با این اسم پیدا نشد."
                         // هیچ اپِ بانکی‌ای شناخته نشد - نباید بن‌بست بشه.
-                        else -> "اپِ بانکی‌ای شناخته نشد. «نمایشِ همه‌ی اپ‌ها» رو بزن یا اسمش رو جستجو کن."
+                        else -> "اپِ بانکی‌ای شناخته نشد. «نمایشِ همه‌ی اپ‌ها» را بزن یا اسمش را جستجو کن."
                     },
                     color = AppMuted,
                     fontSize = 11.5.sp,
@@ -307,7 +300,7 @@ private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: M
                 )
             } else if (shown.size > 40) {
                 Text(
-                    "فقط ۴۰ اپِ اول نشون داده شده - برای بقیه از جستجو استفاده کن.",
+                    "فقط ۴۰ اپِ اول نشان داده شده - برای بقیه از جستجو استفاده کن.",
                     color = AppMuted,
                     fontSize = 11.sp,
                     modifier = Modifier.padding(top = 8.dp),
@@ -319,7 +312,7 @@ private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: M
                     onClick = { showAllApps = true },
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 ) {
-                    Text("نمایشِ همه‌ی اپ‌ها (${toFa(otherApps.size)} تای دیگه)", fontSize = 12.sp)
+                    Text("نمایشِ همه‌ی اپ‌ها (${toFa(otherApps.size)} تای دیگر)", fontSize = 12.sp)
                 }
             }
         }
@@ -352,17 +345,17 @@ private fun NotificationPermissionSteps(modifier: Modifier = Modifier) {
         Triple(
             "تو فهرست دنبالِ «جیبک» بگرد",
             "NOT ALLOWED",
-            "ممکنه زیرِ این سرگروه باشه. اگه از قبل زیرِ ALLOWED بود، کار تمومه.",
+            "ممکن است زیرِ این سرگروه باشد. اگر از قبل زیرِ ALLOWED بود، کار تمام است.",
         ),
         Triple(
             "روش بزن",
             null,
-            "صفحه‌ی خودش باز می‌شه - کلید اونجاست، نه تو فهرست.",
+            "صفحه‌ی خودش باز می‌شود - کلید آن‌جاست، نه تو فهرست.",
         ),
         Triple(
-            "این کلید رو روشن کن",
+            "این کلید را روشن کن",
             "Allow notification access",
-            "بعدش اندروید یه پنجره‌ی تایید میاره؛ Allow رو بزن.",
+            "بعدش اندروید یک پنجره‌ی تایید می‌آورد؛ Allow را بزن.",
         ),
     )
     Column(modifier = modifier) {

@@ -119,7 +119,7 @@ private fun GiftPage(
         )
         Spacer(Modifier.height(24.dp))
         Text(
-            "اسمت چیه؟ (اختیاری)",
+            "اسمت چیست؟ (اختیاری)",
             color = AppText,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
@@ -164,7 +164,7 @@ private fun BackupReassurancePage(onDone: () -> Unit) {
                 .padding(top = 18.dp),
         )
         Text(
-            "حالا که با شماره‌ت وارد شدی، اطلاعاتت روی سرورِ امنِ ما هم نگه داشته می‌شه.",
+            "حالا که با شماره‌ت وارد شدی، اطلاعاتت روی سرورِ امنِ ما هم نگه داشته می‌شود.",
             color = AppMuted,
             fontSize = 13.sp,
             textAlign = TextAlign.Center,
@@ -174,8 +174,8 @@ private fun BackupReassurancePage(onDone: () -> Unit) {
         )
         Spacer(Modifier.height(20.dp))
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            ReassureRow("گوشیت رو عوض کنی، اطلاعاتت برمی‌گرده")
-            ReassureRow("برنامه رو پاک و دوباره نصب کنی، چیزی گم نمی‌شه")
+            ReassureRow("گوشیت را عوض کنی، اطلاعاتت برمی‌گردد")
+            ReassureRow("برنامه را پاک و دوباره نصب کنی، چیزی گم نمی‌شود")
             ReassureRow("هر وقت خواستی خودت هم فایلِ پشتیبان بگیر")
         }
         Spacer(Modifier.weight(1f))

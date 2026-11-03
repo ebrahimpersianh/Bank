@@ -203,7 +203,7 @@ internal fun PeriodSpendHero(
             }
         } else {
             Text(
-                "هنوز خرجی ثبت نکردی - با اولین تراکنش، روندِ ماه‌ها همین‌جا ساخته می‌شه",
+                "هنوز خرجی ثبت نکردی - با اولین تراکنش، روندِ ماه‌ها همین‌جا ساخته می‌شود",
                 color = Color.White.copy(alpha = 0.85f),
                 fontSize = 10.5.sp,
                 fontWeight = FontWeight.Bold,

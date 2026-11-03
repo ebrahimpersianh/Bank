@@ -559,7 +559,7 @@ private fun NothingDueCard(onAddCheque: () -> Unit, onAddLoan: () -> Unit) {
                 textAlign = TextAlign.Center,
             )
             Text(
-                "وقتی چک یا وامی ثبت کنی، سررسیدهایش اینجا و روی ویجت دیده می‌شود.",
+                "وقتی چک یا وامی ثبت کنی، سررسیدهایش این‌جا و روی ویجت دیده می‌شود.",
                 color = AppMuted,
                 fontSize = 12.sp,
                 lineHeight = 22.sp,

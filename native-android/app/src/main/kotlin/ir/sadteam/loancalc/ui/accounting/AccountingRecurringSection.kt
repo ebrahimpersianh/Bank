@@ -83,7 +83,7 @@ internal fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Ca
         item {
             Text(
                 "مثلِ اجاره‌خونه یا قسطِ ثابتِ ماهانه - تو روزِ مشخص‌شده هر ماه یادآوری می‌گیری، ولی " +
-                    "خودش خودکار تراکنش ثبت نمی‌کنه؛ وقتی پرداختی، دکمه‌ی «ثبتِ پرداختِ این ماه» رو بزن.",
+                    "خودش خودکار تراکنش ثبت نمی‌کند؛ وقتی پرداختی، دکمه‌ی «ثبتِ پرداختِ این ماه» را بزن.",
                 color = AppMuted,
                 fontSize = 11.5.sp,
             )
@@ -110,7 +110,7 @@ internal fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Ca
                 EmptyState(
                     icon = Icons.Outlined.AccountBalanceWallet,
                     title = "هنوز چیزی ثبت نشده",
-                    description = "پرداخت‌های ثابتِ ماهانه‌ت (مثلِ اجاره) رو اینجا ثبت کن تا هر ماه یادآوری بگیری.",
+                    description = "پرداخت‌های ثابتِ ماهانه‌ت (مثلِ اجاره) را این‌جا ثبت کن تا هر ماه یادآوری بگیری.",
                 )
             }
         } else {
@@ -169,7 +169,7 @@ internal fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Ca
     deletingPayment?.let { p ->
         ConfirmDeleteDialog(
             title = "حذفِ پرداختِ تکراری",
-            text = "«${p.name}» حذف بشه؟",
+            text = "«${p.name}» حذف شود؟",
             onConfirm = { viewModel.deleteRecurringPayment(p); deletingPayment = null },
             onDismiss = { deletingPayment = null },
         )
@@ -245,8 +245,8 @@ private fun AddRecurringForm(
                 onClick = {
                     val amount = (amountText.toDoubleOrNull() ?: 0.0) * ir.sadteam.loancalc.ui.jibak.unitDivD
                     error = when {
-                        name.isBlank() -> "اسم رو وارد کن"
-                        amount <= 0 -> "مبلغ رو وارد کن"
+                        name.isBlank() -> "اسم را وارد کن"
+                        amount <= 0 -> "مبلغ را وارد کن"
                         else -> null
                     }
                     if (error == null) {

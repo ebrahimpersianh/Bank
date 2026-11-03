@@ -182,8 +182,8 @@ fun AccountsScreen(
                             EmptyState(
                                 icon = Icons.Outlined.AccountBalance,
                                 title = "هنوز حسابی ثبت نشده",
-                                description = "حساب‌های بانکیت رو اضافه کن تا موجودی و " +
-                                    "گردشِ هرکدوم رو یک‌جا داشته باشی.",
+                                description = "حساب‌های بانکیت را اضافه کن تا موجودی و " +
+                                    "گردشِ هرکدام را یک‌جا داشته باشی.",
                             )
                         }
                     } else {

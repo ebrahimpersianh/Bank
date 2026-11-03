@@ -273,7 +273,7 @@ fun AccountDetailScreen(
                         GradientButton(
                             onClick = {
                                 val toman = amountText.toLongOrNull() ?: 0L
-                                error = if (toman <= 0L) "مبلغ رو وارد کن" else null
+                                error = if (toman <= 0L) "مبلغ را وارد کن" else null
                                 if (error == null) {
                                     viewModel.addTransaction(
                                         accountId = account.id,
@@ -311,7 +311,7 @@ fun AccountDetailScreen(
                     icon = Icons.Outlined.SwapVert,
                     title = if (transactions.isEmpty()) "هنوز تراکنشی ثبت نشده" else "این ماه تراکنشی نداری",
                     description = if (transactions.isEmpty()) {
-                        "واریز و برداشت‌های این حساب که ثبت بشن، همین‌جا به‌ترتیبِ تاریخ می‌بینیشون."
+                        "واریز و برداشت‌های این حساب که ثبت شوند، همین‌جا به‌ترتیبِ تاریخ می‌بینی."
                     } else {
                         "ماهِ دیگری را از نوارِ بالا انتخاب کن."
                     },
@@ -369,7 +369,7 @@ fun AccountDetailScreen(
         if (showDeleteConfirm) {
             ConfirmDeleteDialog(
                 title = "حذف حساب",
-                text = "حسابِ «${account.name} - ${account.bankName}» حذف بشه؟ ⚠️ همه‌ی تراکنش‌های این حساب هم پاک می‌شوند و این کار قابلِ‌برگشت نیست.",
+                text = "حسابِ «${account.name} - ${account.bankName}» حذف شود؟ ⚠️ همه‌ی تراکنش‌های این حساب هم پاک می‌شوند و این کار قابلِ‌برگشت نیست.",
                 // پرچم را خودش پایین می‌آورد - وابسته‌بودن به این‌که onDelete صفحه را ببندد
                 // یک وابستگیِ نامرئی بود.
                 onConfirm = { showDeleteConfirm = false; onDelete?.invoke() },
@@ -420,7 +420,7 @@ fun AccountDetailScreen(
         deletingTx?.let { tx ->
             ConfirmDeleteDialog(
                 title = "حذفِ تراکنش",
-                text = "این تراکنش حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+                text = "این تراکنش حذف شود؟ این کار قابلِ‌برگشت نیست.",
                 onConfirm = { viewModel.deleteTransaction(tx); deletingTx = null },
                 onDismiss = { deletingTx = null },
             )

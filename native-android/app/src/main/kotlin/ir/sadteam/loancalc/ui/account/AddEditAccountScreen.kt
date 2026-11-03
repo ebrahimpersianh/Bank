@@ -478,8 +478,8 @@ fun AddEditAccountScreen(
                         val initialBalance = tomanToRial(initialBalanceText.toLongOrNull() ?: 0L).toDouble()
                         val isBank = accountType == ACCOUNT_TYPE_BANK
                         error = when {
-                            name.trim().isEmpty() -> if (isBank) "اسم حساب رو وارد کن" else "اسم منبع رو وارد کن"
-                            isBank && bankName.trim().isEmpty() -> "اسم بانک رو وارد کن"
+                            name.trim().isEmpty() -> if (isBank) "اسم حساب را وارد کن" else "اسم منبع را وارد کن"
+                            isBank && bankName.trim().isEmpty() -> "اسم بانک را وارد کن"
                             // 🚨 سرشماره‌ی تکراری چک نمی‌شد: دو حساب با یک سرشماره یعنی
                             // `BankSmsReceiver` نمی‌داند تراکنش را روی **کدام** حساب
                             // بنشاند - همان جنسِ باگِ نامِ تکراریِ دسته، با همان ریشه

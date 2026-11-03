@@ -162,9 +162,9 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                     Text(
                         when (count) {
                             null -> "دارم می‌شمرم..."
-                            0 -> "این دسته هیچ تراکنشی نداره، پس بی‌دردسر حذف می‌شه."
-                            else -> "${toFa(count ?: 0)} تراکنش این دسته رو دارن. اول باید بگی " +
-                                "به کدوم دسته منتقل بشن."
+                            0 -> "این دسته هیچ تراکنشی ندارد، پس بی‌دردسر حذف می‌شود."
+                            else -> "${toFa(count ?: 0)} تراکنش این دسته را دارند. اول باید بگی " +
+                                "به کدام دسته منتقل شوند."
                         },
                         fontSize = 13.sp,
                         lineHeight = 22.sp,
@@ -353,7 +353,7 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
             // قاعده‌ی صریحِ فریمِ `36b` که باید به کاربر گفته بشه، وگرنه دنبالِ عمقِ دوم می‌گرده.
             AppCard(backgroundColor = AppSurface2, borderColor = AppLineRow, shadow = false) {
                 Text(
-                    "زیرِ هر دسته فقط یک سطح زیردسته می‌شه ساخت (زیرِ زیردسته نه). عددِ کنارِ " +
+                    "زیرِ هر دسته فقط یک سطح زیردسته می‌شود ساخت (زیرِ زیردسته نه). عددِ کنارِ " +
                         "هر دسته، خرجِ همین ماهه.",
                     color = AppMuted,
                     fontSize = 10.5.sp,
@@ -486,7 +486,7 @@ private fun RenameCategoryDialog(
                     isError = taken, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 if (taken) {
                     Text(
-                        "دسته‌ای با این نام هست - دو دسته با هم ادغام می‌شن.",
+                        "دسته‌ای با این نام هست - دو دسته با هم ادغام می‌شوند.",
                         color = AppDanger,
                         fontSize = 11.sp,
                     )
@@ -496,14 +496,14 @@ private fun RenameCategoryDialog(
                 // متن باید **اطمینان** بدهد - وگرنه کاربر از کارِ درست می‌ترسد.
                 if ((transactionCount ?: 0) > 0) {
                     Text(
-                        "${toFa(transactionCount ?: 0)} تراکنش با نامِ تازه ذخیره می‌شن.",
+                        "${toFa(transactionCount ?: 0)} تراکنش با نامِ تازه ذخیره می‌شوند.",
                         color = AppMuted,
                         fontSize = 11.sp,
                     )
                 }
                 if (childCount > 0) {
                     Text(
-                        "${toFa(childCount)} زیرمجموعه هم وصل می‌مونن.",
+                        "${toFa(childCount)} زیرمجموعه هم وصل می‌مانند.",
                         color = AppMuted,
                         fontSize = 11.sp,
                     )

@@ -410,9 +410,9 @@ private fun MainSection(
             if (accounts.isEmpty()) {
                 EmptyState(
                     icon = Icons.Outlined.AccountBalanceWallet,
-                    title = "اول یه حساب بساز",
-                    description = "برای ثبتِ تراکنش، اول یه حساب (نقدی یا بانکی) بساز - قسط/چکِ " +
-                        "پرداخت‌شده‌ت هم خودکار همون‌موقع میاد اینجا.",
+                    title = "اول یک حساب بساز",
+                    description = "برای ثبتِ تراکنش، اول یک حساب (نقدی یا بانکی) بساز - قسط/چکِ " +
+                        "پرداخت‌شده‌ت هم خودکار همان‌موقع می‌آید این‌جا.",
                     actionLabel = "افزودنِ حساب",
                     onAction = { accountsAddMode = true; showAccountsScreen = true },
                 )
@@ -440,7 +440,7 @@ private fun MainSection(
                     icon = Icons.Outlined.AccountBalanceWallet,
                     title = if (searchQuery.isBlank()) "هنوز تراکنشی ثبت نشده" else "چیزی پیدا نشد",
                     description = if (searchQuery.isBlank()) {
-                        "درآمد و خرجِ روزمره‌ت که با دسته‌بندی ثبت بشه، همین‌جا می‌بینیشون."
+                        "درآمد و خرجِ روزمره‌ت که با دسته‌بندی ثبت شود، همین‌جا می‌بینی."
                     } else {
                         "تراکنشی با این توضیح/دسته پیدا نشد."
                     },
@@ -474,7 +474,7 @@ private fun MainSection(
     deletingTx?.let { tx ->
         ConfirmDeleteDialog(
             title = "حذفِ تراکنش",
-            text = "این تراکنش حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            text = "این تراکنش حذف شود؟ این کار قابلِ‌برگشت نیست.",
             onConfirm = { viewModel.deleteTransaction(tx); deletingTx = null },
             onDismiss = { deletingTx = null },
         )
@@ -673,7 +673,7 @@ internal fun AddTransactionForm(
             GradientButton(
                 onClick = {
                     val amount = (amountText.toDoubleOrNull() ?: 0.0) * ir.sadteam.loancalc.ui.jibak.unitDivD
-                    error = if (amount <= 0) "مبلغ رو وارد کن" else null
+                    error = if (amount <= 0) "مبلغ را وارد کن" else null
                     if (error == null) {
                         onSubmit(selectedAccountId, type, amount, selectedCategory?.name, description.trim(), txYear, txMonth, txDay)
                     }

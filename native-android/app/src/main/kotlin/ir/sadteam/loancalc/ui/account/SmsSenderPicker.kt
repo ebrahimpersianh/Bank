@@ -189,8 +189,8 @@ fun SmsSenderPickerDialog(
             }
             val list = messages
             when {
-                permissionDenied -> CenterNote("بدونِ اجازه‌ی خوندنِ پیامک نمی‌شه پیامک‌ها رو نشون داد. می‌تونی شماره رو دستی هم وارد کنی.")
-                list == null -> CenterNote("در حالِ خوندنِ پیامک‌ها…")
+                permissionDenied -> CenterNote("بدونِ اجازه‌ی خواندنِ پیامک نمی‌شود پیامک‌ها را نشان داد. می‌توانی شماره را دستی هم وارد کنی.")
+                list == null -> CenterNote("در حالِ خواندنِ پیامک‌ها…")
                 list.isEmpty() -> CenterNote("پیامکی تو صندوقِ گوشیت پیدا نشد")
                 else -> {
                     val q = query.trim()
