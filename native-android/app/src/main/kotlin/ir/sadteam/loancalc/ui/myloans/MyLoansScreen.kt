@@ -616,7 +616,7 @@ fun MyLoansScreen(
                                 // بازطراحیِ ChatGPT (۷ مهر، دورِ دوم).
                                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                     ir.sadteam.loancalc.ui.components.EmptyHeroCard(
-                                        illustration = ir.sadteam.loancalc.R.drawable.empty_illu_loan,
+                                        illustration = ir.sadteam.loancalc.R.drawable.jibak_home_insight,
                                         tint = ir.sadteam.loancalc.ui.theme.AppPrimaryPill.copy(alpha = 0.55f), // یک‌دست با بقیه‌ی کارت‌های خالی
                                         title = "هنوز وامی ثبت نکردی",
                                         description = "وام‌هات رو اینجا نگه دار تا قسط‌ها، سررسیدها و پرداخت‌ها رو راحت مدیریت کنی.",

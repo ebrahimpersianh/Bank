@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -76,6 +78,7 @@ fun AdminHubScreen(
     onBack: () -> Unit,
     supportVm: SupportInboxViewModel = hiltViewModel(),
     digestVm: AdminDigestViewModel = hiltViewModel(),
+    proVm: AdminProViewModel = hiltViewModel(),
 ) {
     var page by remember { mutableStateOf<String?>(null) }
     var gift by remember { mutableStateOf<String?>(null) }
@@ -107,22 +110,42 @@ fun AdminHubScreen(
         TodayHero(digest) { page = "digest" }
         AdminAlerts(digest?.notes.orEmpty().map { digestNoteIcon(it) to digestNoteText(it) }) { page = if (digest?.notes.orEmpty().any { it.startsWith("open_support:") }) "support" else "digest" }
 
-        // طرحِ ChatGPT (۱۰ مهر): شش کاشیِ رنگی، بعد ردیف‌های فروشگاه/تنظیمات/پیام‌ها.
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ColorTile(Icons.Filled.BarChart, "گزارشِ برنامه", "کاربران، آمار، سلامت", Color(0xFF007950), Color(0xFF00E89A), Modifier.weight(1f)) { page = "stats" }
-            ColorTile(Icons.Filled.AccountBalanceWallet, "پول و فروش", "تمدید، A/B", Color(0xFF4D3B11), Color(0xFFFFD34F), Modifier.weight(1f)) { page = "money" }
+        // ۱۳ آبان (خواسته‌ی کاربر: «خیلی خر تو خره»، و «یک خرید شد و نمی‌دانستم کیست»):
+        // ۱) آخرین خریدها همین بالا - چه کسی، کی، کدام پلن، بازار یا مایکت.
+        // ۲) شش کاشیِ شش‌رنگ → دو فهرستِ مرتب به سبکِ تنظیمات (یک رنگ، یک الگو).
+        LatestPurchasesCard(proVm) { page = "money" }
+
+        ir.sadteam.loancalc.ui.settings.SettingsGroupLabel("گزارش‌ها")
+        ir.sadteam.loancalc.ui.settings.SettingsGroup {
+            ir.sadteam.loancalc.ui.settings.SettingsRowItem("گزارشِ امروز", Icons.Filled.Today, status = "فعال، نصب، خرید - مقایسه با دیروز", onClick = { page = "digest" })
+            ir.sadteam.loancalc.ui.settings.SettingsDivider()
+            ir.sadteam.loancalc.ui.settings.SettingsRowItem("پول و فروش", Icons.Filled.AccountBalanceWallet, status = "همه‌ی خریدها، تمدید، بازار و مایکت", onClick = { page = "money" })
+            ir.sadteam.loancalc.ui.settings.SettingsDivider()
+            ir.sadteam.loancalc.ui.settings.SettingsRowItem("آمارِ برنامه", Icons.Filled.BarChart, status = "کاربران، استفاده، سلامت", onClick = { page = "stats" })
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ColorTile(Icons.Filled.PersonAdd, "کاربران", "فهرست و جستجو با شماره", Color(0xFF451E90), Color(0xFFB46CFF), Modifier.weight(1f)) { page = "user" }
-            ColorTile(Icons.Filled.Forum, "پیامِ گروهی", "به یک گروهِ خاص", Color(0xFF062955), Color(0xFF20BFFF), Modifier.weight(1f)) { page = "broadcast" }
+        ir.sadteam.loancalc.ui.settings.SettingsGroupLabel("کارها")
+        ir.sadteam.loancalc.ui.settings.SettingsGroup {
+            ir.sadteam.loancalc.ui.settings.SettingsRowItem(
+                "پیام‌های کاربران", Icons.Filled.SupportAgent,
+                status = if (open > 0) "${toFa(open)} پیامِ بی‌جواب" else "همه جواب گرفته‌اند",
+                statusTone = if (open > 0) ir.sadteam.loancalc.ui.settings.StatusTone.BROKEN else ir.sadteam.loancalc.ui.settings.StatusTone.NEUTRAL,
+                onClick = { page = "support" },
+            )
+            ir.sadteam.loancalc.ui.settings.SettingsDivider()
+            ir.sadteam.loancalc.ui.settings.SettingsRowItem("کاربران", Icons.Filled.PersonSearch, status = "جستجو با شماره یا Uid", onClick = { page = "user" })
+            ir.sadteam.loancalc.ui.settings.SettingsDivider()
+            ir.sadteam.loancalc.ui.settings.SettingsRowItem("پیامِ گروهی", Icons.Filled.Forum, status = "به همه یا یک گروهِ خاص", onClick = { page = "broadcast" })
+            ir.sadteam.loancalc.ui.settings.SettingsDivider()
+            ir.sadteam.loancalc.ui.settings.SettingsRowItem("هدیه‌ی سکه", Icons.Filled.CardGiftcard, status = "سکه به یک کاربر", onClick = { gift = "coins" })
+            ir.sadteam.loancalc.ui.settings.SettingsDivider()
+            ir.sadteam.loancalc.ui.settings.SettingsRowItem("هدیه‌ی اشتراک", Icons.Filled.Bookmark, status = "چند روز اشتراک به یک کاربر", onClick = { gift = "sub" })
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ColorTile(Icons.Filled.CardGiftcard, "هدیه‌ی سکه", "سکه به یک کاربر", Color(0xFF6C2E61), Color(0xFFF05BDA), Modifier.weight(1f)) { gift = "coins" }
-            ColorTile(Icons.Filled.Bookmark, "هدیه‌ی اشتراک", "روز به یک کاربر", Color(0xFF564314), Color(0xFFFFE49A), Modifier.weight(1f)) { gift = "sub" }
+        ir.sadteam.loancalc.ui.settings.SettingsGroupLabel("تنظیمات")
+        ir.sadteam.loancalc.ui.settings.SettingsGroup {
+            ir.sadteam.loancalc.ui.settings.SettingsRowItem("فروشگاه", Icons.Filled.Storefront, status = "قیمت، پنهان‌کردن، تمِ تازه، تخفیف", onClick = { page = "shop" })
+            ir.sadteam.loancalc.ui.settings.SettingsDivider()
+            ir.sadteam.loancalc.ui.settings.SettingsRowItem("تنظیماتِ از راهِ دور", Icons.Filled.Tune, status = "رایگان، پیامکِ بانک، نسخه، نظرسنجی", onClick = { page = "remote" })
         }
-        HubRow(Icons.Filled.SupportAgent, "پیام‌های کاربران", if (open > 0) "${toFa(open)} بی‌جواب" else "همه جواب گرفته‌اند", Color(0xFF19C9FF), badge = open) { page = "support" }
-        HubRow(Icons.Filled.Storefront, "مدیریتِ فروشگاه", "قیمت، پنهان کردن، تمِ تازه، تخفیف", Color(0xFF00E89A)) { page = "shop" }
-        HubRow(Icons.Filled.Tune, "تنظیماتِ از راهِ دور", "رایگان، پیامکِ بانک، نسخه، نظرسنجی…", Color(0xFF19C9FF)) { page = "remote" }
 
         val recent = items.orEmpty().take(4)
         if (recent.isNotEmpty()) {
@@ -185,62 +208,40 @@ private fun TodayHero(d: ir.sadteam.loancalc.data.network.AdminDigestResponse?, 
     }
 }
 
-/** کاشیِ رنگیِ هاب - رنگ‌ها از SPEC.mdِ ChatGPT (۱۰ مهر): زمینه‌ی [tile]، آیکون و حاشیه [accent]. */
+/**
+ * «آخرین خریدها» بالای هابِ ادمین (۱۳ آبان). داده همان `recent`ِ گزارشِ پول است (سرور، ۵۰ خریدِ
+ * آخر)؛ این‌جا سه‌تای اول، «همه» = صفحه‌ی پول و فروش.
+ */
 @Composable
-private fun ColorTile(icon: ImageVector, title: String, subtitle: String, tile: Color, accent: Color, modifier: Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(22.dp)
-    Column(
-        modifier
-            .heightIn(min = 128.dp)
-            .clip(shape)
-            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(tile, androidx.compose.ui.graphics.lerp(tile, Color(0xFF0A2129), 0.55f))))
-            .border(1.5.dp, accent.copy(alpha = 0.35f), shape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(icon, null, tint = accent, modifier = Modifier.size(40.dp))
-        Text(title, color = Color(0xFFF5F7F8), fontSize = 16.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
-        Text(subtitle, color = Color(0xFFF5F7F8).copy(alpha = 0.72f), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-    }
-}
-
-/** ردیفِ هاب با کاشیِ آیکونِ رنگی. */
-@Composable
-private fun HubRow(icon: ImageVector, title: String, subtitle: String, color: Color, badge: Int = 0, onClick: () -> Unit) {
-    AppCard(modifier = Modifier.clickable(onClick = onClick), contentPadding = 10.dp) {
+private fun LatestPurchasesCard(vm: AdminProViewModel, onAll: () -> Unit) {
+    val m by vm.money.collectAsState()
+    LaunchedEffect(Unit) { if (vm.money.value == null) vm.loadMoney() }
+    val recent = m?.recent.orEmpty().take(3)
+    AppCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)).background(color.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
-                Icon(icon, null, tint = color, modifier = Modifier.size(28.dp))
-            }
-            Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                Text(title, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
-                Text(subtitle, color = AppMuted, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            if (badge > 0) Text(
-                toFa(badge), color = Color.White, fontSize = 11.5.sp, fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(end = 6.dp).clip(RoundedCornerShape(999.dp)).background(AppDanger).padding(horizontal = 7.dp, vertical = 2.dp),
-            )
-            Icon(Icons.Filled.ChevronLeft, null, tint = AppMuted, modifier = Modifier.size(20.dp))
+            Icon(Icons.Filled.ShoppingBag, null, tint = AppPrimaryInk, modifier = Modifier.size(18.dp))
+            Text("آخرین خریدها", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 6.dp).weight(1f))
+            Text("همه", color = AppPrimaryInk, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.clickable(onClick = onAll).padding(8.dp))
         }
-    }
-}
-
-@Composable
-private fun HubTile(icon: ImageVector, title: String, subtitle: String, pill: Color, ink: Color, modifier: Modifier, badge: Int = 0, onClick: () -> Unit) {
-    Box(modifier) {
-        AppCard(modifier = Modifier.clickable(onClick = onClick), horizontalPadding = 14.dp, contentPadding = 12.dp) {
-            Box(Modifier.size(40.dp).clip(RoundedCornerShape(AppRadius.icon)).background(pill), contentAlignment = Alignment.Center) {
-                Icon(icon, null, tint = ink, modifier = Modifier.size(21.dp))
+        when {
+            m == null -> Text("در حالِ گرفتن…", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+            recent.isEmpty() -> Text("هنوز خریدی ثبت نشده.", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+            else -> recent.forEachIndexed { i, r ->
+                if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(AppLineRow))
+                Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Uid ${toFa(r.code)}", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                            Ltr { Text("  ${r.phone}", color = AppMuted, fontSize = 11.sp) }
+                        }
+                        Text(
+                            "${PLAN_LABELS[r.product] ?: r.product} | ${STORE_LABELS[r.store] ?: r.store} | ${adminDay(r.at)} ${adminHourOf(r.at)}",
+                            color = AppMuted, fontSize = 11.sp, maxLines = 1,
+                        )
+                    }
+                    if (r.price > 0) Text("${adminNum(r.price)} ت", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                }
             }
-            Text(title, color = AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 8.dp))
-            Text(subtitle, color = AppMuted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-        if (badge > 0) {
-            Text(
-                toFa(badge), color = Color.White, fontSize = 11.5.sp, fontWeight = FontWeight.Black,
-                modifier = Modifier.align(Alignment.TopEnd).padding(10.dp).clip(RoundedCornerShape(999.dp)).background(AppDanger).padding(horizontal = 7.dp, vertical = 2.dp),
-            )
         }
     }
 }

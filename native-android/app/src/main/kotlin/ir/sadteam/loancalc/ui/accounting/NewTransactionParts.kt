@@ -93,7 +93,8 @@ internal fun NewTxTemplatesRow(
             val kindType = if (kind == NewTxKind.INCOME) TransactionType.DEPOSIT.name else TransactionType.WITHDRAWAL.name
             val mine = templates.filter { it.type == kindType }
             if (mine.isNotEmpty()) {
-                Text("الگوهای من", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                // ۱۳ آبان: حذفِ الگو فقط با نگه‌داشتن بود و هیچ‌جا گفته نمی‌شد.
+                Text("الگوهای من  |  برای حذف، نگه دار", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.defaultMinSize
 import ir.sadteam.loancalc.R
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import androidx.compose.foundation.layout.widthIn
@@ -455,6 +456,9 @@ internal fun NewsCard(
     onFixGap: () -> Unit = {},
     /** دسته‌ی فعلیِ تراکنشِ این پیام (فقط «برداشت/واریزِ تازه»)؛ `null` = متنِ اصلیِ پیام. */
     txCategory: TxCategoryLabel? = null,
+    /** پیامِ «بی‌حساب ماند»: یک دکمه برای هر حساب - «وصل به X» (یافته‌ی ۸۱). خالی = دکمه نه. */
+    linkAccounts: List<Pair<Long, String>> = emptyList(),
+    onLink: (Long) -> Unit = {},
 ) {
     // متنِ بلند ۲ خط نشان داده می‌شود؛ زدن روی کارت بازش می‌کند (و کارِ قبلیِ کارت هم انجام می‌شود).
     var expanded by remember { mutableStateOf(false) }
@@ -543,6 +547,26 @@ internal fun NewsCard(
                 modifier = Modifier.padding(top = 3.dp),
             )
             if (gapRial != null) GapFixButton(gapRial, done = message.actionState == InboxMessageEntity.ActionState.DONE, onFix = onFixGap)
+            if (linkAccounts.isNotEmpty() && message.actionState != InboxMessageEntity.ActionState.DONE) {
+                androidx.compose.foundation.layout.Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(top = 8.dp).horizontalScroll(androidx.compose.foundation.rememberScrollState()),
+                ) {
+                    linkAccounts.forEach { (id, name) ->
+                        Text(
+                            "وصل به «$name»",
+                            color = AppPrimaryInk,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(AppPrimaryPill)
+                                .clickable { onLink(id) }
+                                .padding(horizontal = 12.dp, vertical = 7.dp),
+                        )
+                    }
+                }
+            }
         }
         // ستونِ کناری (طرحِ ChatGPT): زمان بالا؛ پایین نامِ برنامه/فرستنده به آبی **بالای** قرصِ نوع
         // (خواسته‌ی کاربر، ۳ مهر: «blu» دقیقاً بالای «اعلان»).

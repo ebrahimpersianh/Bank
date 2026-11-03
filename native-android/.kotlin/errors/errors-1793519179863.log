@@ -1,0 +1,1823 @@
+kotlin version: 2.0.21
+error message: org.jetbrains.kotlin.codegen.CompilationException: Back-end (JVM) Internal error: Couldn't transform method node:
+invokeSuspend (Ljava/lang/Object;)Ljava/lang/Object;:
+    // annotable parameter count: 1 (visible)
+    // annotable parameter count: 1 (invisible)
+   L0
+    INVOKESTATIC kotlin/coroutines/intrinsics/IntrinsicsKt.getCOROUTINE_SUSPENDED ()Ljava/lang/Object;
+   L1
+    LINENUMBER 164 L1
+    ASTORE 53
+    ALOAD 0
+    GETFIELD ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1.label : I
+    TABLESWITCH
+      0: L2
+      default: L3
+   L2
+    ALOAD 1
+    INVOKESTATIC kotlin/ResultKt.throwOnFailure (Ljava/lang/Object;)V
+   L4
+    ALOAD 0
+    GETFIELD ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1.L$0 : Ljava/lang/Object;
+    CHECKCAST java/util/List
+    ASTORE 2
+   L5
+    ALOAD 0
+    GETFIELD ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1.L$1 : Ljava/lang/Object;
+    CHECKCAST java/util/List
+    ASTORE 3
+   L6
+    ALOAD 0
+    GETFIELD ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1.L$2 : Ljava/lang/Object;
+    CHECKCAST java/util/List
+    ASTORE 4
+   L7
+    ALOAD 0
+    GETFIELD ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1.L$3 : Ljava/lang/Object;
+    CHECKCAST java/util/List
+    ASTORE 5
+   L8
+   L9
+    LINENUMBER 165 L9
+    ALOAD 2
+    CHECKCAST java/lang/Iterable
+    ASTORE 7
+    NOP
+   L10
+    ICONST_0
+    ISTORE 8
+   L11
+    LINENUMBER 486 L11
+    ALOAD 7
+    BIPUSH 10
+    INVOKESTATIC kotlin/collections/CollectionsKt.collectionSizeOrDefault (Ljava/lang/Iterable;I)I
+    INVOKESTATIC kotlin/collections/MapsKt.mapCapacity (I)I
+    BIPUSH 16
+    INVOKESTATIC kotlin/ranges/RangesKt.coerceAtLeast (II)I
+    ISTORE 9
+   L12
+    LINENUMBER 487 L12
+    ALOAD 7
+    ASTORE 10
+    NEW java/util/LinkedHashMap
+    DUP
+    ILOAD 9
+    INVOKESPECIAL java/util/LinkedHashMap.<init> (I)V
+    CHECKCAST java/util/Map
+    ASTORE 11
+   L13
+    ICONST_0
+    ISTORE 12
+   L14
+    LINENUMBER 488 L14
+    ALOAD 10
+    INVOKEINTERFACE java/lang/Iterable.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 13
+   L15
+    ALOAD 13
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L16
+    ALOAD 13
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    ASTORE 14
+   L17
+    LINENUMBER 489 L17
+    ALOAD 11
+    ASTORE 15
+    ALOAD 14
+    CHECKCAST ir/sadteam/loancalc/data/db/AccountEntity
+    ASTORE 16
+   L18
+    ICONST_0
+    ISTORE 17
+   L19
+    LINENUMBER 165 L19
+    ALOAD 16
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getId ()J
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxLong (J)Ljava/lang/Long;
+    ALOAD 16
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getName ()Ljava/lang/String;
+    INVOKESTATIC kotlin/TuplesKt.to (Ljava/lang/Object;Ljava/lang/Object;)Lkotlin/Pair;
+    NOP
+    GOTO L20
+   L21
+   L22
+   L20
+   L23
+    LINENUMBER 489 L23
+    CHECKCAST kotlin/Pair
+    ASTORE 16
+    ALOAD 15
+    ALOAD 16
+    INVOKEVIRTUAL kotlin/Pair.getFirst ()Ljava/lang/Object;
+    ALOAD 16
+    INVOKEVIRTUAL kotlin/Pair.getSecond ()Ljava/lang/Object;
+    INVOKEINTERFACE java/util/Map.put (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; (itf)
+    POP
+   L24
+    GOTO L15
+   L16
+    LINENUMBER 491 L16
+    ALOAD 11
+   L25
+    LINENUMBER 487 L25
+    NOP
+    GOTO L26
+   L27
+   L28
+   L26
+   L29
+    LINENUMBER 165 L29
+    ASTORE 6
+   L30
+   L31
+    LINENUMBER 166 L31
+    NOP
+   L32
+    NOP
+    INVOKESTATIC kotlin/collections/CollectionsKt.createListBuilder ()Ljava/util/List;
+    ASTORE 7
+    ALOAD 7
+    CHECKCAST java/util/List
+    ASTORE 8
+   L33
+    ICONST_0
+    ISTORE 9
+   L34
+    LINENUMBER 167 L34
+    ALOAD 2
+    CHECKCAST java/lang/Iterable
+    ASTORE 10
+   L35
+    ICONST_0
+    ISTORE 11
+   L36
+    LINENUMBER 492 L36
+    ALOAD 10
+    INVOKEINTERFACE java/lang/Iterable.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 12
+   L37
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L38
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    ASTORE 13
+   L39
+    ALOAD 13
+    CHECKCAST ir/sadteam/loancalc/data/db/AccountEntity
+    ASTORE 14
+   L40
+    ICONST_0
+    ISTORE 15
+   L41
+    LINENUMBER 168 L41
+    ALOAD 8
+    NEW ir/sadteam/loancalc/ui/search/SearchHit
+    DUP
+    GETSTATIC ir/sadteam/loancalc/ui/search/SearchKind.ACCOUNT : Lir/sadteam/loancalc/ui/search/SearchKind;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getId ()J
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getBankName ()Ljava/lang/String;
+    ACONST_NULL
+   L42
+    LINENUMBER 169 L42
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getBankName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getCardNumber ()Ljava/lang/String;
+    DUP
+    IFNONNULL L43
+    POP
+    LDC ""
+   L43
+    GOTO L44
+   L44
+    NOP
+   L45
+    LINENUMBER 169 L45
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getAccountNumber ()Ljava/lang/String;
+    DUP
+    IFNONNULL L46
+    POP
+    LDC ""
+   L46
+    GOTO L47
+   L47
+    NOP
+   L48
+    LINENUMBER 169 L48
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getSheba ()Ljava/lang/String;
+    DUP
+    IFNONNULL L49
+    POP
+    LDC ""
+   L49
+    GOTO L50
+   L50
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0001 \u0001 \u0001 \u0001 \u0001"
+    ]
+   L51
+    LINENUMBER 169 L51
+    INVOKESTATIC ir/sadteam/loancalc/ui/search/GlobalSearchKt.normalizeForSearch (Ljava/lang/String;)Ljava/lang/String;
+   L52
+    LINENUMBER 168 L52
+    ACONST_NULL
+    BIPUSH 64
+    ACONST_NULL
+    INVOKESPECIAL ir/sadteam/loancalc/ui/search/SearchHit.<init> (Lir/sadteam/loancalc/ui/search/SearchKind;JLjava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+    INVOKEINTERFACE java/util/List.add (Ljava/lang/Object;)Z (itf)
+    POP
+   L53
+    LINENUMBER 170 L53
+    GOTO L54
+   L54
+   L55
+    LINENUMBER 492 L55
+   L56
+    GOTO L37
+   L38
+    LINENUMBER 493 L38
+    GOTO L57
+   L57
+   L58
+    LINENUMBER 171 L58
+    ALOAD 3
+    CHECKCAST java/lang/Iterable
+    ASTORE 10
+   L59
+    ICONST_0
+    ISTORE 11
+   L60
+    LINENUMBER 494 L60
+    ALOAD 10
+    NEW ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1$invokeSuspend$lambda$9$$inlined$sortedByDescending$1
+    DUP
+    INVOKESPECIAL ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1$invokeSuspend$lambda$9$$inlined$sortedByDescending$1.<init> ()V
+    CHECKCAST java/util/Comparator
+   L61
+    LINENUMBER 494 L61
+    INVOKESTATIC kotlin/collections/CollectionsKt.sortedWith (Ljava/lang/Iterable;Ljava/util/Comparator;)Ljava/util/List;
+    GOTO L62
+   L62
+    CHECKCAST java/lang/Iterable
+    ASTORE 10
+   L63
+    LINENUMBER 171 L63
+    NOP
+   L64
+    ICONST_0
+    ISTORE 11
+   L65
+    LINENUMBER 495 L65
+    ALOAD 10
+    INVOKEINTERFACE java/lang/Iterable.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 12
+   L66
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L67
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    ASTORE 13
+   L68
+    ALOAD 13
+    CHECKCAST ir/sadteam/loancalc/data/db/AccountTransactionEntity
+    ASTORE 14
+   L69
+    ICONST_0
+    ISTORE 15
+   L70
+    LINENUMBER 172 L70
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getDescription ()Ljava/lang/String;
+    CHECKCAST java/lang/CharSequence
+    ASTORE 16
+    ALOAD 16
+    INVOKESTATIC kotlin/text/StringsKt.isBlank (Ljava/lang/CharSequence;)Z
+    IFEQ L71
+   L72
+    LINENUMBER 496 L72
+    ICONST_0
+    ISTORE 17
+   L73
+    LINENUMBER 172 L73
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getCategory ()Ljava/lang/String;
+    DUP
+    IFNULL L74
+    GOTO L75
+   L74
+    POP
+    LDC "\u062a\u0631\u0627\u06a9\u0646\u0634"
+   L75
+    GOTO L76
+   L76
+    LINENUMBER 172 L76
+    GOTO L77
+   L71
+    ALOAD 16
+   L77
+    GOTO L78
+   L78
+    LINENUMBER 172 L78
+    CHECKCAST java/lang/String
+    ASTORE 18
+   L79
+    LINENUMBER 173 L79
+    ALOAD 8
+    GETSTATIC ir/sadteam/loancalc/ui/search/SearchKind.TX : Lir/sadteam/loancalc/ui/search/SearchKind;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getId ()J
+    ALOAD 18
+   L80
+    LINENUMBER 174 L80
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getYear ()I
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxInt (I)Ljava/lang/Integer;
+    INVOKESTATIC ir/sadteam/loancalc/core/PersianFormatKt.toFa (Ljava/lang/Object;)Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getMonth ()I
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxInt (I)Ljava/lang/Integer;
+    INVOKESTATIC ir/sadteam/loancalc/core/PersianFormatKt.toFa (Ljava/lang/Object;)Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getDay ()I
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxInt (I)Ljava/lang/Integer;
+    INVOKESTATIC ir/sadteam/loancalc/core/PersianFormatKt.toFa (Ljava/lang/Object;)Ljava/lang/String;
+    ALOAD 6
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getAccountId ()J
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxLong (J)Ljava/lang/Long;
+    INVOKEINTERFACE java/util/Map.get (Ljava/lang/Object;)Ljava/lang/Object; (itf)
+    CHECKCAST java/lang/String
+    DUP
+    IFNULL L81
+    GOTO L82
+   L81
+    POP
+    LDC ""
+   L82
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getCategory ()Ljava/lang/String;
+    DUP
+    IFNULL L83
+    CHECKCAST java/lang/String
+    ASTORE 19
+   L84
+    LINENUMBER 496 L84
+    ASTORE 20
+    ASTORE 21
+    ASTORE 22
+    ASTORE 23
+    ASTORE 24
+    LSTORE 25
+    ASTORE 27
+    ASTORE 30
+   L85
+    ICONST_0
+    ISTORE 31
+   L86
+    LINENUMBER 174 L86
+    ALOAD 19
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      " \u00b7 \u0001"
+    ]
+    GOTO L87
+   L87
+    ASTORE 32
+    ALOAD 30
+    ALOAD 27
+    LLOAD 25
+    ALOAD 24
+    ALOAD 23
+    ALOAD 22
+    ALOAD 21
+    ALOAD 20
+    ALOAD 32
+   L88
+    LINENUMBER 174 L88
+    GOTO L89
+   L89
+    LINENUMBER 174 L89
+    CHECKCAST java/lang/String
+    DUP
+    IFNULL L83
+    GOTO L90
+   L83
+    POP
+    LDC ""
+   L90
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0001/\u0001/\u0001 \u00b7 \u0001\u0001"
+    ]
+   L91
+    LINENUMBER 175 L91
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getAmount ()D
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxDouble (D)Ljava/lang/Double;
+   L92
+    LINENUMBER 176 L92
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getDescription ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getCategory ()Ljava/lang/String;
+    DUP
+    IFNONNULL L93
+    POP
+    LDC ""
+   L93
+    GOTO L94
+   L94
+    NOP
+   L95
+    LINENUMBER 176 L95
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getTags ()Ljava/lang/String;
+    DUP
+    IFNONNULL L96
+    POP
+    LDC ""
+   L96
+    GOTO L97
+   L97
+    NOP
+   L98
+    LINENUMBER 176 L98
+    ALOAD 6
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getAccountId ()J
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxLong (J)Ljava/lang/Long;
+    INVOKEINTERFACE java/util/Map.get (Ljava/lang/Object;)Ljava/lang/Object; (itf)
+    CHECKCAST java/lang/String
+    DUP
+    IFNONNULL L99
+    POP
+    LDC ""
+   L99
+    GOTO L100
+   L100
+    LINENUMBER 176 L100
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getAmount ()D
+    D2L
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getAmount ()D
+    BIPUSH 10
+    I2D
+    DDIV
+    D2L
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJ)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0001 \u0001 \u0001 \u0001 \u0001 \u0001"
+    ]
+    INVOKESTATIC ir/sadteam/loancalc/ui/search/GlobalSearchKt.normalizeForSearch (Ljava/lang/String;)Ljava/lang/String;
+   L101
+    LINENUMBER 177 L101
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getAccountId ()J
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxLong (J)Ljava/lang/Long;
+   L102
+    LINENUMBER 173 L102
+    ASTORE 35
+    ASTORE 36
+    ASTORE 37
+    ASTORE 38
+    ASTORE 39
+    LSTORE 40
+    ASTORE 42
+    NEW ir/sadteam/loancalc/ui/search/SearchHit
+    DUP
+    ALOAD 42
+    LLOAD 40
+    ALOAD 39
+    ALOAD 38
+    ALOAD 37
+    ALOAD 36
+    ALOAD 35
+    INVOKESPECIAL ir/sadteam/loancalc/ui/search/SearchHit.<init> (Lir/sadteam/loancalc/ui/search/SearchKind;JLjava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/Long;)V
+    INVOKEINTERFACE java/util/List.add (Ljava/lang/Object;)Z (itf)
+    POP
+   L103
+    LINENUMBER 178 L103
+    GOTO L104
+   L104
+   L105
+    LINENUMBER 495 L105
+   L106
+    GOTO L66
+   L67
+    LINENUMBER 497 L67
+    GOTO L107
+   L107
+   L108
+    LINENUMBER 179 L108
+    ALOAD 4
+    CHECKCAST java/lang/Iterable
+    ASTORE 10
+   L109
+    ICONST_0
+    ISTORE 11
+   L110
+    LINENUMBER 498 L110
+    ALOAD 10
+    INVOKEINTERFACE java/lang/Iterable.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 12
+   L111
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L112
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    ASTORE 13
+   L113
+    ALOAD 13
+    CHECKCAST ir/sadteam/loancalc/data/db/LoanEntity
+    ASTORE 14
+   L114
+    ICONST_0
+    ISTORE 15
+   L115
+    LINENUMBER 180 L115
+    ALOAD 8
+    NEW ir/sadteam/loancalc/ui/search/SearchHit
+    DUP
+    GETSTATIC ir/sadteam/loancalc/ui/search/SearchKind.LOAN : Lir/sadteam/loancalc/ui/search/SearchKind;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getId ()J
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getBank ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getAmount ()D
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxDouble (D)Ljava/lang/Double;
+   L116
+    LINENUMBER 181 L116
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getBank ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getAmount ()D
+    D2L
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getAmount ()D
+    BIPUSH 10
+    I2D
+    DDIV
+    D2L
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;Ljava/lang/String;JJ)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0001 \u0001 \u0001 \u0001"
+    ]
+    INVOKESTATIC ir/sadteam/loancalc/ui/search/GlobalSearchKt.normalizeForSearch (Ljava/lang/String;)Ljava/lang/String;
+   L117
+    LINENUMBER 180 L117
+    ACONST_NULL
+    BIPUSH 64
+    ACONST_NULL
+    INVOKESPECIAL ir/sadteam/loancalc/ui/search/SearchHit.<init> (Lir/sadteam/loancalc/ui/search/SearchKind;JLjava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+    INVOKEINTERFACE java/util/List.add (Ljava/lang/Object;)Z (itf)
+    POP
+   L118
+    LINENUMBER 182 L118
+    GOTO L119
+   L119
+   L120
+    LINENUMBER 498 L120
+   L121
+    GOTO L111
+   L112
+    LINENUMBER 499 L112
+    GOTO L122
+   L122
+   L123
+    LINENUMBER 183 L123
+    ALOAD 5
+    CHECKCAST java/lang/Iterable
+    ASTORE 10
+   L124
+    ICONST_0
+    ISTORE 11
+   L125
+    LINENUMBER 500 L125
+    ALOAD 10
+    INVOKEINTERFACE java/lang/Iterable.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 12
+   L126
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L127
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    ASTORE 13
+   L128
+    ALOAD 13
+    CHECKCAST ir/sadteam/loancalc/data/db/ChequeEntity
+    ASTORE 14
+   L129
+    ICONST_0
+    ISTORE 15
+   L130
+    LINENUMBER 184 L130
+    ALOAD 8
+    GETSTATIC ir/sadteam/loancalc/ui/search/SearchKind.CHEQUE : Lir/sadteam/loancalc/ui/search/SearchKind;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getId ()J
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getOwnerName ()Ljava/lang/String;
+    CHECKCAST java/lang/CharSequence
+    ASTORE 16
+    ALOAD 16
+    INVOKESTATIC kotlin/text/StringsKt.isBlank (Ljava/lang/CharSequence;)Z
+    IFEQ L131
+   L132
+    LINENUMBER 496 L132
+    LSTORE 33
+    ASTORE 19
+    ASTORE 22
+    ICONST_0
+    ISTORE 23
+   L133
+    LINENUMBER 184 L133
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getChequeNumber ()Ljava/lang/String;
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0686\u06a9 \u0001"
+    ]
+    GOTO L134
+   L134
+    ASTORE 24
+    ALOAD 22
+    ALOAD 19
+    LLOAD 33
+    ALOAD 24
+   L135
+    LINENUMBER 184 L135
+    GOTO L136
+   L131
+    ALOAD 16
+   L136
+    GOTO L137
+   L137
+    CHECKCAST java/lang/String
+   L138
+    LINENUMBER 185 L138
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getBankName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getDueYear ()I
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxInt (I)Ljava/lang/Integer;
+    INVOKESTATIC ir/sadteam/loancalc/core/PersianFormatKt.toFa (Ljava/lang/Object;)Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getDueMonth ()I
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxInt (I)Ljava/lang/Integer;
+    INVOKESTATIC ir/sadteam/loancalc/core/PersianFormatKt.toFa (Ljava/lang/Object;)Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getDueDay ()I
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxInt (I)Ljava/lang/Integer;
+    INVOKESTATIC ir/sadteam/loancalc/core/PersianFormatKt.toFa (Ljava/lang/Object;)Ljava/lang/String;
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0001 \u00b7 \u0001/\u0001/\u0001"
+    ]
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getAmount ()D
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxDouble (D)Ljava/lang/Double;
+   L139
+    LINENUMBER 186 L139
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getOwnerName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getBankName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getBranchName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getChequeNumber ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getSayadId ()Ljava/lang/String;
+    DUP
+    IFNONNULL L140
+    POP
+    LDC ""
+   L140
+    GOTO L141
+   L141
+    LINENUMBER 186 L141
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getNotes ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getAmount ()D
+    D2L
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getAmount ()D
+    BIPUSH 10
+    I2D
+    DDIV
+    D2L
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJ)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0001 \u0001 \u0001 \u0001 \u0001 \u0001 \u0001 \u0001"
+    ]
+    INVOKESTATIC ir/sadteam/loancalc/ui/search/GlobalSearchKt.normalizeForSearch (Ljava/lang/String;)Ljava/lang/String;
+   L142
+    LINENUMBER 184 L142
+    ACONST_NULL
+    BIPUSH 64
+    ACONST_NULL
+    ASTORE 43
+    ISTORE 44
+    ASTORE 45
+    ASTORE 46
+    ASTORE 47
+    ASTORE 48
+    ASTORE 49
+    LSTORE 50
+    ASTORE 52
+    NEW ir/sadteam/loancalc/ui/search/SearchHit
+    DUP
+    ALOAD 52
+    LLOAD 50
+    ALOAD 49
+    ALOAD 48
+    ALOAD 47
+    ALOAD 46
+    ALOAD 45
+    ILOAD 44
+    ALOAD 43
+    INVOKESPECIAL ir/sadteam/loancalc/ui/search/SearchHit.<init> (Lir/sadteam/loancalc/ui/search/SearchKind;JLjava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+    INVOKEINTERFACE java/util/List.add (Ljava/lang/Object;)Z (itf)
+    POP
+   L143
+    LINENUMBER 187 L143
+    GOTO L144
+   L144
+   L145
+    LINENUMBER 500 L145
+   L146
+    GOTO L126
+   L127
+    LINENUMBER 501 L127
+    GOTO L147
+   L147
+   L148
+    LINENUMBER 188 L148
+    NOP
+    GOTO L149
+   L150
+   L151
+   L149
+   L152
+    LINENUMBER 166 L152
+    ALOAD 7
+    INVOKESTATIC kotlin/collections/CollectionsKt.build (Ljava/util/List;)Ljava/util/List;
+    NOP
+    GOTO L153
+   L154
+   L155
+   L153
+   L156
+    LINENUMBER 188 L156
+    ARETURN
+   L157
+   L158
+   L3
+    LINENUMBER 164 L3
+    NEW java/lang/IllegalStateException
+    DUP
+    LDC "call to 'resume' before 'invoke' with coroutine"
+    INVOKESPECIAL java/lang/IllegalStateException.<init> (Ljava/lang/String;)V
+    ATHROW
+    RETURN
+   L159
+    LOCALVARIABLE accs Ljava/util/List; L5 L21 2
+    LOCALVARIABLE accs Ljava/util/List; L22 L27 2
+    LOCALVARIABLE accs Ljava/util/List; L28 L35 2
+    LOCALVARIABLE txs Ljava/util/List; L6 L21 3
+    LOCALVARIABLE txs Ljava/util/List; L22 L27 3
+    LOCALVARIABLE txs Ljava/util/List; L28 L59 3
+    LOCALVARIABLE loans Ljava/util/List; L7 L21 4
+    LOCALVARIABLE loans Ljava/util/List; L22 L27 4
+    LOCALVARIABLE loans Ljava/util/List; L28 L109 4
+    LOCALVARIABLE cheques Ljava/util/List; L8 L21 5
+    LOCALVARIABLE cheques Ljava/util/List; L22 L27 5
+    LOCALVARIABLE cheques Ljava/util/List; L28 L124 5
+    LOCALVARIABLE accName Ljava/util/Map; L30 L67 6
+    LOCALVARIABLE $this$associate$iv Ljava/lang/Iterable; L10 L13 7
+    LOCALVARIABLE $this$invokeSuspend_u24lambda_u249 Ljava/util/List; L33 L151 8
+    LOCALVARIABLE capacity$iv I L12 L13 9
+    LOCALVARIABLE $this$associateTo$iv$iv Ljava/lang/Iterable; L13 L15 10
+    LOCALVARIABLE $this$forEach$iv Ljava/lang/Iterable; L35 L37 10
+    LOCALVARIABLE $this$sortedByDescending$iv Ljava/lang/Iterable; L59 L62 10
+    LOCALVARIABLE $this$forEach$iv Ljava/lang/Iterable; L63 L66 10
+    LOCALVARIABLE $this$forEach$iv Ljava/lang/Iterable; L109 L111 10
+    LOCALVARIABLE $this$forEach$iv Ljava/lang/Iterable; L124 L126 10
+    LOCALVARIABLE destination$iv$iv Ljava/util/Map; L13 L25 11
+    LOCALVARIABLE element$iv Ljava/lang/Object; L39 L40 13
+    LOCALVARIABLE element$iv Ljava/lang/Object; L68 L69 13
+    LOCALVARIABLE element$iv Ljava/lang/Object; L113 L121 13
+    LOCALVARIABLE element$iv Ljava/lang/Object; L128 L129 13
+    LOCALVARIABLE element$iv$iv Ljava/lang/Object; L17 L24 14
+    LOCALVARIABLE a Lir/sadteam/loancalc/data/db/AccountEntity; L40 L49 14
+    LOCALVARIABLE t Lir/sadteam/loancalc/data/db/AccountTransactionEntity; L69 L104 14
+    LOCALVARIABLE l Lir/sadteam/loancalc/data/db/LoanEntity; L114 L119 14
+    LOCALVARIABLE c Lir/sadteam/loancalc/data/db/ChequeEntity; L129 L144 14
+    LOCALVARIABLE it Lir/sadteam/loancalc/data/db/AccountEntity; L18 L22 16
+    LOCALVARIABLE title Ljava/lang/String; L79 L80 18
+    LOCALVARIABLE it Ljava/lang/String; L84 L87 19
+    LOCALVARIABLE $i$a$-associate-GlobalSearchViewModel$finance$1$accName$1 I L19 L22 17
+    LOCALVARIABLE $i$f$associateTo I L14 L25 12
+    LOCALVARIABLE $i$f$associate I L11 L28 8
+    LOCALVARIABLE $i$a$-forEach-GlobalSearchViewModel$finance$1$1$1 I L41 L54 15
+    LOCALVARIABLE $i$f$forEach I L36 L57 11
+    LOCALVARIABLE $i$f$sortedByDescending I L60 L62 11
+    LOCALVARIABLE $i$a$-ifBlank-GlobalSearchViewModel$finance$1$1$3$title$1 I L73 L76 17
+    LOCALVARIABLE $i$a$-let-GlobalSearchViewModel$finance$1$1$3$1 I L86 L87 31
+    LOCALVARIABLE $i$a$-forEach-GlobalSearchViewModel$finance$1$1$3 I L70 L104 15
+    LOCALVARIABLE $i$f$forEach I L65 L107 11
+    LOCALVARIABLE $i$a$-forEach-GlobalSearchViewModel$finance$1$1$4 I L115 L119 15
+    LOCALVARIABLE $i$f$forEach I L110 L122 11
+    LOCALVARIABLE $i$a$-ifBlank-GlobalSearchViewModel$finance$1$1$5$1 I L133 L134 23
+    LOCALVARIABLE $i$a$-forEach-GlobalSearchViewModel$finance$1$1$5 I L130 L144 15
+    LOCALVARIABLE $i$f$forEach I L125 L147 11
+    LOCALVARIABLE $i$a$-buildList-GlobalSearchViewModel$finance$1$1 I L34 L151 9
+    LOCALVARIABLE this Lir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1; L0 L159 0
+    LOCALVARIABLE $result Ljava/lang/Object; L4 L158 1
+    MAXSTACK = 21
+    MAXLOCALS = 54
+
+File is unknown
+The root cause org.jetbrains.kotlin.codegen.CompilationException was thrown at: org.jetbrains.kotlin.codegen.TransformationMethodVisitor.visitEnd(TransformationMethodVisitor.kt:89)
+	at org.jetbrains.kotlin.codegen.TransformationMethodVisitor.visitEnd(TransformationMethodVisitor.kt:89)
+	at org.jetbrains.org.objectweb.asm.tree.MethodNode.accept(MethodNode.java:772)
+	at org.jetbrains.kotlin.backend.jvm.codegen.CoroutineCodegenKt.acceptWithStateMachine(CoroutineCodegen.kt:76)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ClassCodegen.generateMethod(ClassCodegen.kt:440)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ClassCodegen.generate(ClassCodegen.kt:168)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ClassCodegen.generate(ClassCodegen.kt:181)
+	at org.jetbrains.kotlin.backend.jvm.FileCodegen.lower(JvmPhases.kt:39)
+	at org.jetbrains.kotlin.backend.common.phaser.PhaseFactoriesKt.createFilePhase$lambda$4(PhaseFactories.kt:71)
+	at org.jetbrains.kotlin.backend.common.phaser.PhaseBuildersKt$createSimpleNamedCompilerPhase$1.phaseBody(PhaseBuilders.kt:69)
+	at org.jetbrains.kotlin.backend.common.phaser.SimpleNamedCompilerPhase.phaseBody(CompilerPhase.kt:226)
+	at org.jetbrains.kotlin.backend.common.phaser.AbstractNamedCompilerPhase.invoke(CompilerPhase.kt:113)
+	at org.jetbrains.kotlin.backend.common.phaser.PerformByIrFilePhase.invokeSequential(performByIrFile.kt:62)
+	at org.jetbrains.kotlin.backend.common.phaser.PerformByIrFilePhase.invoke(performByIrFile.kt:52)
+	at org.jetbrains.kotlin.backend.common.phaser.PerformByIrFilePhase.invoke(performByIrFile.kt:38)
+	at org.jetbrains.kotlin.backend.common.phaser.NamedCompilerPhase.phaseBody(CompilerPhase.kt:166)
+	at org.jetbrains.kotlin.backend.common.phaser.AbstractNamedCompilerPhase.invoke(CompilerPhase.kt:113)
+	at org.jetbrains.kotlin.backend.common.phaser.CompositePhase.invoke(PhaseBuilders.kt:27)
+	at org.jetbrains.kotlin.backend.common.phaser.CompositePhase.invoke(PhaseBuilders.kt:14)
+	at org.jetbrains.kotlin.backend.common.phaser.NamedCompilerPhase.phaseBody(CompilerPhase.kt:166)
+	at org.jetbrains.kotlin.backend.common.phaser.AbstractNamedCompilerPhase.invoke(CompilerPhase.kt:113)
+	at org.jetbrains.kotlin.backend.common.phaser.CompilerPhaseKt.invokeToplevel(CompilerPhase.kt:62)
+	at org.jetbrains.kotlin.backend.jvm.JvmIrCodegenFactory.invokeCodegen(JvmIrCodegenFactory.kt:371)
+	at org.jetbrains.kotlin.codegen.CodegenFactory.generateModule(CodegenFactory.kt:47)
+	at org.jetbrains.kotlin.backend.jvm.JvmIrCodegenFactory.generateModuleInFrontendIRMode(JvmIrCodegenFactory.kt:433)
+	at org.jetbrains.kotlin.cli.jvm.compiler.pipeline.JvmCompilerPipelineKt.generateCodeFromIr(jvmCompilerPipeline.kt:246)
+	at org.jetbrains.kotlin.cli.jvm.compiler.pipeline.JvmCompilerPipelineKt.compileModulesUsingFrontendIrAndLightTree(jvmCompilerPipeline.kt:142)
+	at org.jetbrains.kotlin.cli.jvm.K2JVMCompiler.doExecute(K2JVMCompiler.kt:148)
+	at org.jetbrains.kotlin.cli.jvm.K2JVMCompiler.doExecute(K2JVMCompiler.kt:43)
+	at org.jetbrains.kotlin.cli.common.CLICompiler.execImpl(CLICompiler.kt:103)
+	at org.jetbrains.kotlin.cli.common.CLICompiler.execImpl(CLICompiler.kt:49)
+	at org.jetbrains.kotlin.cli.common.CLITool.exec(CLITool.kt:101)
+	at org.jetbrains.kotlin.incremental.IncrementalJvmCompilerRunner.runCompiler(IncrementalJvmCompilerRunner.kt:464)
+	at org.jetbrains.kotlin.incremental.IncrementalJvmCompilerRunner.runCompiler(IncrementalJvmCompilerRunner.kt:73)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.doCompile(IncrementalCompilerRunner.kt:506)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compileImpl(IncrementalCompilerRunner.kt:423)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compileNonIncrementally(IncrementalCompilerRunner.kt:301)
+	at org.jetbrains.kotlin.incremental.IncrementalCompilerRunner.compile(IncrementalCompilerRunner.kt:129)
+	at org.jetbrains.kotlin.daemon.CompileServiceImplBase.execIncrementalCompiler(CompileServiceImpl.kt:675)
+	at org.jetbrains.kotlin.daemon.CompileServiceImplBase.access$execIncrementalCompiler(CompileServiceImpl.kt:92)
+	at org.jetbrains.kotlin.daemon.CompileServiceImpl.compile(CompileServiceImpl.kt:1660)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.rmi/sun.rmi.server.UnicastServerRef.dispatch(UnicastServerRef.java:360)
+	at java.rmi/sun.rmi.transport.Transport$1.run(Transport.java:200)
+	at java.rmi/sun.rmi.transport.Transport$1.run(Transport.java:197)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:712)
+	at java.rmi/sun.rmi.transport.Transport.serviceCall(Transport.java:196)
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport.handleMessages(TCPTransport.java:587)
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0(TCPTransport.java:828)
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.lambda$run$0(TCPTransport.java:705)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:399)
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run(TCPTransport.java:704)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+Caused by: org.jetbrains.kotlin.codegen.CompilationException: Back-end (JVM) Internal error: Couldn't transform method node:
+invokeSuspend (Ljava/lang/Object;)Ljava/lang/Object;:
+    // annotable parameter count: 1 (visible)
+    // annotable parameter count: 1 (invisible)
+   L0
+    INVOKESTATIC kotlin/coroutines/intrinsics/IntrinsicsKt.getCOROUTINE_SUSPENDED ()Ljava/lang/Object;
+   L1
+    LINENUMBER 164 L1
+    ASTORE 53
+    ALOAD 0
+    GETFIELD ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1.label : I
+    TABLESWITCH
+      0: L2
+      default: L3
+   L2
+    ALOAD 1
+    INVOKESTATIC kotlin/ResultKt.throwOnFailure (Ljava/lang/Object;)V
+   L4
+    ALOAD 0
+    GETFIELD ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1.L$0 : Ljava/lang/Object;
+    CHECKCAST java/util/List
+    ASTORE 2
+   L5
+    ALOAD 0
+    GETFIELD ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1.L$1 : Ljava/lang/Object;
+    CHECKCAST java/util/List
+    ASTORE 3
+   L6
+    ALOAD 0
+    GETFIELD ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1.L$2 : Ljava/lang/Object;
+    CHECKCAST java/util/List
+    ASTORE 4
+   L7
+    ALOAD 0
+    GETFIELD ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1.L$3 : Ljava/lang/Object;
+    CHECKCAST java/util/List
+    ASTORE 5
+   L8
+    LINENUMBER 165 L8
+    ALOAD 2
+    CHECKCAST java/lang/Iterable
+    ASTORE 7
+    NOP
+   L9
+    ICONST_0
+    ISTORE 8
+   L10
+    LINENUMBER 486 L10
+    ALOAD 7
+    BIPUSH 10
+    INVOKESTATIC kotlin/collections/CollectionsKt.collectionSizeOrDefault (Ljava/lang/Iterable;I)I
+    INVOKESTATIC kotlin/collections/MapsKt.mapCapacity (I)I
+    BIPUSH 16
+    INVOKESTATIC kotlin/ranges/RangesKt.coerceAtLeast (II)I
+    ISTORE 9
+   L11
+    LINENUMBER 487 L11
+    ALOAD 7
+    ASTORE 10
+    NEW java/util/LinkedHashMap
+    DUP
+    ILOAD 9
+    INVOKESPECIAL java/util/LinkedHashMap.<init> (I)V
+    CHECKCAST java/util/Map
+    ASTORE 11
+   L12
+    ICONST_0
+    ISTORE 12
+   L13
+    LINENUMBER 488 L13
+    ALOAD 10
+    INVOKEINTERFACE java/lang/Iterable.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 13
+   L14
+    ALOAD 13
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L15
+    ALOAD 13
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    ASTORE 14
+   L16
+    LINENUMBER 489 L16
+    ALOAD 11
+    ASTORE 15
+    ALOAD 14
+    CHECKCAST ir/sadteam/loancalc/data/db/AccountEntity
+    ASTORE 16
+   L17
+    ICONST_0
+    ISTORE 17
+   L18
+    LINENUMBER 165 L18
+    ALOAD 16
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getId ()J
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxLong (J)Ljava/lang/Long;
+    ALOAD 16
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getName ()Ljava/lang/String;
+    INVOKESTATIC kotlin/TuplesKt.to (Ljava/lang/Object;Ljava/lang/Object;)Lkotlin/Pair;
+    NOP
+    GOTO L19
+   L19
+    LINENUMBER 489 L19
+    ASTORE 16
+    ALOAD 15
+    ALOAD 16
+    INVOKEVIRTUAL kotlin/Pair.getFirst ()Ljava/lang/Object;
+    ALOAD 16
+    INVOKEVIRTUAL kotlin/Pair.getSecond ()Ljava/lang/Object;
+    INVOKEINTERFACE java/util/Map.put (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; (itf)
+    POP
+   L20
+    GOTO L14
+   L15
+    LINENUMBER 491 L15
+    ALOAD 11
+   L21
+    LINENUMBER 487 L21
+    NOP
+    GOTO L22
+   L22
+    LINENUMBER 165 L22
+    ASTORE 6
+   L23
+    LINENUMBER 166 L23
+    NOP
+   L24
+    NOP
+    INVOKESTATIC kotlin/collections/CollectionsKt.createListBuilder ()Ljava/util/List;
+    ASTORE 7
+    ALOAD 7
+    ASTORE 8
+   L25
+    ICONST_0
+    ISTORE 9
+   L26
+    LINENUMBER 167 L26
+    ALOAD 2
+    CHECKCAST java/lang/Iterable
+    ASTORE 10
+   L27
+    ICONST_0
+    ISTORE 11
+   L28
+    LINENUMBER 492 L28
+    ALOAD 10
+    INVOKEINTERFACE java/lang/Iterable.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 12
+   L29
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L30
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    ASTORE 13
+   L31
+    ALOAD 13
+    CHECKCAST ir/sadteam/loancalc/data/db/AccountEntity
+    ASTORE 14
+   L32
+    ICONST_0
+    ISTORE 15
+   L33
+    LINENUMBER 168 L33
+    ALOAD 8
+    NEW ir/sadteam/loancalc/ui/search/SearchHit
+    DUP
+    GETSTATIC ir/sadteam/loancalc/ui/search/SearchKind.ACCOUNT : Lir/sadteam/loancalc/ui/search/SearchKind;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getId ()J
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getBankName ()Ljava/lang/String;
+    ACONST_NULL
+   L34
+    LINENUMBER 169 L34
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getBankName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getCardNumber ()Ljava/lang/String;
+    DUP
+    IFNONNULL L35
+    POP
+    LDC ""
+   L35
+    GOTO L36
+   L36
+    NOP
+   L37
+    LINENUMBER 169 L37
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getAccountNumber ()Ljava/lang/String;
+    DUP
+    IFNONNULL L38
+    POP
+    LDC ""
+   L38
+    GOTO L39
+   L39
+    NOP
+   L40
+    LINENUMBER 169 L40
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountEntity.getSheba ()Ljava/lang/String;
+    DUP
+    IFNONNULL L41
+    POP
+    LDC ""
+   L41
+    GOTO L42
+   L42
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0001 \u0001 \u0001 \u0001 \u0001"
+    ]
+   L43
+    LINENUMBER 169 L43
+    INVOKESTATIC ir/sadteam/loancalc/ui/search/GlobalSearchKt.normalizeForSearch (Ljava/lang/String;)Ljava/lang/String;
+   L44
+    LINENUMBER 168 L44
+    ACONST_NULL
+    BIPUSH 64
+    ACONST_NULL
+    INVOKESPECIAL ir/sadteam/loancalc/ui/search/SearchHit.<init> (Lir/sadteam/loancalc/ui/search/SearchKind;JLjava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+    INVOKEINTERFACE java/util/List.add (Ljava/lang/Object;)Z (itf)
+    POP
+   L45
+    LINENUMBER 170 L45
+    GOTO L46
+   L46
+    LINENUMBER 492 L46
+   L47
+    GOTO L29
+   L30
+    LINENUMBER 493 L30
+    GOTO L48
+   L48
+    LINENUMBER 171 L48
+    ALOAD 3
+    CHECKCAST java/lang/Iterable
+    ASTORE 10
+   L49
+    ICONST_0
+    ISTORE 11
+   L50
+    LINENUMBER 494 L50
+    ALOAD 10
+    NEW ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1$invokeSuspend$lambda$9$$inlined$sortedByDescending$1
+    DUP
+    INVOKESPECIAL ir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1$invokeSuspend$lambda$9$$inlined$sortedByDescending$1.<init> ()V
+    CHECKCAST java/util/Comparator
+   L51
+    LINENUMBER 494 L51
+    INVOKESTATIC kotlin/collections/CollectionsKt.sortedWith (Ljava/lang/Iterable;Ljava/util/Comparator;)Ljava/util/List;
+    GOTO L52
+   L52
+    CHECKCAST java/lang/Iterable
+    ASTORE 10
+   L53
+    LINENUMBER 171 L53
+    NOP
+   L54
+    ICONST_0
+    ISTORE 11
+   L55
+    LINENUMBER 495 L55
+    ALOAD 10
+    INVOKEINTERFACE java/lang/Iterable.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 12
+   L56
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L57
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    ASTORE 13
+   L58
+    ALOAD 13
+    CHECKCAST ir/sadteam/loancalc/data/db/AccountTransactionEntity
+    ASTORE 14
+   L59
+    ICONST_0
+    ISTORE 15
+   L60
+    LINENUMBER 172 L60
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getDescription ()Ljava/lang/String;
+    CHECKCAST java/lang/CharSequence
+    ASTORE 16
+    ALOAD 16
+    INVOKESTATIC kotlin/text/StringsKt.isBlank (Ljava/lang/CharSequence;)Z
+    IFEQ L61
+   L62
+    LINENUMBER 496 L62
+    ICONST_0
+    ISTORE 17
+   L63
+    LINENUMBER 172 L63
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getCategory ()Ljava/lang/String;
+    DUP
+    IFNULL L64
+    GOTO L65
+   L64
+    POP
+    LDC "\u062a\u0631\u0627\u06a9\u0646\u0634"
+   L65
+    GOTO L66
+   L66
+    LINENUMBER 172 L66
+    GOTO L67
+   L61
+    ALOAD 16
+   L67
+    GOTO L68
+   L68
+    LINENUMBER 172 L68
+    CHECKCAST java/lang/String
+    ASTORE 18
+   L69
+    LINENUMBER 173 L69
+    ALOAD 8
+    GETSTATIC ir/sadteam/loancalc/ui/search/SearchKind.TX : Lir/sadteam/loancalc/ui/search/SearchKind;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getId ()J
+    ALOAD 18
+   L70
+    LINENUMBER 174 L70
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getYear ()I
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxInt (I)Ljava/lang/Integer;
+    INVOKESTATIC ir/sadteam/loancalc/core/PersianFormatKt.toFa (Ljava/lang/Object;)Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getMonth ()I
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxInt (I)Ljava/lang/Integer;
+    INVOKESTATIC ir/sadteam/loancalc/core/PersianFormatKt.toFa (Ljava/lang/Object;)Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getDay ()I
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxInt (I)Ljava/lang/Integer;
+    INVOKESTATIC ir/sadteam/loancalc/core/PersianFormatKt.toFa (Ljava/lang/Object;)Ljava/lang/String;
+    ALOAD 6
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getAccountId ()J
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxLong (J)Ljava/lang/Long;
+    INVOKEINTERFACE java/util/Map.get (Ljava/lang/Object;)Ljava/lang/Object; (itf)
+    CHECKCAST java/lang/String
+    DUP
+    IFNULL L71
+    GOTO L72
+   L71
+    POP
+    LDC ""
+   L72
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getCategory ()Ljava/lang/String;
+    DUP
+    IFNULL L73
+    ASTORE 19
+   L74
+    LINENUMBER 496 L74
+    ASTORE 20
+    ASTORE 21
+    ASTORE 22
+    ASTORE 23
+    ASTORE 24
+    LSTORE 25
+    ASTORE 27
+    ASTORE 30
+   L75
+    ICONST_0
+    ISTORE 31
+   L76
+    LINENUMBER 174 L76
+    ALOAD 19
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      " \u00b7 \u0001"
+    ]
+    GOTO L77
+   L77
+    ASTORE 32
+    ALOAD 30
+    ALOAD 27
+    LLOAD 25
+    ALOAD 24
+    ALOAD 23
+    ALOAD 22
+    ALOAD 21
+    ALOAD 20
+    ALOAD 32
+   L78
+    LINENUMBER 174 L78
+    GOTO L79
+   L79
+    LINENUMBER 174 L79
+    DUP
+    IFNULL L73
+    GOTO L80
+   L73
+    POP
+    LDC ""
+   L80
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0001/\u0001/\u0001 \u00b7 \u0001\u0001"
+    ]
+   L81
+    LINENUMBER 175 L81
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getAmount ()D
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxDouble (D)Ljava/lang/Double;
+   L82
+    LINENUMBER 176 L82
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getDescription ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getCategory ()Ljava/lang/String;
+    DUP
+    IFNONNULL L83
+    POP
+    LDC ""
+   L83
+    GOTO L84
+   L84
+    NOP
+   L85
+    LINENUMBER 176 L85
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getTags ()Ljava/lang/String;
+    DUP
+    IFNONNULL L86
+    POP
+    LDC ""
+   L86
+    GOTO L87
+   L87
+    NOP
+   L88
+    LINENUMBER 176 L88
+    ALOAD 6
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getAccountId ()J
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxLong (J)Ljava/lang/Long;
+    INVOKEINTERFACE java/util/Map.get (Ljava/lang/Object;)Ljava/lang/Object; (itf)
+    CHECKCAST java/lang/String
+    DUP
+    IFNONNULL L89
+    POP
+    LDC ""
+   L89
+    GOTO L90
+   L90
+    LINENUMBER 176 L90
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getAmount ()D
+    D2L
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getAmount ()D
+    BIPUSH 10
+    I2D
+    DDIV
+    D2L
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJ)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0001 \u0001 \u0001 \u0001 \u0001 \u0001"
+    ]
+    INVOKESTATIC ir/sadteam/loancalc/ui/search/GlobalSearchKt.normalizeForSearch (Ljava/lang/String;)Ljava/lang/String;
+   L91
+    LINENUMBER 177 L91
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/AccountTransactionEntity.getAccountId ()J
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxLong (J)Ljava/lang/Long;
+   L92
+    LINENUMBER 173 L92
+    ASTORE 35
+    ASTORE 36
+    ASTORE 37
+    ASTORE 38
+    ASTORE 39
+    LSTORE 40
+    ASTORE 42
+    NEW ir/sadteam/loancalc/ui/search/SearchHit
+    DUP
+    ALOAD 42
+    LLOAD 40
+    ALOAD 39
+    ALOAD 38
+    ALOAD 37
+    ALOAD 36
+    ALOAD 35
+    INVOKESPECIAL ir/sadteam/loancalc/ui/search/SearchHit.<init> (Lir/sadteam/loancalc/ui/search/SearchKind;JLjava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/Long;)V
+    INVOKEINTERFACE java/util/List.add (Ljava/lang/Object;)Z (itf)
+    POP
+   L93
+    LINENUMBER 178 L93
+    GOTO L94
+   L94
+    LINENUMBER 495 L94
+   L95
+    GOTO L56
+   L57
+    LINENUMBER 497 L57
+    GOTO L96
+   L96
+    LINENUMBER 179 L96
+    ALOAD 4
+    CHECKCAST java/lang/Iterable
+    ASTORE 10
+   L97
+    ICONST_0
+    ISTORE 11
+   L98
+    LINENUMBER 498 L98
+    ALOAD 10
+    INVOKEINTERFACE java/lang/Iterable.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 12
+   L99
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L100
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    ASTORE 13
+   L101
+    ALOAD 13
+    CHECKCAST ir/sadteam/loancalc/data/db/LoanEntity
+    ASTORE 14
+   L102
+    ICONST_0
+    ISTORE 15
+   L103
+    LINENUMBER 180 L103
+    ALOAD 8
+    NEW ir/sadteam/loancalc/ui/search/SearchHit
+    DUP
+    GETSTATIC ir/sadteam/loancalc/ui/search/SearchKind.LOAN : Lir/sadteam/loancalc/ui/search/SearchKind;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getId ()J
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getBank ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getAmount ()D
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxDouble (D)Ljava/lang/Double;
+   L104
+    LINENUMBER 181 L104
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getBank ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getAmount ()D
+    D2L
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/LoanEntity.getAmount ()D
+    BIPUSH 10
+    I2D
+    DDIV
+    D2L
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;Ljava/lang/String;JJ)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0001 \u0001 \u0001 \u0001"
+    ]
+    INVOKESTATIC ir/sadteam/loancalc/ui/search/GlobalSearchKt.normalizeForSearch (Ljava/lang/String;)Ljava/lang/String;
+   L105
+    LINENUMBER 180 L105
+    ACONST_NULL
+    BIPUSH 64
+    ACONST_NULL
+    INVOKESPECIAL ir/sadteam/loancalc/ui/search/SearchHit.<init> (Lir/sadteam/loancalc/ui/search/SearchKind;JLjava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+    INVOKEINTERFACE java/util/List.add (Ljava/lang/Object;)Z (itf)
+    POP
+   L106
+    LINENUMBER 182 L106
+    GOTO L107
+   L107
+    LINENUMBER 498 L107
+   L108
+    GOTO L99
+   L100
+    LINENUMBER 499 L100
+    GOTO L109
+   L109
+    LINENUMBER 183 L109
+    ALOAD 5
+    CHECKCAST java/lang/Iterable
+    ASTORE 10
+   L110
+    ICONST_0
+    ISTORE 11
+   L111
+    LINENUMBER 500 L111
+    ALOAD 10
+    INVOKEINTERFACE java/lang/Iterable.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 12
+   L112
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L113
+    ALOAD 12
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    ASTORE 13
+   L114
+    ALOAD 13
+    CHECKCAST ir/sadteam/loancalc/data/db/ChequeEntity
+    ASTORE 14
+   L115
+    ICONST_0
+    ISTORE 15
+   L116
+    LINENUMBER 184 L116
+    ALOAD 8
+    GETSTATIC ir/sadteam/loancalc/ui/search/SearchKind.CHEQUE : Lir/sadteam/loancalc/ui/search/SearchKind;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getId ()J
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getOwnerName ()Ljava/lang/String;
+    CHECKCAST java/lang/CharSequence
+    ASTORE 16
+    ALOAD 16
+    INVOKESTATIC kotlin/text/StringsKt.isBlank (Ljava/lang/CharSequence;)Z
+    IFEQ L117
+   L118
+    LINENUMBER 496 L118
+    LSTORE 33
+    ASTORE 19
+    ASTORE 22
+    ICONST_0
+    ISTORE 23
+   L119
+    LINENUMBER 184 L119
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getChequeNumber ()Ljava/lang/String;
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0686\u06a9 \u0001"
+    ]
+    GOTO L120
+   L120
+    ASTORE 24
+    ALOAD 22
+    ALOAD 19
+    LLOAD 33
+    ALOAD 24
+   L121
+    LINENUMBER 184 L121
+    GOTO L122
+   L117
+    ALOAD 16
+   L122
+    GOTO L123
+   L123
+    CHECKCAST java/lang/String
+   L124
+    LINENUMBER 185 L124
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getBankName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getDueYear ()I
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxInt (I)Ljava/lang/Integer;
+    INVOKESTATIC ir/sadteam/loancalc/core/PersianFormatKt.toFa (Ljava/lang/Object;)Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getDueMonth ()I
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxInt (I)Ljava/lang/Integer;
+    INVOKESTATIC ir/sadteam/loancalc/core/PersianFormatKt.toFa (Ljava/lang/Object;)Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getDueDay ()I
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxInt (I)Ljava/lang/Integer;
+    INVOKESTATIC ir/sadteam/loancalc/core/PersianFormatKt.toFa (Ljava/lang/Object;)Ljava/lang/String;
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0001 \u00b7 \u0001/\u0001/\u0001"
+    ]
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getAmount ()D
+    INVOKESTATIC kotlin/coroutines/jvm/internal/Boxing.boxDouble (D)Ljava/lang/Double;
+   L125
+    LINENUMBER 186 L125
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getOwnerName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getBankName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getBranchName ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getChequeNumber ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getSayadId ()Ljava/lang/String;
+    DUP
+    IFNONNULL L126
+    POP
+    LDC ""
+   L126
+    GOTO L127
+   L127
+    LINENUMBER 186 L127
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getNotes ()Ljava/lang/String;
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getAmount ()D
+    D2L
+    ALOAD 14
+    INVOKEVIRTUAL ir/sadteam/loancalc/data/db/ChequeEntity.getAmount ()D
+    BIPUSH 10
+    I2D
+    DDIV
+    D2L
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JJ)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "\u0001 \u0001 \u0001 \u0001 \u0001 \u0001 \u0001 \u0001"
+    ]
+    INVOKESTATIC ir/sadteam/loancalc/ui/search/GlobalSearchKt.normalizeForSearch (Ljava/lang/String;)Ljava/lang/String;
+   L128
+    LINENUMBER 184 L128
+    ACONST_NULL
+    BIPUSH 64
+    ACONST_NULL
+    ASTORE 43
+    ISTORE 44
+    ASTORE 45
+    ASTORE 46
+    ASTORE 47
+    ASTORE 48
+    ASTORE 49
+    LSTORE 50
+    ASTORE 52
+    NEW ir/sadteam/loancalc/ui/search/SearchHit
+    DUP
+    ALOAD 52
+    LLOAD 50
+    ALOAD 49
+    ALOAD 48
+    ALOAD 47
+    ALOAD 46
+    ALOAD 45
+    ILOAD 44
+    ALOAD 43
+    INVOKESPECIAL ir/sadteam/loancalc/ui/search/SearchHit.<init> (Lir/sadteam/loancalc/ui/search/SearchKind;JLjava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+    INVOKEINTERFACE java/util/List.add (Ljava/lang/Object;)Z (itf)
+    POP
+   L129
+    LINENUMBER 187 L129
+    GOTO L130
+   L130
+    LINENUMBER 500 L130
+   L131
+    GOTO L112
+   L113
+    LINENUMBER 501 L113
+    GOTO L132
+   L132
+    LINENUMBER 188 L132
+    NOP
+    GOTO L133
+   L133
+    LINENUMBER 166 L133
+    ALOAD 7
+    INVOKESTATIC kotlin/collections/CollectionsKt.build (Ljava/util/List;)Ljava/util/List;
+    NOP
+    GOTO L134
+   L134
+    LINENUMBER 188 L134
+    ARETURN
+   L3
+    LINENUMBER 164 L3
+    NEW java/lang/IllegalStateException
+    DUP
+    LDC "call to 'resume' before 'invoke' with coroutine"
+    INVOKESPECIAL java/lang/IllegalStateException.<init> (Ljava/lang/String;)V
+    ATHROW
+    RETURN
+   L135
+    LOCALVARIABLE accs Ljava/util/List; L5 L19 2
+    LOCALVARIABLE accs Ljava/util/List; L19 L22 2
+    LOCALVARIABLE accs Ljava/util/List; L22 L27 2
+    LOCALVARIABLE txs Ljava/util/List; L6 L19 3
+    LOCALVARIABLE txs Ljava/util/List; L19 L22 3
+    LOCALVARIABLE txs Ljava/util/List; L22 L49 3
+    LOCALVARIABLE loans Ljava/util/List; L7 L19 4
+    LOCALVARIABLE loans Ljava/util/List; L19 L22 4
+    LOCALVARIABLE loans Ljava/util/List; L22 L97 4
+    LOCALVARIABLE cheques Ljava/util/List; L8 L19 5
+    LOCALVARIABLE cheques Ljava/util/List; L19 L22 5
+    LOCALVARIABLE cheques Ljava/util/List; L22 L110 5
+    LOCALVARIABLE accName Ljava/util/Map; L23 L57 6
+    LOCALVARIABLE $this$associate$iv Ljava/lang/Iterable; L9 L12 7
+    LOCALVARIABLE $this$invokeSuspend_u24lambda_u249 Ljava/util/List; L25 L133 8
+    LOCALVARIABLE capacity$iv I L11 L12 9
+    LOCALVARIABLE $this$associateTo$iv$iv Ljava/lang/Iterable; L12 L14 10
+    LOCALVARIABLE $this$forEach$iv Ljava/lang/Iterable; L27 L29 10
+    LOCALVARIABLE $this$sortedByDescending$iv Ljava/lang/Iterable; L49 L52 10
+    LOCALVARIABLE $this$forEach$iv Ljava/lang/Iterable; L53 L56 10
+    LOCALVARIABLE $this$forEach$iv Ljava/lang/Iterable; L97 L99 10
+    LOCALVARIABLE $this$forEach$iv Ljava/lang/Iterable; L110 L112 10
+    LOCALVARIABLE destination$iv$iv Ljava/util/Map; L12 L21 11
+    LOCALVARIABLE element$iv Ljava/lang/Object; L31 L32 13
+    LOCALVARIABLE element$iv Ljava/lang/Object; L58 L59 13
+    LOCALVARIABLE element$iv Ljava/lang/Object; L101 L108 13
+    LOCALVARIABLE element$iv Ljava/lang/Object; L114 L115 13
+    LOCALVARIABLE element$iv$iv Ljava/lang/Object; L16 L20 14
+    LOCALVARIABLE a Lir/sadteam/loancalc/data/db/AccountEntity; L32 L41 14
+    LOCALVARIABLE t Lir/sadteam/loancalc/data/db/AccountTransactionEntity; L59 L94 14
+    LOCALVARIABLE l Lir/sadteam/loancalc/data/db/LoanEntity; L102 L107 14
+    LOCALVARIABLE c Lir/sadteam/loancalc/data/db/ChequeEntity; L115 L130 14
+    LOCALVARIABLE it Lir/sadteam/loancalc/data/db/AccountEntity; L17 L19 16
+    LOCALVARIABLE title Ljava/lang/String; L69 L70 18
+    LOCALVARIABLE it Ljava/lang/String; L74 L77 19
+    LOCALVARIABLE $i$a$-associate-GlobalSearchViewModel$finance$1$accName$1 I L18 L19 17
+    LOCALVARIABLE $i$f$associateTo I L13 L21 12
+    LOCALVARIABLE $i$f$associate I L10 L22 8
+    LOCALVARIABLE $i$a$-forEach-GlobalSearchViewModel$finance$1$1$1 I L33 L46 15
+    LOCALVARIABLE $i$f$forEach I L28 L48 11
+    LOCALVARIABLE $i$f$sortedByDescending I L50 L52 11
+    LOCALVARIABLE $i$a$-ifBlank-GlobalSearchViewModel$finance$1$1$3$title$1 I L63 L66 17
+    LOCALVARIABLE $i$a$-let-GlobalSearchViewModel$finance$1$1$3$1 I L76 L77 31
+    LOCALVARIABLE $i$a$-forEach-GlobalSearchViewModel$finance$1$1$3 I L60 L94 15
+    LOCALVARIABLE $i$f$forEach I L55 L96 11
+    LOCALVARIABLE $i$a$-forEach-GlobalSearchViewModel$finance$1$1$4 I L103 L107 15
+    LOCALVARIABLE $i$f$forEach I L98 L109 11
+    LOCALVARIABLE $i$a$-ifBlank-GlobalSearchViewModel$finance$1$1$5$1 I L119 L120 23
+    LOCALVARIABLE $i$a$-forEach-GlobalSearchViewModel$finance$1$1$5 I L116 L130 15
+    LOCALVARIABLE $i$f$forEach I L111 L132 11
+    LOCALVARIABLE $i$a$-buildList-GlobalSearchViewModel$finance$1$1 I L26 L133 9
+    LOCALVARIABLE this Lir/sadteam/loancalc/ui/search/GlobalSearchViewModel$finance$1; L0 L135 0
+    LOCALVARIABLE $result Ljava/lang/Object; L4 L3 1
+    MAXSTACK = 21
+    MAXLOCALS = 54
+
+File is unknown
+The root cause java.lang.OutOfMemoryError was thrown at: org.jetbrains.org.objectweb.asm.tree.analysis.Frame.<init>(Frame.java:78)
+	at org.jetbrains.kotlin.codegen.TransformationMethodVisitor.visitEnd(TransformationMethodVisitor.kt:89)
+	at org.jetbrains.org.objectweb.asm.MethodVisitor.visitEnd(MethodVisitor.java:783)
+	at org.jetbrains.kotlin.codegen.TransformationMethodVisitor.visitEnd(TransformationMethodVisitor.kt:87)
+	... 56 more
+Caused by: java.lang.OutOfMemoryError: GC overhead limit exceeded
+	at org.jetbrains.org.objectweb.asm.tree.analysis.Frame.<init>(Frame.java:78)
+	at org.jetbrains.kotlin.codegen.optimization.common.FastMethodAnalyzer._init_$lambda$0(FastMethodAnalyzer.kt:47)
+	at org.jetbrains.kotlin.codegen.optimization.common.FastMethodAnalyzer$$Lambda$1339/0x000001e89583b778.invoke(Unknown Source)
+	at org.jetbrains.kotlin.codegen.optimization.common.FastAnalyzer.fullMergeControlFlowEdge(FastAnalyzer.kt:233)
+	at org.jetbrains.kotlin.codegen.optimization.common.FastAnalyzer.mergeControlFlowEdge(FastAnalyzer.kt:216)
+	at org.jetbrains.kotlin.codegen.optimization.common.FastAnalyzer.processControlFlowEdge(FastAnalyzer.kt:208)
+	at org.jetbrains.kotlin.codegen.optimization.common.FastAnalyzer.processControlFlowEdge$default(FastAnalyzer.kt:206)
+	at org.jetbrains.kotlin.codegen.optimization.common.FastAnalyzer.visitOpInsn(FastAnalyzer.kt:292)
+	at org.jetbrains.kotlin.codegen.optimization.common.FastAnalyzer.visitMeaningfulInstruction(FastAnalyzer.kt:281)
+	at org.jetbrains.kotlin.codegen.optimization.common.FastAnalyzer.analyzeInstruction(FastAnalyzer.kt:113)
+	at org.jetbrains.kotlin.codegen.optimization.common.FastAnalyzer.analyzeMainLoop(FastAnalyzer.kt:74)
+	at org.jetbrains.kotlin.codegen.optimization.common.FastAnalyzer.analyze(FastAnalyzer.kt:53)
+	at org.jetbrains.kotlin.codegen.optimization.transformer.MethodTransformer.analyze(MethodTransformer.java:49)
+	at org.jetbrains.kotlin.codegen.optimization.ConstantConditionEliminationMethodTransformer$ConstantConditionsOptimization.collectRewriteActions(ConstantConditionEliminationMethodTransformer.kt:65)
+	at org.jetbrains.kotlin.codegen.optimization.ConstantConditionEliminationMethodTransformer$ConstantConditionsOptimization.run(ConstantConditionEliminationMethodTransformer.kt:56)
+	at org.jetbrains.kotlin.codegen.optimization.ConstantConditionEliminationMethodTransformer.transform(ConstantConditionEliminationMethodTransformer.kt:39)
+	at org.jetbrains.kotlin.codegen.optimization.transformer.CompositeMethodTransformer.transform(CompositeMethodTransformer.kt:25)
+	at org.jetbrains.kotlin.codegen.optimization.OptimizationMethodVisitor.performTransformations(OptimizationMethodVisitor.kt:74)
+	at org.jetbrains.kotlin.codegen.TransformationMethodVisitor.visitEnd(TransformationMethodVisitor.kt:67)
+	at org.jetbrains.org.objectweb.asm.MethodVisitor.visitEnd(MethodVisitor.java:783)
+	at org.jetbrains.kotlin.codegen.TransformationMethodVisitor.visitEnd(TransformationMethodVisitor.kt:87)
+	at org.jetbrains.org.objectweb.asm.tree.MethodNode.accept(MethodNode.java:772)
+	at org.jetbrains.kotlin.backend.jvm.codegen.CoroutineCodegenKt.acceptWithStateMachine(CoroutineCodegen.kt:76)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ClassCodegen.generateMethod(ClassCodegen.kt:440)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ClassCodegen.generate(ClassCodegen.kt:168)
+	at org.jetbrains.kotlin.backend.jvm.codegen.ClassCodegen.generate(ClassCodegen.kt:181)
+	at org.jetbrains.kotlin.backend.jvm.FileCodegen.lower(JvmPhases.kt:39)
+	at org.jetbrains.kotlin.backend.common.phaser.PhaseFactoriesKt.createFilePhase$lambda$4(PhaseFactories.kt:71)
+	at org.jetbrains.kotlin.backend.common.phaser.PhaseFactoriesKt$$Lambda$184/0x000001e895147ce0.invoke(Unknown Source)
+	at org.jetbrains.kotlin.backend.common.phaser.PhaseBuildersKt$createSimpleNamedCompilerPhase$1.phaseBody(PhaseBuilders.kt:69)
+	at org.jetbrains.kotlin.backend.common.phaser.SimpleNamedCompilerPhase.phaseBody(CompilerPhase.kt:226)
+	at org.jetbrains.kotlin.backend.common.phaser.AbstractNamedCompilerPhase.invoke(CompilerPhase.kt:113)
+
+

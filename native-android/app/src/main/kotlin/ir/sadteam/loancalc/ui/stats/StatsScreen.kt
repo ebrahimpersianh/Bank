@@ -348,14 +348,14 @@ private fun StatsExportTile(
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(AppInfoPill)
+            .background(ir.sadteam.loancalc.ui.theme.AppPrimaryPill)
             .pressScaleClickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(9.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))
-        Text(label, color = AppInfo, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Icon(icon, contentDescription = null, tint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, modifier = Modifier.size(17.dp))
+        Text(label, color = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
 }
 

@@ -449,13 +449,17 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
 }
 
 
-/** آیکون و رنگِ هر نوعِ قبض (طرحِ Claude Design). */
+/**
+ * آیکون و رنگِ هر نوعِ قبض. ۱۳ آبان (خواسته‌ی کاربر: «آیکون‌ها همه یک‌دست»): هفت رنگ (آبی، زرد،
+ * نارنجی، بنفش…) → یک رنگِ برند؛ نوع را شکلِ آیکون می‌گوید.
+ */
+@androidx.compose.runtime.Composable
 private fun billKindIcon(kind: String): Pair<androidx.compose.ui.graphics.vector.ImageVector, androidx.compose.ui.graphics.Color> = when (kind) {
-    "water" -> Icons.Filled.WaterDrop to androidx.compose.ui.graphics.Color(0xFF2B7BD6)
-    "power" -> Icons.Filled.Bolt to androidx.compose.ui.graphics.Color(0xFFD69E2E)
-    "gas" -> Icons.Filled.LocalFireDepartment to androidx.compose.ui.graphics.Color(0xFFDD6B20)
-    "mobile" -> Icons.Filled.Smartphone to androidx.compose.ui.graphics.Color(0xFF7C4DDB)
-    "phone" -> Icons.Filled.Call to androidx.compose.ui.graphics.Color(0xFF5B6B62)
-    "internet" -> Icons.Filled.Wifi to androidx.compose.ui.graphics.Color(0xFF0E9F8E)
-    else -> Icons.Filled.Receipt to androidx.compose.ui.graphics.Color(0xFF7A8A81)
-}
+    "water" -> Icons.Filled.WaterDrop
+    "power" -> Icons.Filled.Bolt
+    "gas" -> Icons.Filled.LocalFireDepartment
+    "mobile" -> Icons.Filled.Smartphone
+    "phone" -> Icons.Filled.Call
+    "internet" -> Icons.Filled.Wifi
+    else -> Icons.Filled.Receipt
+} to ir.sadteam.loancalc.ui.theme.AppPrimaryInk

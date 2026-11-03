@@ -124,6 +124,7 @@ fun DebtScreen(
     startInDang: Boolean = false,
     viewModel: DebtViewModel = hiltViewModel(),
     dangViewModel: DangViewModel = hiltViewModel(),
+    dangAccountVm: ir.sadteam.loancalc.ui.account.AccountViewModel = hiltViewModel(),
 ) {
     val counterparties by viewModel.counterparties.collectAsState()
     val debts by viewModel.debts.collectAsState()
@@ -267,6 +268,7 @@ fun DebtScreen(
                     onCreateCounterparty = { name, onCreated -> viewModel.addCounterparty(name, onResult = onCreated) },
                     existing = editing,
                     loadExisting = { id -> dangViewModel.loadForEdit(id) },
+                    onExpenseSplit = { id -> dangAccountVm.markDangSplit(id) },
                     onSave = { title, method, total, y, m, d, eventMode, participants, items ->
                         if (editing != null) {
                             dangViewModel.updateEvent(editing, title, method, total, y, m, d, eventMode, participants, items) {

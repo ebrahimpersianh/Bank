@@ -287,10 +287,10 @@ private fun RuleCard(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(999.dp))
-                            .background(AppInfoPill)
+                            .background(ir.sadteam.loancalc.ui.theme.AppPrimaryPill)
                             .padding(horizontal = 7.dp, vertical = 3.dp),
                     ) {
-                        Text("خودکار", color = AppInfo, fontSize = 9.5.sp, fontWeight = FontWeight.ExtraBold)
+                        Text("خودکار", color = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, fontSize = 9.5.sp, fontWeight = FontWeight.ExtraBold)
                     }
                 }
             }

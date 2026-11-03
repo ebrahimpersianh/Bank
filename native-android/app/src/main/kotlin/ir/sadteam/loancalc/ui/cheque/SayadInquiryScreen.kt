@@ -92,7 +92,7 @@ fun SayadInquiryScreen(sayadId: String?, onBack: () -> Unit) {
             }
 
             item {
-                SayadCard(Icons.Filled.Language, Color(0xFF2B7BD6), "استعلام از طریق سایت") {
+                SayadCard(Icons.Filled.Language, ir.sadteam.loancalc.ui.theme.AppPrimaryInk, "استعلام از طریق سایت") {
                     ir.sadteam.loancalc.ui.components.Ltr {
                         Text(
                             SAYAD_WEB_URL.removePrefix("https://"),
@@ -156,7 +156,7 @@ fun SayadInquiryScreen(sayadId: String?, onBack: () -> Unit) {
                 // اسم اپ‌ها از رو عکسِ کاربر (تاپ/آپ/ساد۲۴) - چون شناسه‌ی واقعی پکیج/دیپ‌لینک هرکدوم
                 // رو نداریم، دکمه‌ها فقط جستجوی اسمِ اپ رو کافه‌بازار/گوگل‌پلی رو باز می‌کنن (بدون
                 // هیچ پکیج‌نیم حدسی)، نه یه Intent مستقیم به اپ مشخص.
-                SayadCard(Icons.Filled.QrCodeScanner, Color(0xFF7C4DDB), "استعلام از طریق اپلیکیشن") {
+                SayadCard(Icons.Filled.QrCodeScanner, ir.sadteam.loancalc.ui.theme.AppPrimaryInk, "استعلام از طریق اپلیکیشن") {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("تاپ", "آپ", "ساد ۲۴").forEach { appName ->
                             OutlinedButton(

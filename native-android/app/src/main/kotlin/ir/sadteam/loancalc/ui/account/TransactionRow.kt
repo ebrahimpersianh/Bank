@@ -117,7 +117,12 @@ fun CompactTransactionRow(
                 )
                 Text(
                     // یافته‌ی ۴۶: خریدِ منتظرِ تأیید با بقیه فرقی نداشت.
-                    listOfNotNull(if (!tx.confirmed) "منتظرِ تأیید" else null, accountName, origin, timeOfTransaction(tx)).joinToString(" · "),
+                    listOfNotNull(
+                        if (!tx.confirmed) "منتظرِ تأیید" else null,
+                        // یافته‌ی ۴۴: خرجی که دنگ شده نشانش را دارد.
+                        if (tx.tags?.split(',')?.any { it.trim() == ir.sadteam.loancalc.ui.account.DANG_TAG } == true) "دنگ‌شده" else null,
+                        accountName, origin, timeOfTransaction(tx),
+                    ).joinToString(" · "),
                     color = AppMuted,
                     fontSize = 10.sp,
                     maxLines = 1,
@@ -178,10 +183,10 @@ private fun DangWiggleButton(onClick: () -> Unit) {
                 .size(30.dp)
                 .graphicsLayer { rotationZ = angle }
                 .clip(RoundedCornerShape(AppRadius.icon))
-                .background(AppPurplePill),
+                .background(ir.sadteam.loancalc.ui.theme.AppPrimaryPill),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Filled.Groups, contentDescription = "تقسیمِ دنگ", tint = AppPurple, modifier = Modifier.size(16.dp))
+            Icon(Icons.Filled.Groups, contentDescription = "تقسیمِ دنگ", tint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, modifier = Modifier.size(16.dp))
         }
     }
 }

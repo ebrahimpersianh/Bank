@@ -112,7 +112,9 @@ class BankSmsReceiver : BroadcastReceiver() {
                             inboxRepository.post(
                                 kind = InboxMessageEntity.Kind.SYSTEM,
                                 title = "پیامکِ بانکی بی‌حساب ماند",
-                                body = "از «$sender» یک تراکنش آمد ولی به هیچ حسابی وصل نیست. در ویرایشِ حساب، «سرشماره‌ی پیامک» را همین شماره بگذار تا از این به بعد خودکار ثبت شود.",
+                                body = "از «$sender» یک تراکنش آمد ولی به هیچ حسابی وصل نیست. حسابش را همین‌جا انتخاب کن تا از این به بعد خودکار ثبت شود.",
+                                // یافته‌ی ۸۱: دکمه‌ی یک‌لمسیِ «وصل به حساب» در پیام.
+                                refId = ir.sadteam.loancalc.data.LINK_SOURCE_PREFIX + sender,
                                 sourceLabel = "پیامک از $sender",
                                 sourceText = body,
                             )

@@ -585,13 +585,14 @@ private fun ChequeCard(
             val received = cheque.type == "RECEIVED"
             val frameFill = when {
                 cheque.archived -> AppChipBg
-                received -> AppPurplePill
-                else -> AppInfoPill
+                // ۱۳ آبان (یک‌دستیِ آیکون‌ها): بنفش/آبی → همان رنگِ فرمِ چک: دریافتی سبز، پرداختی قرمز.
+                received -> ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+                else -> ir.sadteam.loancalc.ui.theme.AppDangerPill
             }
             val frameInk = when {
                 cheque.archived -> AppLabel
-                received -> AppPurple
-                else -> AppInfo
+                received -> ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+                else -> ir.sadteam.loancalc.ui.theme.AppDangerInk
             }
             Box(
                 modifier = Modifier

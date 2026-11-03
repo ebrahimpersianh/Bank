@@ -447,6 +447,15 @@ private fun MainSection(
                 )
             }
         } else {
+            // ۱۳ آبان (خواسته‌ی کاربر): کسی نمی‌دانست چطور تراکنش را حذف کند.
+            item(key = "delete-hint") {
+                Text(
+                    "برای حذف، انگشتت را روی تراکنش نگه دار.",
+                    color = AppMuted,
+                    fontSize = 10.5.sp,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                )
+            }
             items(filtered, key = { it.id }) { tx ->
                 val accountName = accounts.firstOrNull { it.id == tx.accountId }?.name ?: "—"
                 SwipeToDeleteRow(onDelete = { deletingTx = tx }, confirmDismiss = false, modifier = Modifier.animateItem()) {

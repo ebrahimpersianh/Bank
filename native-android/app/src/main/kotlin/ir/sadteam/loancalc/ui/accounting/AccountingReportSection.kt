@@ -658,14 +658,14 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
         item {
             AppCard(
                 modifier = Modifier.pressScaleClickable(onClick = { showLoanStats = true }),
-                borderColor = AppInfo.copy(alpha = 0.26f),
+                borderColor = ir.sadteam.loancalc.ui.theme.AppPrimary.copy(alpha = 0.26f),
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppInfoPill),
+                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(AppRadius.icon)).background(ir.sadteam.loancalc.ui.theme.AppPrimaryPill),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Filled.Assessment, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))
+                        Icon(Icons.Filled.Assessment, contentDescription = null, tint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, modifier = Modifier.size(17.dp))
                     }
                     Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
                         Text("آمارِ وام‌ها", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -680,14 +680,14 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
             // showCustomReport = !showCustomReport، بدونِ تغییرِ منطق/خروجی‌گیرها.
             AppCard(
                 modifier = Modifier.pressScaleClickable(onClick = { showCustomReport = !showCustomReport }),
-                borderColor = AppInfo.copy(alpha = 0.26f),
+                borderColor = ir.sadteam.loancalc.ui.theme.AppPrimary.copy(alpha = 0.26f),
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppInfoPill),
+                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(AppRadius.icon)).background(ir.sadteam.loancalc.ui.theme.AppPrimaryPill),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Outlined.PieChart, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))
+                        Icon(Icons.Outlined.PieChart, contentDescription = null, tint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, modifier = Modifier.size(17.dp))
                     }
                     Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
                         Text(

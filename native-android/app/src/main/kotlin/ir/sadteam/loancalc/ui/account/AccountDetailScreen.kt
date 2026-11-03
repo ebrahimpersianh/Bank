@@ -346,7 +346,7 @@ fun AccountDetailScreen(
             item {
                 // نشانه‌ی کشف‌پذیری - یک‌بار زیرِ فهرست، نه زیرِ هر ردیف (که ردیف را دوبرابر می‌کرد).
                 Text(
-                    "برای ویرایش بزن · برای حذف بکش",
+                    "برای ویرایش یا حذف، روی ردیف بزن یا انگشتت را نگه دار",
                     color = AppMuted.copy(alpha = 0.7f),
                     fontSize = 9.5.sp,
                     modifier = Modifier.padding(top = 6.dp),
@@ -391,6 +391,7 @@ fun AccountDetailScreen(
                         initialExpenseId = tx.id,
                         onCancel = { splitTx = null },
                         onCreateCounterparty = { name, onCreated -> debtVm.addCounterparty(name, onResult = onCreated) },
+                        onExpenseSplit = { id -> viewModel.markDangSplit(id) },
                         onSave = { title, method, total, y, m, d, eventMode, participants, items ->
                             dangVm.createEvent(title, method, total, y, m, d, eventMode, participants, items) {
                                 android.widget.Toast.makeText(splitCtx, "دنگ ساخته شد؛ در «دنگ» می‌بینی‌اش.", android.widget.Toast.LENGTH_LONG).show()
@@ -412,6 +413,7 @@ fun AccountDetailScreen(
                     editingTx = null
                 },
                 onDismiss = { editingTx = null },
+                onDelete = { editingTx = null; deletingTx = tx },
             )
         }
 
@@ -535,6 +537,8 @@ private fun EditTransactionDialog(
     onSave: (amountRial: Double, description: String) -> Unit,
     onDismiss: () -> Unit,
     onSplitDang: (() -> Unit)? = null,
+    /** ۱۳ آبان (خواسته‌ی کاربر): حذف فقط با کشیدن بود و پیدا نمی‌شد - حالا این‌جا هم. */
+    onDelete: (() -> Unit)? = null,
 ) {
     var amountText by remember { mutableStateOf(rialToToman(tx.amount.toLong()).toString()) }
     var description by remember { mutableStateOf(tx.description) }
@@ -582,6 +586,11 @@ private fun EditTransactionDialog(
                 if (onSplitDang != null) {
                     TextButton(onClick = onSplitDang, modifier = Modifier.fillMaxWidth()) {
                         Text("تقسیمِ دنگ بینِ دوست‌ها", color = AppPrimaryInk, fontWeight = FontWeight.Bold)
+                    }
+                }
+                if (onDelete != null) {
+                    TextButton(onClick = onDelete, modifier = Modifier.fillMaxWidth()) {
+                        Text("حذفِ این تراکنش", color = ir.sadteam.loancalc.ui.theme.AppDanger, fontWeight = FontWeight.Bold)
                     }
                 }
             }

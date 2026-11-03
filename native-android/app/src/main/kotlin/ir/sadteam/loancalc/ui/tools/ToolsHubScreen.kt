@@ -145,7 +145,7 @@ fun ToolsHubScreen(
                 ToolCard(
                     icon = Icons.Outlined.Description,
                     title = "استعلام صیادی",
-                    tint = AppInfo,
+                    tint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk,
                     text = "راهنمای استعلام اعتبار چک صیادی از سایت یا پیامک.",
                     action = "استعلام چک",
                     onClick = onOpenSayad,

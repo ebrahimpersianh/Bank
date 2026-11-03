@@ -180,6 +180,27 @@ class InboxViewModel @Inject constructor(
         )
     }
 
+    /** حساب‌ها برای دکمه‌های «وصل به حساب» (یافته‌ی ۸۱). */
+    val accountList = accounts.observeAccounts()
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * یافته‌ی ۸۱: پیامکِ بانکیِ بی‌حساب کاربر را می‌فرستاد «ویرایشِ حساب، سرشماره را بگذار». حالا یک
+     * لمس: سرشماره (یا بسته‌نامِ اپ) به `smsSender`ِ همان حساب اضافه می‌شود (قالبِ «سرشماره,بسته‌نام»).
+     */
+    fun linkSource(message: InboxMessageEntity, accountId: Long) = viewModelScope.launch {
+        val ref = message.refId ?: return@launch
+        if (!ref.startsWith(ir.sadteam.loancalc.data.LINK_SOURCE_PREFIX)) return@launch
+        val source = ref.removePrefix(ir.sadteam.loancalc.data.LINK_SOURCE_PREFIX).trim().ifEmpty { return@launch }
+        val account = accounts.observeAccounts().first().firstOrNull { it.id == accountId } ?: return@launch
+        val parts = account.smsSender.orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() }
+        if (source !in parts) {
+            accounts.updateAccount(account.copy(smsSender = (parts + source).joinToString(","), smsEnabled = true))
+        }
+        inbox.resolve(message.id, done = true)
+        inbox.markRead(message.id)
+    }
+
     fun dismiss(message: InboxMessageEntity) = viewModelScope.launch {
         if (InboxMessageEntity.Kind.isActionable(message.kind)) {
             inbox.resolve(message.id, done = false)

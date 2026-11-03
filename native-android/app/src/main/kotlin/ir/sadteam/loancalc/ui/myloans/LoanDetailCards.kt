@@ -353,8 +353,8 @@ internal fun LoanKeyStatsCard(
             KeyStatDivider()
             KeyStat(
                 icon = Icons.Filled.Payments,
-                tint = AppInfo,
-                bg = AppInfoPill,
+                tint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk,
+                bg = ir.sadteam.loancalc.ui.theme.AppPrimaryPill,
                 label = installmentLabel,
                 value = maskIfPrivate(privacyMode, amountToman(installment)),
                 unit = "${ir.sadteam.loancalc.ui.jibak.unitFa()}",
@@ -363,8 +363,8 @@ internal fun LoanKeyStatsCard(
             KeyStatDivider()
             KeyStat(
                 icon = Icons.Filled.CalendarMonth,
-                tint = AppPurpleInk,
-                bg = AppPurplePill,
+                tint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk,
+                bg = ir.sadteam.loancalc.ui.theme.AppPrimaryPill,
                 label = "سررسیدِ بعدی",
                 value = nextDueLabel ?: "—",
                 unit = "",
@@ -378,14 +378,14 @@ internal fun LoanKeyStatsCard(
                             dueInDays == 0 -> "امروز"
                             else -> "${toFa(dueInDays)} روز مانده"
                         },
-                        color = if (late || dueInDays == 0) AppDangerInk else AppInfo,
+                        color = if (late || dueInDays == 0) AppDangerInk else ir.sadteam.loancalc.ui.theme.AppPrimaryInk,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Black,
                         maxLines = 1,
                         modifier = Modifier
                             .padding(top = 3.dp)
                             .clip(RoundedCornerShape(999.dp))
-                            .background(if (late || dueInDays == 0) AppDangerPill else AppInfoPill)
+                            .background(if (late || dueInDays == 0) AppDangerPill else ir.sadteam.loancalc.ui.theme.AppPrimaryPill)
                             .padding(horizontal = 7.dp, vertical = 2.dp),
                     )
                 }

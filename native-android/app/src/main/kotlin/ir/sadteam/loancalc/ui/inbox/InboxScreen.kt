@@ -95,6 +95,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
     }
     val messages by viewModel.messages.collectAsState()
     val txCategories by viewModel.txCategories.collectAsState()
+    val linkAccountChoices = viewModel.accountList.collectAsState().value.map { it.id to it.name }
     val bin by viewModel.recycleBin.collectAsState()
     var binOpen by remember { mutableStateOf(false) }
     val sourceAccount by viewModel.sourceAccount.collectAsState()
@@ -299,6 +300,8 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                             gapRial = gap?.gapRial,
                             onFixGap = { viewModel.markRead(message.id); viewModel.fixBalanceGap(message) },
                             txCategory = message.refId?.toLongOrNull()?.let { txCategories[it] },
+                            linkAccounts = if (message.refId?.startsWith(ir.sadteam.loancalc.data.LINK_SOURCE_PREFIX) == true) linkAccountChoices else emptyList(),
+                            onLink = { id -> viewModel.linkSource(message, id) },
                             onClick = {
                                 viewModel.markRead(message.id)
                                 // ۱۴ مهر: تراکنشِ خودکار → پنجره‌ی دسته (متنِ پیام از همان‌جا).

@@ -666,8 +666,8 @@ internal fun LoanDetailBottomBar(
                         else -> "افزودن به تقویم"
                     },
                     icon = Icons.Filled.CalendarMonth,
-                    ink = AppInfo,
-                    bg = AppInfoPill,
+                    ink = ir.sadteam.loancalc.ui.theme.AppPrimaryInk,
+                    bg = ir.sadteam.loancalc.ui.theme.AppPrimaryPill,
                     enabled = !isExportingCalendar,
                     modifier = Modifier.weight(1.1f),
                     onClick = {

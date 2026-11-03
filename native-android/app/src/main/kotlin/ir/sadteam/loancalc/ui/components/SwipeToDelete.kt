@@ -13,6 +13,19 @@ import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
+import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -80,6 +93,46 @@ fun SwipeToDeleteRow(
             }
         },
     ) {
-        content()
+        // ۱۳ آبان (خواسته‌ی کاربر: «یکی پرسید چطور حذف کنم - باید بکشیم از یک سمت»): کشیدن پیدا
+        // نمی‌شد. حالا **نگه‌داشتنِ انگشت** روی ردیف یک منوی «حذف» باز می‌کند - همان کاری که کاربر
+        // در هر برنامه‌ی دیگری اول امتحان می‌کند. لمسِ کوتاه دست نمی‌خورد (کارِ خودِ ردیف).
+        var menuOpen by remember { mutableStateOf(false) }
+        val haptic = LocalHapticFeedback.current
+        Box(
+            modifier = Modifier.pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    val slop = viewConfiguration.touchSlop
+                    val released = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                        while (true) {
+                            val ch = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id }
+                                ?: return@withTimeoutOrNull true
+                            if (!ch.pressed) return@withTimeoutOrNull true
+                            if ((ch.position - down.position).getDistance() > slop) return@withTimeoutOrNull true
+                        }
+                        @Suppress("UNREACHABLE_CODE") true
+                    }
+                    if (released == null) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        menuOpen = true
+                        // رها کردنِ انگشت بعد از نگه‌داشتن «لمس» حساب نشود (ردیف باز نشود).
+                        while (true) {
+                            val ev = awaitPointerEvent(PointerEventPass.Initial)
+                            ev.changes.forEach { it.consume() }
+                            if (ev.changes.none { it.pressed }) break
+                        }
+                    }
+                }
+            },
+        ) {
+            content()
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(
+                    text = { Text("حذف", color = AppDanger) },
+                    leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, tint = AppDanger) },
+                    onClick = { menuOpen = false; onDelete() },
+                )
+            }
+        }
     }
 }

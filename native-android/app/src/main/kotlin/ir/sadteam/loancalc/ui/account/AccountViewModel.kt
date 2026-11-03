@@ -199,6 +199,20 @@ class AccountViewModel @Inject constructor(
         }
     }
 
+    /**
+     * یافته‌ی ۴۴: بعد از ساختنِ دنگ از یک خرج، ردیفِ آن خرج هیچ نشانی نداشت. برچسبِ «دنگ» روی همان
+     * خرج می‌نشیند (ستونِ موجودِ `tags`، بی migration) و ردیفِ تراکنش آن را نشان می‌دهد.
+     */
+    fun markDangSplit(txId: Long) {
+        viewModelScope.launch {
+            val tx = transactions.value.firstOrNull { it.id == txId } ?: return@launch
+            val tags = tx.tags?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
+            if (DANG_TAG in tags) return@launch
+            accountRepository.updateTransaction(tx.copy(tags = (tags + DANG_TAG).joinToString(",")))
+            syncIfLoggedIn()
+        }
+    }
+
     /** «نه، این جابه‌جایی نبود» - برگرداندنِ جابه‌جاییِ تشخیصِ خودکار. */
     fun unpairTransfer(transaction: AccountTransactionEntity) {
         viewModelScope.launch {
@@ -290,3 +304,6 @@ class AccountViewModel @Inject constructor(
         }
     }
 }
+
+/** برچسبِ خرجی که از آن دنگ ساخته شده (یافته‌ی ۴۴). */
+const val DANG_TAG = "دنگ"

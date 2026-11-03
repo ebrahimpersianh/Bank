@@ -127,7 +127,7 @@ internal fun InstallmentRow(
         paidLate -> AppDangerInk
         paid -> AppPrimaryInk
         overdue -> AppDangerInk
-        upcoming -> AppInfo
+        upcoming -> AppPrimaryInk
         else -> AppMuted
     }
     val rowBg = when {
@@ -154,13 +154,13 @@ internal fun InstallmentRow(
     val iconBg = when {
         paid -> AppPrimaryPill
         overdue -> AppDanger
-        upcoming -> AppInfoPill
+        upcoming -> AppChipBg // پرداخت‌شده سبز؛ آینده خنثی تا با هم اشتباه نشوند
         else -> AppChipBg
     }
     val iconTint = when {
         overdue -> Color.White
         paid -> AppPrimaryInk
-        upcoming -> AppInfo
+        upcoming -> AppPrimaryInk
         else -> AppMuted
     }
     // قرصِ زیرِ تاریخ فقط برای معوق و «بعدی» - ردیف‌های آتیِ دور چیزی برای گفتن ندارند.
@@ -276,14 +276,14 @@ internal fun InstallmentRow(
             if (chip != null) {
                 Text(
                     chip,
-                    color = if (overdue) AppDangerInk else AppInfo,
+                    color = if (overdue) AppDangerInk else AppPrimaryInk,
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                     modifier = Modifier
                         .padding(top = 3.dp)
                         .clip(RoundedCornerShape(999.dp))
-                        .background(if (overdue) AppDangerPill else AppInfoPill)
+                        .background(if (overdue) AppDangerPill else ir.sadteam.loancalc.ui.theme.AppPrimaryPill)
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 )
             }

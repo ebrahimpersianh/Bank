@@ -129,6 +129,8 @@ fun AdminMoneyScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel()
             failed -> Text("نرسید؛ اینترنت را چک کن.", color = AppDangerInk)
             d == null -> Box(Modifier.fillMaxWidth().padding(30.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = AppPrimary) }
             else -> {
+                // ۱۳ آبان: «چه کسی خرید» مهم‌ترین سوالِ این صفحه است - اول.
+                AdminSalesCard(d)
                 AppCard(variant = AppCardVariant.GOLD) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.WorkspacePremium, null, tint = AppGoldInk2, modifier = Modifier.size(18.dp))
@@ -164,7 +166,6 @@ fun AdminMoneyScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel()
                     KpiTile("درآمد به‌ازای هر کاربر", if (d.users > 0) adminNum((d.netTotal / d.users).toLong()) else "—", Modifier.weight(1f), unit = "تومان", prevText = "خالص · ${adminNum(d.users)} کاربر", standalone = true)
                     KpiTile("درآمد به‌ازای هر خریدار", if (d.payers > 0) adminNum((d.netTotal / d.payers).toLong()) else "—", Modifier.weight(1f), unit = "تومان", prevText = "خالص · ${adminNum(d.payers)} خریدار", standalone = true)
                 }
-                AdminSalesCard(d)
                 AbCard(d)
             }
         }

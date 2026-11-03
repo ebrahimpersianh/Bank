@@ -258,7 +258,7 @@ internal fun PeriodStatRow(
         )
         PeriodStatCard(
             icon = Icons.Filled.SwapHoriz,
-            iconTint = AppPurple,
+            iconTint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk,
             iconBg = AppIconFrame,
             title = "تعدادِ تراکنش",
             value = count.toFa(),
@@ -561,10 +561,10 @@ private fun CommitmentRow(
             .padding(vertical = 9.dp),
     ) {
         Box(
-            modifier = Modifier.size(30.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPurplePill),
+            modifier = Modifier.size(30.dp).clip(RoundedCornerShape(AppRadius.icon)).background(ir.sadteam.loancalc.ui.theme.AppPrimaryPill),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = AppPurple, modifier = Modifier.size(15.dp))
+            Icon(icon, contentDescription = null, tint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, modifier = Modifier.size(15.dp))
         }
         Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
             Text(title, color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.Black)

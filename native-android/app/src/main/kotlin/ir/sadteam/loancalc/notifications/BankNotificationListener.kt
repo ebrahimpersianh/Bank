@@ -189,8 +189,9 @@ class BankNotificationListener : NotificationListenerService() {
                     inboxRepository.post(
                         kind = InboxMessageEntity.Kind.SYSTEM,
                         title = "اعلانِ بانکی بی‌حساب ماند",
-                        body = "یک تراکنش از «${appLabelOf(packageName)}» دیدیم ولی نمی‌دانیم مالِ کدام حساب است. در ویرایشِ حساب، «اپِ اعلان‌دهنده» را همین اپ انتخاب کن.",
-                        refId = null,
+                        body = "یک تراکنش از «${appLabelOf(packageName)}» دیدیم ولی نمی‌دانیم مالِ کدام حساب است. حسابش را همین‌جا انتخاب کن تا از این به بعد خودکار ثبت شود.",
+                        // یافته‌ی ۸۱: پیام دکمه‌ی یک‌لمسیِ «وصل به حساب» می‌گیرد (InboxScreen).
+                        refId = ir.sadteam.loancalc.data.LINK_SOURCE_PREFIX + packageName,
                         sourceLabel = "اعلانِ ${appLabelOf(packageName)}",
                         sourceText = body,
                     )

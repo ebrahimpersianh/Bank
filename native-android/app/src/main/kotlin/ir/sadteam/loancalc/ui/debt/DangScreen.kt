@@ -278,6 +278,8 @@ fun DangCreateScreen(
         participants: List<DangParticipantInput>,
         items: List<DangItemInput>,
     ) -> Unit,
+    /** دنگ از یک خرجِ ثبت‌شده ساخته شد - فراخوان برچسبِ «دنگ» را روی آن خرج می‌گذارد (یافته‌ی ۴۴). */
+    onExpenseSplit: (txId: Long) -> Unit = {},
 ) {
     var title by rememberSaveable { mutableStateOf("") }
     var totalText by rememberSaveable { mutableStateOf("") }
@@ -464,6 +466,7 @@ fun DangCreateScreen(
                             itemInputs = itemInputsBuilt
                         }
                     }
+                    if (pickedExpenseId > 0L) onExpenseSplit(pickedExpenseId)
                     // فرم تومان است، دیتابیس ریال - تبدیل فقط همین‌جا.
                     onSave(
                         title.trim().ifEmpty { "دنگ" }, method, totalAmount * ir.sadteam.loancalc.ui.jibak.unitDivD, year, month, day, isEventMode,

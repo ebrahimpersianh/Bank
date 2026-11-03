@@ -517,12 +517,12 @@ private fun AddBudgetDialog(
  * هم‌الگو با کارتِ آبیِ گزارشِ سفارشی تو ReportSection. */
 @Composable
 private fun BudgetToolTile(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    AppCard(modifier = modifier.pressScaleClickable(onClick = onClick), borderColor = AppInfo.copy(alpha = 0.30f)) {
+    AppCard(modifier = modifier.pressScaleClickable(onClick = onClick), borderColor = ir.sadteam.loancalc.ui.theme.AppPrimary.copy(alpha = 0.30f)) {
         Box(
-            modifier = Modifier.size(32.dp).background(AppInfoPill, CircleShape),
+            modifier = Modifier.size(32.dp).background(ir.sadteam.loancalc.ui.theme.AppPrimaryPill, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = AppInfo, modifier = Modifier.size(16.dp))
+            Icon(icon, contentDescription = null, tint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, modifier = Modifier.size(16.dp))
         }
         Text(title, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
         Text(subtitle, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))

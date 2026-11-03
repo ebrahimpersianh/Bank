@@ -623,7 +623,7 @@ private fun PlanCard(
                         maxLines = 1,
                         modifier = Modifier
                             .clip(RoundedCornerShape(999.dp))
-                            .background(AppInfoPill)
+                            .background(ir.sadteam.loancalc.ui.theme.AppPrimaryPill)
                             .padding(horizontal = 6.dp, vertical = 1.dp),
                     )
                 }
