@@ -118,6 +118,15 @@ fun AddEditChequeScreen(
     val counterparties by debtViewModel.counterparties.collectAsState()
     val selectedCounterparty = counterparties.firstOrNull { it.id == counterpartyId }
 
+    // یافته‌ی ۴۲ (همان دسته در فرمِ چک): برگشت با فرمِ دست‌خورده اول می‌پرسد.
+    val chequeSignature = listOf<Any?>(type, amountText, chequeNumber, sayadId, bankName, branchName, ownerName, notes,
+        dueYear, dueMonth, dueDay, chequeBookId, photoPath, nationalId, previousBalanceText, depositAmountText, counterpartyId)
+    val chequeBaseline = remember { chequeSignature }
+    val requestCancel = ir.sadteam.loancalc.ui.components.rememberLeaveGuard(
+        dirty = !savedOk && chequeSignature != chequeBaseline,
+        onLeave = onCancel,
+    )
+
     if (showCalendarPicker) {
         CalendarPickerScreen(
             initialDate = PersianDate(dueYear, dueMonth, dueDay),
@@ -464,7 +473,7 @@ fun AddEditChequeScreen(
                 ) {
                     Text("ذخیره چک")
                 }
-                OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = requestCancel, modifier = Modifier.fillMaxWidth()) {
                     Text("انصراف")
                 }
             }

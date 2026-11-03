@@ -516,29 +516,32 @@ internal fun CommitmentRows(
     onOpenChequeReport: () -> Unit,
 ) {
     // ۱۴ مهر: از داخلِ کارتِ دونات بیرون آمد - دیگر کارت توی کارت نیست.
-    run {
-        AppCard(label = "تعهدهای این ماه") {
-            CommitmentRow(
-                icon = Icons.Filled.EventRepeat,
-                title = "اقساط وام",
-                value = maskIfPrivate(privacyMode, rialToToman(monthlyInstallmentRial.toLong()).toFaMoney()) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
-                // ۱۶ مهر: «این ماه» معلوم نبود جمعِ سررسید است، نه پرداخت‌شده؛ و با «خرجِ» بالا اشتباه می‌شد.
-                caption = "سررسیدِ این ماه",
-                onClick = onOpenLoanStats,
-            )
-            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppLineRow))
-            CommitmentRow(
-                icon = Icons.Filled.CheckCircle,
-                title = "چک‌ها",
-                // شمارش است نه مبلغ، پس حالتِ خصوصی پوشانده‌اش نمی‌کند.
-                value = "${chequesThisMonth.toFa()} چک",
-                caption = "تا آخرِ ماه",
-                onClick = onOpenChequeReport,
-            )
-        }
+    // یافته‌ی ۵۱: «اقساطِ وام ۰» و «۰ چک» برای کسی که وام/چک ندارد شلوغیِ بی‌فایده بود -
+    // ردیفِ صفر نمی‌آید و اگر هر دو صفرند کلِ کارت.
+    val hasInstallments = monthlyInstallmentRial > 0.0
+    val hasCheques = chequesThisMonth > 0
+    if (!hasInstallments && !hasCheques) return
+    AppCard(label = "تعهدهای این ماه") {
+        if (hasInstallments) CommitmentRow(
+            icon = Icons.Filled.EventRepeat,
+            title = "اقساط وام",
+            value = maskIfPrivate(privacyMode, rialToToman(monthlyInstallmentRial.toLong()).toFaMoney()) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
+            // ۱۶ مهر: «این ماه» معلوم نبود جمعِ سررسید است، نه پرداخت‌شده؛ و با «خرجِ» بالا اشتباه می‌شد.
+            caption = "سررسیدِ این ماه",
+            onClick = onOpenLoanStats,
+        )
+        if (hasInstallments && hasCheques) Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppLineRow))
+        if (hasCheques) CommitmentRow(
+            icon = Icons.Filled.CheckCircle,
+            title = "چک‌ها",
+            // شمارش است نه مبلغ، پس حالتِ خصوصی پوشانده‌اش نمی‌کند.
+            value = "${chequesThisMonth.toFa()} چک",
+            caption = "تا آخرِ ماه",
+            onClick = onOpenChequeReport,
+        )
     }
 }
-/** یک ردیفِ تعهد. بنفش فقط سه نقطه می‌آید: زمینه‌ی آیکون، خودِ عدد، و نقطه‌ی خطِ گروه. */
+/** یک ردیفِ تعهد. بنفش فقط آیکون است؛ عدد مثلِ بقیه‌ی صفحه سیاه (یافته‌ی ۵۱: بنفشِ مبلغ بی‌دلیل بود). */
 @Composable
 private fun CommitmentRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -566,7 +569,7 @@ private fun CommitmentRow(
             Text(title, color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
             Text(caption, color = AppMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 1.dp))
         }
-        Text(value, color = AppPurpleInk, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+        Text(value, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
         Icon(
             Icons.Filled.ChevronLeft,
             contentDescription = null,
@@ -586,7 +589,9 @@ internal fun MonthCompareCard(all: List<ir.sadteam.loancalc.data.db.AccountTrans
     }.groupBy { it.category ?: "بی‌دسته" }.mapValues { e -> e.value.sumOf { it.amount } }
     val now = spend(today.y, today.m)
     val prev = spend(py, pm)
-    if (now.isEmpty() && prev.isEmpty()) return
+    // یافته‌ی ۵۲: برای کاربرِ تازه «ماهِ قبل ۰» و هر دسته «↑ بیشتر» قرمز بود - مقایسه با هیچ.
+    // بی دو ماهِ واقعی کارت نمی‌آید.
+    if (now.isEmpty() || prev.isEmpty()) return
     val rows = (now.keys + prev.keys).map { k -> Triple(k, now[k] ?: 0.0, prev[k] ?: 0.0) }
         .sortedByDescending { kotlin.math.abs(it.second - it.third) }.take(5)
     val totalNow = now.values.sum()
@@ -656,13 +661,14 @@ internal fun MonthCompareCard(all: List<ir.sadteam.loancalc.data.db.AccountTrans
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(top = 6.dp),
         ) {
+            // یافته‌ی ۵۲: راهنمای سه‌رنگ پیچیده بود؛ رنگ را فلشِ «↑ بیشتر / ↓ کمتر» خودش می‌گوید.
+            // راهنما فقط دو نوار را از هم جدا می‌کند: پهن = این ماه، باریکِ خاکستری = ماهِ قبل.
             listOf(
-                AppPrimaryInk to "این ماه (کمتر شده)",
-                AppDangerInk to "این ماه (بیشتر شده)",
-                AppMuted.copy(alpha = 0.45f) to "ماهِ قبل",
-            ).forEach { (c, label) ->
+                Triple(AppText.copy(alpha = 0.6f), 7.dp, "این ماه"),
+                Triple(AppMuted.copy(alpha = 0.45f), 5.dp, "ماهِ قبل"),
+            ).forEach { (c, h, label) ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(width = 12.dp, height = 5.dp).clip(RoundedCornerShape(99.dp)).background(c))
+                    Box(Modifier.size(width = 12.dp, height = h).clip(RoundedCornerShape(99.dp)).background(c))
                     Text(label, color = AppLabel, fontSize = 9.5.sp, modifier = Modifier.padding(start = 4.dp))
                 }
             }

@@ -260,8 +260,13 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
         var dayError by remember(base) { mutableStateOf(false) }
         val close = { adding = false; editing = null }
         ir.sadteam.loancalc.ui.subscription.PremiumBlock(blocked = base == null, key = "bills", label = "قبض‌ها", onBlocked = close)
+        // یافته‌ی ۴۲: لمسِ بیرونِ پنجره/برگشت/«انصراف» با فرمِ دست‌خورده اول می‌پرسد.
+        val billDirty = name != (base?.name ?: "") || kind != (base?.kind ?: "power") ||
+            billId != (base?.billId ?: "") || dayText != (base?.dueDay?.toString() ?: "") ||
+            period != (base?.periodMonths ?: 1) || phone != (base?.phone ?: "")
+        val requestClose = ir.sadteam.loancalc.ui.components.rememberLeaveGuard(dirty = billDirty, onLeave = close)
         JibakAlertDialog(
-            onDismissRequest = close,
+            onDismissRequest = requestClose,
             title = { Text(if (base == null) "قبضِ جدید" else "ویرایشِ قبض") },
             text = {
                 // بازطراحیِ ۸ مهر: کاشی‌های آیکون‌دارِ نوعِ قبض، کارتِ خط‌چینِ «چسباندن»، کادرهای گرد.
@@ -436,7 +441,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         Icon(Icons.Filled.Delete, contentDescription = "حذف", tint = AppDanger)
                     }
                 } else {
-                    TextButton(onClick = close) { Text("انصراف") }
+                    TextButton(onClick = requestClose) { Text("انصراف") }
                 }
             },
         )

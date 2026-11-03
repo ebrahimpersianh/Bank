@@ -116,6 +116,14 @@ fun AddManualLoanScreen(
     // SuccessCheckmark.kt. onSaved واقعی همون‌جا (بعدِ یه تاخیرِ کوتاه) صدا زده می‌شه.
     var savedOk by remember { mutableStateOf(false) }
 
+    // یافته‌ی ۴۲ (همان دسته در فرمِ وام): برگشت با فرمِ دست‌خورده اول می‌پرسد.
+    val loanSignature = listOf<Any?>(name, bank, installmentText, totalCountText, paidCountText, startYear, startMonth, startDay)
+    val loanBaseline = remember(editingLoan) { loanSignature }
+    val requestCancel = ir.sadteam.loancalc.ui.components.rememberLeaveGuard(
+        dirty = !saving && !savedOk && loanSignature != loanBaseline,
+        onLeave = onCancel,
+    )
+
     // 🚨 قبلاً این بلوک با `return` کلِ فرم را از کامپوزیشن برمی‌داشت - چهارمین موردِ همان
     // باگی که در `AssetTradeSheet` و `AccountDetailScreen` رفع شد. نتیجه: اسکرولِ فرم صفر
     // می‌شد و کاربر بعدِ انتخابِ تاریخ خودش را بالای صفحه پیدا می‌کرد.
@@ -407,7 +415,7 @@ fun AddManualLoanScreen(
                         Text(if (editingLoan != null) "ذخیره تغییرات" else "ذخیره وام")
                     }
                 }
-                OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth(), enabled = !saving) {
+                OutlinedButton(onClick = requestCancel, modifier = Modifier.fillMaxWidth(), enabled = !saving) {
                     Text("انصراف")
                 }
             }

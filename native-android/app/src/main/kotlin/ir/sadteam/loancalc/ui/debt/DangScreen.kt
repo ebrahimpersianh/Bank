@@ -375,6 +375,18 @@ fun DangCreateScreen(
         loadedExisting = true
     }
 
+    // یافته‌ی ۴۲: برگشت با فرمِ دست‌خورده می‌پرسد. «دست‌خورده» = فرق با لحظه‌ای که فرم آماده
+    // شد (بعد از بارگذاریِ ویرایش / پرشدن از خرج) - نه صرفاً «خالی نیست».
+    val formSignature = listOf<Any?>(title, totalText, method, isEventMode, year, month, day, participants.value, items.value)
+    var formBaseline by remember { mutableStateOf<List<Any?>?>(null) }
+    val formReady = (existing == null || loadExisting == null || loadedExisting) &&
+        (initialExpenseId <= 0 || pickedExpenseId != 0L)
+    LaunchedEffect(formReady) { if (formReady && formBaseline == null) formBaseline = formSignature }
+    val requestCancel = ir.sadteam.loancalc.ui.components.rememberLeaveGuard(
+        dirty = formBaseline != null && formSignature != formBaseline,
+        onLeave = onCancel,
+    )
+
     val totalAmount = totalText.toDoubleOrNull() ?: 0.0
 
     // ثبت: اگر «نفرِ ۲…» هنوز دوستِ واقعی نیست، اول برایش طرف‌حساب می‌سازیم و دوباره ادامه می‌دهیم.
@@ -469,7 +481,7 @@ fun DangCreateScreen(
     ) {
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onCancel) {
+                IconButton(onClick = requestCancel) {
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Text(if (existing != null) "ویرایشِ دنگ" else "دنگِ جدید", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)

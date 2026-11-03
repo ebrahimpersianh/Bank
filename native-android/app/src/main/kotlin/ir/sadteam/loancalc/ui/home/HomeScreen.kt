@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
@@ -250,6 +252,15 @@ fun HomeScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         // کشیدنِ صفحه به پایین = تازه‌سازی از سرور (اشتراک، شماره‌ی کاربری، پیام‌ها) - خواسته‌ی کاربر ۱۰ مهر.
         var homeRefreshing by remember { mutableStateOf(false) }
+        var fabShown by remember { mutableStateOf(true) }
+        val fabHider = remember {
+            object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+                override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                    if (available.y < -6f) fabShown = false else if (available.y > 6f) fabShown = true
+                    return androidx.compose.ui.geometry.Offset.Zero
+                }
+            }
+        }
         androidx.compose.material3.pulltorefresh.PullToRefreshBox(
             isRefreshing = homeRefreshing,
             onRefresh = {
@@ -259,7 +270,7 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize(),
         ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().nestedScroll(fabHider),
             // حاشیه‌ی صفحه ۱۶ طبقِ بندِ ۳ سیستمِ طراحی، فاصله‌ی بینِ کارت‌ها ۱۳ طبقِ خودِ فریم.
             contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 170.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp),
@@ -442,12 +453,26 @@ fun HomeScreen(
                     } else {
                         // حالتِ سالم **کارت نمی‌گیرد** (فریمِ `63b`) - یک خطِ آرام بس است؛
                         // کارتِ «همه‌چیز خوب است» فضای کارتِ هشدار را می‌گیرد و بی‌اثر است.
-                        Text(
-                            "با این سرعت تا آخرِ ماه می‌رسی",
-                            color = AppMuted,
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
+                        // یافته‌ی ۹: خطِ تنها شبیهِ عنوانی بی‌محتوا بود («زیرش چه می‌آید؟»). با تیکِ سبز و
+                        // جمله‌ی کامل حالا یک «وضعیت» خوانده می‌شود، نه سرصفحه.
+                        androidx.compose.foundation.layout.Row(
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 4.dp),
+                        ) {
+                            androidx.compose.material3.Icon(
+                                androidx.compose.material.icons.Icons.Filled.CheckCircle,
+                                contentDescription = null,
+                                tint = ir.sadteam.loancalc.ui.theme.AppPrimary,
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Text(
+                                "با این سرعتِ خرج، پولت تا آخرِ ماه می‌رسد",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 6.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -512,14 +537,22 @@ fun HomeScreen(
 
         // فریمِ `15b` دکمه‌ی شناور نداره: تو حالتِ خالی اقدامِ اصلی همون دکمه‌ی تمام‌عرضِ
         // «ثبتِ اولین خرج»ه و دو تا دکمه‌ی هم‌کار گیج‌کننده‌ست.
-        if (transactions.isNotEmpty()) AppFab(
-            onClick = { showNewTransaction = true },
-            contentDescription = "ثبتِ تراکنش",
+        // یافته‌ی ۸: دکمه‌ی گرد هنگامِ خواندن روی عنوانِ کارت‌ها (سمتِ راست در RTL) می‌افتاد.
+        // حالا با پایین‌رفتن کنار می‌رود و با کمی بالا آمدن برمی‌گردد.
+        androidx.compose.animation.AnimatedVisibility(
+            visible = transactions.isNotEmpty() && fabShown,
+            enter = androidx.compose.animation.scaleIn() + androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.scaleOut() + androidx.compose.animation.fadeOut(),
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 16.dp, bottom = 16.dp)
-                .then(Modifier.guideTarget("add_tx")),
-        )
+                .padding(start = 16.dp, bottom = 16.dp),
+        ) {
+            AppFab(
+                onClick = { showNewTransaction = true },
+                contentDescription = "ثبتِ تراکنش",
+                modifier = Modifier.guideTarget("add_tx"),
+            )
+        }
 
         if (showNewTransaction) {
             NewTransactionSheet(onDismiss = { showNewTransaction = false })
