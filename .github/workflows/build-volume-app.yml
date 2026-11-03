@@ -1,0 +1,58 @@
+name: Build Volume App (اجرای دستی)
+
+# برنامه‌ی جدای «ولوم» (دکمه‌ی شناورِ صدا) - فقط دستی اجرا می‌شود و به جیبک و سرور کاری ندارد.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/volume
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # کلیدِ امضا داخلِ مخزن نیست: بارِ اول همین‌جا ساخته و در کشِ Actions نگه داشته می‌شود تا
+      # نسخه‌های بعدی روی قبلی نصب شوند. اگر کش پاک شود، نسخه‌ی بعد یک بار حذف‌ونصبِ دوباره می‌خواهد.
+      - name: Restore signing key
+        id: key
+        uses: actions/cache@v4
+        with:
+          path: apps/volume/app/volume.keystore
+          key: volume-signing-key-v1
+
+      - name: Create signing key (first time only)
+        if: steps.key.outputs.cache-hit != 'true'
+        run: |
+          keytool -genkeypair -keystore app/volume.keystore -alias volume -keyalg RSA -keysize 2048 \
+            -validity 36500 -storepass volume123 -keypass volume123 -dname "CN=Volume, O=sadteam, C=IR"
+
+      - name: Build APK
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:assembleRelease -PvolumeVersionCode=${{ github.run_number }}
+          cp app/build/outputs/apk/release/app-release.apk "Volume-1.0.${{ github.run_number }}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: volume-apk
+          path: apps/volume/Volume-1.0.${{ github.run_number }}.apk
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "volume-${{ github.run_number }}" "Volume-1.0.${{ github.run_number }}.apk" \
+            --title "ولوم نسخه‌ی 1.0.${{ github.run_number }}" \
+            --notes "دکمه‌ی شناورِ صدا" --target "${{ github.sha }}" --latest=false
