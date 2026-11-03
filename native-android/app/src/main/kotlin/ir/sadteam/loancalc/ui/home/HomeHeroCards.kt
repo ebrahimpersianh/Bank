@@ -133,7 +133,9 @@ internal fun TodaySpendHero(
                             modifier = Modifier.padding(start = 8.dp),
                         )
                     }
-                    PrivacyCrossfade(privacyMode) { masked ->
+                    // تستِ ۱۳ آبان: «۰»ِ فارسیِ درشت شبیهِ یک نقطه است («• تومان»). خرجِ صفر عدد
+                    // نمی‌گیرد؛ جمله‌ی «هنوز خرجی … ثبت نکردی» پایینِ کارت همین را می‌گوید.
+                    if (periodSpend > 0.0) PrivacyCrossfade(privacyMode) { masked ->
                         Text(
                             maskIfPrivate(masked, shown.rialToFaCompact()) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                             color = Color.White,

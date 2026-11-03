@@ -26,7 +26,8 @@ fun rememberLeaveGuard(dirty: Boolean, onLeave: () -> Unit): () -> Unit {
             title = "بیرون می‌روی؟",
             consequence = "چیزهایی که نوشتی ذخیره نمی‌شوند.",
             actionLabel = "بیرون برو",
-            tone = ConfirmTone.DESTRUCTIVE,
+            // تستِ ۱۳ آبان: آیکونِ سطلِ زباله حسِ «حذف» می‌داد؛ بیرون‌رفتن حذفِ چیزی نیست.
+            tone = ConfirmTone.HEAVY_CHANGE,
             onConfirm = { asking = false; leave() },
             onDismiss = { asking = false },
             dismissLabel = "ادامه بده",

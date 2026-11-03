@@ -121,15 +121,7 @@ internal fun NoBudgetCard(onCreate: () -> Unit) {
             action = "ساختنِ بودجه",
             onAction = onCreate,
         )
-        ir.sadteam.loancalc.ui.components.EmptyFeatureList(
-            "با بودجه‌بندی چه می‌تونی؟",
-            listOf(
-                ir.sadteam.loancalc.R.drawable.empty_icon_budget_control to "هزینه‌ها رو کنترل کنی",
-                ir.sadteam.loancalc.R.drawable.empty_icon_budget_prevent to "از خرجِ بیشتر جلوگیری کنی",
-                ir.sadteam.loancalc.R.drawable.empty_icon_budget_goals to "هدفِ مالی تعیین کنی",
-                ir.sadteam.loancalc.R.drawable.empty_icon_budget_progress to "پیشرفتت رو ببینی",
-            ),
-        )
+        // تستِ ۱۳ آبان: فهرستِ «با بودجه‌بندی چه می‌تونی؟» حرفِ تبلیغاتی با چهار رنگ بود - حذف (مینیمال).
     }
 }
 @Composable
@@ -323,7 +315,8 @@ private fun HeroMiniStat(up: Boolean, label: String, value: Double, privacyMode:
             PrivacyCrossfade(privacyMode) { masked ->
                 AutoShrinkText(
                     ir.sadteam.loancalc.ui.jibak.isoSigned(up, maskIfPrivate(masked, value.rialToFaCompact())) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
-                    color = ink,
+                    // تستِ ۱۳ آبان (مثلِ کارتِ خانه): سبز/قرمز روی سبز خوانا نبود - عدد سفید، رنگ فقط روی فلش.
+                    color = Color.White,
                     maxFontSize = 11.5.sp,
                     fontWeight = FontWeight.Black,
                 )
@@ -437,8 +430,15 @@ internal fun MonthTotalCard(
 // ═══ ۴ · ردیفِ دسته ═════════════════════════════════════════════════════════════
 @Composable
 internal fun CategoryBudgetRow(row: BudgetRowData, privacyMode: Boolean, onClick: () -> Unit = {}) {
-    val tint = if (row.over) OverInk else row.category.color
-    val soft = tint.copy(alpha = 0.12f)
+    // تستِ ۱۳ آبان: نوار رنگِ خودِ دسته را می‌گرفت («خوراک» قرمز) - ۹٪ِ مصرف قرمز = «خطر» دروغین.
+    // رنگِ نوار و درصد حالا **وضعیت** است (سبز / کهربایی از ۸۰٪ / قرمز ردشده)؛ آیکون رنگِ دسته.
+    val tint = when {
+        row.over -> OverInk
+        row.percent >= 80 -> ir.sadteam.loancalc.ui.theme.AppWarningInk
+        else -> AppPrimary
+    }
+    val iconTint = if (row.over) OverInk else row.category.color
+    val soft = iconTint.copy(alpha = 0.12f)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -463,7 +463,7 @@ internal fun CategoryBudgetRow(row: BudgetRowData, privacyMode: Boolean, onClick
                 Icon(
                     row.category.icon,
                     contentDescription = null,
-                    tint = tint,
+                    tint = iconTint,
                     modifier = Modifier.size(14.dp),
                 )
             }

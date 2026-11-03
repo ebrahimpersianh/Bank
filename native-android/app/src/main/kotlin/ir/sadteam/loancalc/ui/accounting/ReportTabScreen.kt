@@ -241,7 +241,7 @@ fun ReportTabScreen(
         if (transactions.isEmpty()) {
             item { NoChartCard(onAddTransaction = { showNewTransaction = true }) }
             item { BankSmsHintCard() }
-            item { ComingSoonCard() }
+            // تستِ ۱۳ آبان: فهرستِ «وقتی داده داشته باشی…» حذف شد (مینیمال، مثلِ بودجه و وام).
             return@LazyColumn
         }
         item {
@@ -634,19 +634,6 @@ private fun BankSmsHintCard() {
             lineHeight = 21.sp,
         )
     }
-}
-/** «وقتی داده داشته باشی اینها را می‌بینی» - سه نقطه‌ی رنگیِ فریم. */
-@Composable
-private fun ComingSoonCard() {
-    // بازطراحیِ ChatGPT (۷ مهر، دورِ دوم): آیکون‌های رنگیِ تخت به‌جای نقطه.
-    ir.sadteam.loancalc.ui.components.EmptyFeatureList(
-        "وقتی داده داشته باشی این‌ها رو می‌بینی",
-        listOf(
-            ir.sadteam.loancalc.R.drawable.empty_icon_report_breakdown to "سهمِ هر دسته از خرجِ ماه",
-            ir.sadteam.loancalc.R.drawable.empty_icon_report_compare to "مقایسه‌ی این ماه با ماهِ قبل و پارسال",
-            ir.sadteam.loancalc.R.drawable.empty_icon_report_trend to "تفکیکِ خرجِ ثابت از متغیر",
-        ),
-    )
 }
 private val SkeletonBarBg: Color
     @Composable get() = AppLineRow

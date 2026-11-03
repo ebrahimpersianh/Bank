@@ -617,20 +617,11 @@ fun MyLoansScreen(
                                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                     ir.sadteam.loancalc.ui.components.EmptyHeroCard(
                                         illustration = ir.sadteam.loancalc.R.drawable.empty_illu_loan,
-                                        tint = ir.sadteam.loancalc.ui.theme.AppInfoPill.copy(alpha = 0.6f),
+                                        tint = ir.sadteam.loancalc.ui.theme.AppPrimaryPill.copy(alpha = 0.55f), // یک‌دست با بقیه‌ی کارت‌های خالی
                                         title = "هنوز وامی ثبت نکردی",
                                         description = "وام‌هات رو اینجا نگه دار تا قسط‌ها، سررسیدها و پرداخت‌ها رو راحت مدیریت کنی.",
                                         action = "افزودنِ وام",
                                         onAction = { onAddLoanClick() },
-                                    )
-                                    ir.sadteam.loancalc.ui.components.EmptyFeatureList(
-                                        "با ثبتِ وام چه چیزهایی می‌بینی؟",
-                                        listOf(
-                                            ir.sadteam.loancalc.R.drawable.empty_icon_loan_installment to "مبلغ و اقساط",
-                                            ir.sadteam.loancalc.R.drawable.empty_icon_loan_reminder to "سررسید و یادآوری",
-                                            ir.sadteam.loancalc.R.drawable.empty_icon_loan_status to "وضعیتِ پرداخت و باقی‌مانده",
-                                            ir.sadteam.loancalc.R.drawable.empty_icon_loan_progress to "نمودارِ پیشرفتِ بازپرداخت",
-                                        ),
                                     )
                                 }
                             }

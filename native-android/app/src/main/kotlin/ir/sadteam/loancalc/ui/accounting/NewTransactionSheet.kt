@@ -297,31 +297,15 @@ fun NewTransactionSheet(
                 when (kind) {
                     NewTxKind.EXPENSE -> "خرجِ تازه"
                     NewTxKind.INCOME -> "درآمدِ تازه"
-                    NewTxKind.TRANSFER -> "جابجایی"
+                    NewTxKind.TRANSFER -> "انتقالِ تازه"
                 },
                 color = AppText,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.weight(1f),
             )
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(AppRadius.icon))
-                    .background(accent.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    when (kind) {
-                        NewTxKind.EXPENSE -> Icons.Filled.ArrowUpward
-                        NewTxKind.INCOME -> Icons.Filled.ArrowDownward
-                        NewTxKind.TRANSFER -> Icons.Filled.SwapHoriz
-                    },
-                    contentDescription = null,
-                    tint = accent,
-                    modifier = Modifier.size(17.dp),
-                )
-            }
+            // تستِ ۱۳ آبان: کادرِ رنگیِ فلش‌دارِ این گوشه شبیهِ دکمه بود ولی کاری نمی‌کرد و همان قرصِ
+            // «خرج/درآمد» را تکرار می‌کرد - حذف.
         }
 
         // سه **قرصِ مستقل** به‌جای تاگلِ لغزنده - فریمِ `17a` هر سه رو هم‌عرض و جدا نشون می‌ده

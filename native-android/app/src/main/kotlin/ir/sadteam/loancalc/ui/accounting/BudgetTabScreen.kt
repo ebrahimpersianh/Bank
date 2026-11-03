@@ -379,7 +379,7 @@ fun BudgetTabScreen(
                     BudgetToolRow(
                         icon = Icons.Filled.EventRepeat,
                         title = "پرداختِ تکراری",
-                        subtitle = "${toFa(recurringPayments.size)} مورد",
+                        subtitle = if (recurringPayments.isEmpty()) "اجاره، اشتراک و پرداخت‌های ماهانه" else "${toFa(recurringPayments.size)} مورد", // تستِ ۱۳ آبان: «۰ مورد» شبیهِ «• مورد»
                         onClick = onOpenRecurring,
                     )
                     BudgetToolRow(

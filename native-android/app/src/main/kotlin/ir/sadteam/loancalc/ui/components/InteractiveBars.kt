@@ -57,7 +57,7 @@ fun InteractiveBars(
     tooltipValueColor: Color,
     modifier: Modifier = Modifier,
     height: Dp = 40.dp,
-    spacing: Dp = 3.dp,
+    spacing: Dp = 6.dp, // یافته‌ی ۶: میله‌های چسبیده + گوشه‌ی تیز = «مستطیلِ سفیدِ ساده»
 ) {
     val max = values.maxOrNull()?.takeIf { it > 0.0 } ?: return
     val interactive = labels.size == values.size
@@ -115,7 +115,7 @@ fun InteractiveBars(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight(fraction)
-                        .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
+                        .clip(RoundedCornerShape(topStart = 7.dp, topEnd = 7.dp, bottomStart = 2.dp, bottomEnd = 2.dp))
                         .background(
                             when {
                                 selected -> currentBarColor
