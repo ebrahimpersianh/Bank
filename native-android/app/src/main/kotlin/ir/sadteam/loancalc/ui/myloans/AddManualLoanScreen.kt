@@ -317,6 +317,7 @@ fun AddManualLoanScreen(
             AppCard(label = "تعداد کل اقساط") {
                 OutlinedTextField(
                     value = totalCountText,
+                    visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                     onValueChange = { totalCountText = cleanNum(it).take(3) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
@@ -329,6 +330,7 @@ fun AddManualLoanScreen(
                 AppCard(label = "تعداد اقساط پرداخت‌شده (اختیاری)") {
                     OutlinedTextField(
                         value = paidCountText,
+                        visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                         onValueChange = { paidCountText = cleanNum(it) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),

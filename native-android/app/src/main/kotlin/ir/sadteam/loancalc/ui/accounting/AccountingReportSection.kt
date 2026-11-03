@@ -637,7 +637,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
                                             modifier = Modifier.padding(start = 8.dp),
                                         )
                                         Text(
-                                            "٪${toFa(share)}",
+                                            "${toFa(share)}٪",
                                             color = AppMuted,
                                             fontSize = 11.sp,
                                             modifier = Modifier.padding(start = 6.dp),

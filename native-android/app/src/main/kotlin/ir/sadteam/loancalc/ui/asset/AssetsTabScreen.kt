@@ -297,7 +297,8 @@ fun AssetsTabScreen(
                     other = otherTotal,
                     trend = trendSeries,
                     trendIsReal = trendIsReal,
-                    trendPercent = cashTrendPercent,
+                    // ۱۱ آبان (تست): حسابِ تازه «۲۵٪ کمتر از ماهِ قبل» نشان می‌داد (ماهِ قبل وجود نداشت) - فقط با داده‌ی واقعی.
+                    trendPercent = if (trendIsReal) cashTrendPercent else null,
                     privacyMode = privacyMode,
                     onOpen = if (wealthSnapshots.size >= 5) ({ showWealthDetail = true }) else null,
                     onPill = { key ->

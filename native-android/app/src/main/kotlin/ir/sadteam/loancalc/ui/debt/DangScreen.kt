@@ -781,6 +781,7 @@ private fun DangParticipantRow(
                 Ltr {
                     OutlinedTextField(
                         value = draft.percentageText,
+                        visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                         onValueChange = onPercentageChange,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.size(width = 76.dp, height = 52.dp),
@@ -851,6 +852,7 @@ private fun DangItemRow(
             Ltr {
                 OutlinedTextField(
                     value = item.amountText,
+                    visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                     onValueChange = { onAmountChange(cleanNum(it)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.size(width = 110.dp, height = 56.dp).padding(start = 6.dp),

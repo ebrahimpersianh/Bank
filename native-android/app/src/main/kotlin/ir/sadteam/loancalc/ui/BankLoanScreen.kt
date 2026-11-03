@@ -445,6 +445,7 @@ fun BankLoanScreen(
                             )
                             ir.sadteam.loancalc.ui.components.CompactField(
                                 value = rateText,
+                                visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                 readOnly = rateReadOnly,
                                 onValueChange = { raw ->
                                     val filtered = cleanNumDecimal(raw)
@@ -467,6 +468,7 @@ fun BankLoanScreen(
                             )
                             ir.sadteam.loancalc.ui.components.CompactField(
                                 value = customMonthsText,
+                                visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                 onValueChange = { formError = null; customMonthsText = cleanNum(it).take(3) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.fillMaxWidth(),

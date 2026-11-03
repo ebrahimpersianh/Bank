@@ -250,6 +250,7 @@ fun AffordScreen(
                 AppCard(label = "نرخ سود سالانه") {
                     OutlinedTextField(
                         value = rateText,
+                        visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                         onValueChange = { raw ->
                             val filtered = cleanNumDecimal(raw)
                             rateText = filtered
@@ -293,6 +294,7 @@ fun AffordScreen(
                     }
                     OutlinedTextField(
                         value = monthsText,
+                        visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                         onValueChange = { monthsText = cleanNum(it).take(3) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier
@@ -422,6 +424,7 @@ private fun RateFinderCard() {
             )
             OutlinedTextField(
                 value = monthsText,
+                visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                 onValueChange = { monthsText = cleanNum(it).take(3) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier

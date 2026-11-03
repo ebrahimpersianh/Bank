@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -39,7 +40,15 @@ class InboxViewModel @Inject constructor(
         }
     }
 
+    // ۱۱ آبان: مبلغِ پیام‌های قدیمی به واحدِ فعلی (تومان/ریال) - رجوع کن به [ir.sadteam.loancalc.core.localizeMoneyUnits].
     val messages: StateFlow<List<InboxMessageEntity>> = inbox.observeAll()
+        .map { list ->
+            list.map { m ->
+                val title = ir.sadteam.loancalc.core.localizeMoneyUnits(m.title)
+                val body = ir.sadteam.loancalc.core.localizeMoneyUnits(m.body)
+                if (title == m.title && body == m.body) m else m.copy(title = title, body = body)
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /**

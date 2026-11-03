@@ -543,6 +543,7 @@ private fun QuantityField(
         if (manual) {
             OutlinedTextField(
                 value = qtyText,
+                visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                 // اعشار لازم است (۱٫۲ بیت‌کوین)، پس فیلترِ رقم و نقطه نه cleanNum.
                 onValueChange = onQtyChange,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),

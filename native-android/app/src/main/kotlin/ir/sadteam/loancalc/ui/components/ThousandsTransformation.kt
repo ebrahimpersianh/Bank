@@ -55,3 +55,13 @@ class ThousandsSeparatorTransformation : VisualTransformation {
         return TransformedText(AnnotatedString(formatted), mapping)
     }
 }
+
+/**
+ * ۱۱ آبان (تست): کادرهای عددیِ بی‌جداکننده (نرخِ سود «23»، روزِ موعد «5»، تعدادِ ماه) رقمِ **لاتین** نشان
+ * می‌دادند در حالی که بقیه‌ی برنامه فارسی است. فقط نمایش عوض می‌شود (هر رقم یک‌به‌یک، پس مکان‌نما درست
+ * می‌ماند)؛ متنِ واقعیِ state همان رقمِ لاتین است.
+ */
+object PersianDigitsTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText =
+        TransformedText(AnnotatedString(toFa(text.text).replace('.', '٫')), OffsetMapping.Identity)
+}

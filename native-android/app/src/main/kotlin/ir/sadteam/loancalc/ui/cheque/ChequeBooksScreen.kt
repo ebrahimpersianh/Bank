@@ -180,6 +180,7 @@ fun ChequeBooksScreen(
                             Ltr {
                                 OutlinedTextField(
                                     value = startText,
+                                    visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                     onValueChange = { startText = cleanNum(it) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     modifier = Modifier.fillMaxWidth(),
@@ -190,6 +191,7 @@ fun ChequeBooksScreen(
                             Ltr {
                                 OutlinedTextField(
                                     value = endText,
+                                    visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                     onValueChange = { endText = cleanNum(it) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     modifier = Modifier.fillMaxWidth(),
@@ -201,6 +203,7 @@ fun ChequeBooksScreen(
                         Ltr {
                             OutlinedTextField(
                                 value = sayadIdText,
+                                visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                 onValueChange = { sayadIdText = cleanNum(it).take(16) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.fillMaxWidth(),
@@ -211,6 +214,7 @@ fun ChequeBooksScreen(
                         Ltr {
                             OutlinedTextField(
                                 value = last4Text,
+                                visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                 onValueChange = { last4Text = cleanNum(it).take(4) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.fillMaxWidth(),

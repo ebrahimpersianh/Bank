@@ -150,7 +150,9 @@ internal fun DailyDealCard(deal: DailyDeal, onOpen: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("تخفیفِ امروز", color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.Black)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Pill("${toFa(DEAL_PERCENT)}٪", AppGoldPillSoft, AppGoldInk)
+                    // ۱۱ آبان (تست): برچسب «۲۵٪» ثابت بود ولی قیمت (گردشده به ۵) مثلاً ۱۵۰ → ۱۱۰ یعنی ۲۷٪. حالا از خودِ دو قیمت.
+                    val realPct = if (deal.originalPrice > 0) Math.round((deal.originalPrice - deal.item.price) * 100f / deal.originalPrice) else DEAL_PERCENT
+                    Pill("${toFa(realPct)}٪", AppGoldPillSoft, AppGoldInk)
                 }
                 Text(
                     deal.item.label,

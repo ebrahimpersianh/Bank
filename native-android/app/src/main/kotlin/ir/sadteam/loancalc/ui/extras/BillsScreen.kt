@@ -200,6 +200,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         OutlinedTextField(
  textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                             value = payId,
+                            visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                             onValueChange = {
                                 payId = cleanNum(it).take(13)
                                 ir.sadteam.loancalc.core.BillCodes.parsePaymentId(payId, bill.billId)?.let { p ->
@@ -337,6 +338,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         OutlinedTextField(
  textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                             value = billId,
+                            visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                             onValueChange = {
                                 billId = cleanNum(it).take(18)
                                 // نوعِ قبض از خودِ شناسه (رقمِ یکی‌مانده‌به‌آخر) - کاربر لازم نیست بداند.
@@ -380,6 +382,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                     OutlinedTextField(
  textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                         value = dayText,
+                        visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                         onValueChange = { dayText = cleanNum(it).take(2); dayError = false },
                         singleLine = true,
                         label = { Text("روزِ موعد در ماه") },

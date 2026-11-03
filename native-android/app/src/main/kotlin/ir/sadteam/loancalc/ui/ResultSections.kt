@@ -92,6 +92,7 @@ internal fun ResultSaveSection(
                     )
                     OutlinedTextField(
                         value = paidCountText,
+                        visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                         onValueChange = { paidCountText = cleanNum(it) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),

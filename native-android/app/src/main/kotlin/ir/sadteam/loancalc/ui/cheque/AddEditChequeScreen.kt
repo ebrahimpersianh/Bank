@@ -265,6 +265,7 @@ fun AddEditChequeScreen(
                             Ltr {
                                 OutlinedTextField(
                                     value = chequeNumber,
+                                    visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                     onValueChange = { chequeNumber = cleanNum(it) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     modifier = Modifier.fillMaxWidth(),
@@ -303,6 +304,7 @@ fun AddEditChequeScreen(
                             Ltr {
                                 OutlinedTextField(
                                     value = nationalId,
+                                    visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                     onValueChange = { nationalId = cleanNum(it).take(11) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     modifier = Modifier.fillMaxWidth(),
@@ -312,6 +314,7 @@ fun AddEditChequeScreen(
                         AppCard(label = "مانده قبلی (${ir.sadteam.loancalc.ui.jibak.unitFa()})") {
                             OutlinedTextField(
                                 value = previousBalanceText,
+                                visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                 onValueChange = { previousBalanceText = cleanNumDecimal(it) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.fillMaxWidth(),
@@ -326,6 +329,7 @@ fun AddEditChequeScreen(
                         AppCard(label = "واریزی (${ir.sadteam.loancalc.ui.jibak.unitFa()})") {
                             OutlinedTextField(
                                 value = depositAmountText,
+                                visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                 onValueChange = { depositAmountText = cleanNumDecimal(it) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.fillMaxWidth(),
@@ -372,6 +376,7 @@ fun AddEditChequeScreen(
                             Ltr {
                                 OutlinedTextField(
                                     value = sayadId,
+                                    visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                                     onValueChange = { sayadId = cleanNum(it).take(16) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     modifier = Modifier.fillMaxWidth(),

@@ -623,7 +623,7 @@ private fun PlanCard(
             Box(modifier = Modifier.padding(top = 5.dp).height(18.dp), contentAlignment = Alignment.Center) {
                 if (discount != null) {
                     Text(
-                        "٪${toFa(discount)} تخفیف",
+                        "${toFa(discount)}٪ تخفیف",
                         color = AppPrimaryInk,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Black,

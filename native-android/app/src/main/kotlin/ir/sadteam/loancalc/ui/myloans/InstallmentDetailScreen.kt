@@ -218,6 +218,7 @@ internal fun InstallmentDetailScreen(
                     Ltr {
                         OutlinedTextField(
                             value = trackingDraft,
+                            visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                             onValueChange = { trackingDraft = cleanNum(it) },
                             modifier = Modifier.weight(1f),
                             singleLine = true,

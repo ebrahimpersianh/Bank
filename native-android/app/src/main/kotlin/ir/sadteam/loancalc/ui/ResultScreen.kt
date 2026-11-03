@@ -390,6 +390,7 @@ fun ResultScreen(
                     AppCard(label = "نرخ سود سالانه") {
                         OutlinedTextField(
                             value = editRateText,
+                            visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                             onValueChange = { raw ->
                                 val filtered = cleanNumDecimal(raw)
                                 editRateText = filtered
@@ -414,6 +415,7 @@ fun ResultScreen(
                     AppCard(label = "تعداد اقساط (ماه)") {
                         OutlinedTextField(
                             value = editNText,
+                            visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                             onValueChange = { editNText = cleanNum(it).take(3) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),

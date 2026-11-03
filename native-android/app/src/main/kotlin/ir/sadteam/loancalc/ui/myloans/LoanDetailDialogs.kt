@@ -196,6 +196,7 @@ internal fun LoanEditMetaDialog(
                         }
                         OutlinedTextField(
                             value = editMetaNText,
+                            visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                             onValueChange = { editMetaNText = cleanNum(it).take(3) },
                             label = { Text("تعداد اقساط") },
                             singleLine = true,

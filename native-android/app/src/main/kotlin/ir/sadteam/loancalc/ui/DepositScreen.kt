@@ -225,6 +225,7 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                 AppCard(label = "نرخ سود سالانه") {
                     OutlinedTextField(
                         value = rateText,
+                        visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
                         onValueChange = { raw ->
                             val filtered = cleanNumDecimal(raw)
                             rateText = filtered
