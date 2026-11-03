@@ -56,8 +56,14 @@ object AutoTxNotifier {
         privacyMode: Boolean,
         /** «پیامک از ۱۰۰۰…» یا «اعلانِ بلوبانک» — بی این، کاربر نمی‌داند این از کجا آمده. */
         sourceLabel: String? = null,
+        /** ۱۱ آبان: جابه‌جایی بینِ حساب‌های خودِ کاربر - اعلانِ جدا، نه «خرج شد». */
+        transfer: ir.sadteam.loancalc.data.AccountRepository.TransferInfo? = null,
     ) {
         ReminderChannels.ensureAll(context)
+        if (transfer != null) {
+            notifyTransfer(context, txId, amountRial, transfer, privacyMode, sourceLabel)
+            return
+        }
         val notificationId = "autotx_$txId".hashCode()
         // واحد **تومان** و رقمِ فارسی. ستونِ amount ریال است پس تبدیل همین لبه.
         val amount = fmt(rialToToman(amountRial.toLong()).toDouble()).faDigits()
@@ -76,13 +82,13 @@ object AutoTxNotifier {
             // خطِ دوم **منبع** است، نه دسته: اولین چیزی که کاربر می‌پرسد «این از کجا آمد؟»
             // است و دسته تا بعد از تایید اصلاً مطرح نیست.
             .setContentText(
-                listOfNotNull(sourceLabel, "روی «$accountName» ثبت می‌شود").joinToString(" · "),
+                listOfNotNull(sourceLabel, "روی «$accountName» ثبت می‌شود").joinToString(" | "),
             )
             .setStyle(
                 NotificationCompat.BigTextStyle().bigText(
                     listOfNotNull(
                         sourceLabel,
-                        "روی «$accountName» ثبت می‌شود" + if (confident) " · دسته: $category" else "",
+                        "روی «$accountName» ثبت می‌شود" + if (confident) " | دسته: $category" else "",
                         "درست است؟",
                     ).joinToString("\n"),
                 ),
@@ -99,6 +105,51 @@ object AutoTxNotifier {
         builder.addAction(rejectAction(context, notificationId, txId))
 
         ir.sadteam.loancalc.data.UsageStats.action("notif_shown_autotx")
+        NotificationManagerCompat.from(context).notify(notificationId, builder.build())
+    }
+
+    /**
+     * ۱۱ آبان (کاربر: «اعلانِ انتقال از حسابِ خودم به حسابِ خودم خیلی داغونه و هوشمند نیست»):
+     * عنوان می‌گوید «جابه‌جا شد»، خطِ دوم «از «A» به «B»»، و دو دکمه: «درسته» / «جابه‌جایی نبود».
+     * دومی همان تراکنش را باز می‌کند که گزینه‌ی «این جابه‌جایی نبود» را دارد. اعلانِ قبلیِ سمتِ دیگر
+     * («… خرج شد» از پیامکِ اول) برداشته می‌شود تا دو اعلانِ متناقض نماند.
+     */
+    private fun notifyTransfer(
+        context: Context,
+        txId: Long,
+        amountRial: Double,
+        transfer: ir.sadteam.loancalc.data.AccountRepository.TransferInfo,
+        privacyMode: Boolean,
+        sourceLabel: String?,
+    ) {
+        transfer.otherLegId?.let { NotificationManagerCompat.from(context).cancel("autotx_$it".hashCode()) }
+        val notificationId = "autotx_$txId".hashCode()
+        val amount = fmt(rialToToman(amountRial.toLong()).toDouble()).faDigits()
+        val route = "از «${transfer.fromName}» به «${transfer.toName}»"
+        val builder = NotificationCompat.Builder(context, ReminderChannels.CHANNEL_AUTO_TX)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(
+                if (privacyMode) "جابه‌جایی بینِ حساب‌هایت"
+                else "$amount ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} بینِ حساب‌هایت جابه‌جا شد",
+            )
+            .setContentText(route)
+            .setStyle(
+                NotificationCompat.BigTextStyle().bigText(
+                    listOfNotNull(route, "خرج یا درآمد حساب نمی‌شود.", sourceLabel).joinToString("\n"),
+                ),
+            )
+            .setContentIntent(openTransactionIntent(context, notificationId, txId))
+            .setGroup(GROUP_AUTO_TX)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+        builder.addAction(
+            NotificationCompat.Action.Builder(0, "درسته", confirmAction(context, notificationId, txId, true).actionIntent).build(),
+        )
+        builder.addAction(
+            NotificationCompat.Action.Builder(0, "جابه‌جایی نبود", openTransactionIntent(context, "notx_$txId".hashCode(), txId)).build(),
+        )
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_transfer")
         NotificationManagerCompat.from(context).notify(notificationId, builder.build())
     }
 

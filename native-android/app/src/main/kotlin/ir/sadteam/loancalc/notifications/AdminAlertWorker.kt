@@ -53,7 +53,7 @@ class AdminAlertWorker @AssistedInject constructor(
         val n = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_NUDGES)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("ادمین · گزارشِ امروز")
-            .setContentText(lines.joinToString(" · "))
+            .setContentText(lines.joinToString(" | "))
             .setAutoCancel(true)
             // تپ روی اعلان = بازشدنِ گزارشِ ادمین (خواسته‌ی کاربر ۱۳ مهر).
             .setContentIntent(

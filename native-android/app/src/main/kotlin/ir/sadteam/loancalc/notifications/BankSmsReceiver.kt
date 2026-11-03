@@ -169,12 +169,20 @@ class BankSmsReceiver : BroadcastReceiver() {
                     val dest = if (parsed.type == TransactionType.WITHDRAWAL) accountRepository.ownDestinationOf(body, account.id) else null
                     if (dest != null) accountRepository.markOwnTransfer(txId, dest.id) else accountRepository.pairAutoTransfer(txId)
                 }
+                // ۱۱ آبان: جابه‌جایی؟ اعلان/پیام باید همین را بگویند. تکراریِ حذف‌شده (سمتِ دیگرش قبلاً از
+                // پیامکِ اول ساخته شده) نه پیام می‌خواهد نه اعلان.
+                val transfer = runCatching { accountRepository.transferInfo(txId) }.getOrNull()
+                val skipNotice = transfer?.removed == true
+                // پیامِ «برداشتِ تازه»ِ سمتِ اول دیگر معنا ندارد - همین جابه‌جایی جایش را می‌گیرد.
+                transfer?.otherLegId?.let { runCatching { inboxRepository.resolveByRefId(it.toString(), done = true) } }
                 // واحد **تومان** و رقمِ فارسی - قبلاً «ریال»ِ لاتین بود (بندِ ۹ی تحویلِ اعلان‌ها).
                 val amountToman = fmt(rialToToman(parsed.amountRial.toLong()).toDouble()).faDigits()
-                inboxRepository.post(
+                if (!skipNotice) inboxRepository.post(
                     kind = InboxMessageEntity.Kind.DETECTED_TX,
-                    title = if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه",
-                    body = if (confident) {
+                    title = if (transfer != null) "جابه‌جایی بینِ حساب‌هایت" else if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه",
+                    body = if (transfer != null) {
+                    "$amountToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} از «${transfer.fromName}» به «${transfer.toName}» - خرج یا درآمد حساب نمی‌شود. درست است؟"
+                } else if (confident) {
                         "$amountToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} از «${account.name}» - دسته: $category. تایید می‌کنی؟"
                     } else {
                         "$amountToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} از «${account.name}» - دسته‌بندیش نامشخصه، لمس کن و خودت انتخاب کن."
@@ -187,7 +195,7 @@ class BankSmsReceiver : BroadcastReceiver() {
                 )
                 // 🚨 بندِ ۷ی تحویل: مسیرِ پیامک هم مثلِ مسیرِ اعلانِ بانکی باید اعلان بدهد،
                 // وگرنه تراکنشِ پیامکی بی‌خبر و تاییدنشده می‌ماند.
-                if (uiPrefs.autoTxNotifyEnabled.first()) AutoTxNotifier.notify(
+                if (!skipNotice && uiPrefs.autoTxNotifyEnabled.first()) AutoTxNotifier.notify(
                     context = context.applicationContext,
                     txId = txId,
                     amountRial = parsed.amountRial,
@@ -197,6 +205,7 @@ class BankSmsReceiver : BroadcastReceiver() {
                     confident = confident,
                     privacyMode = uiPrefs.privacyModeEnabled.first(),
                     sourceLabel = "پیامک از $sender",
+                    transfer = transfer,
                 )
                 uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
                 // زمانِ آخرین پیامکِ **همین حساب** - زیرنویسِ صفحه‌ی تنظیماتِ پیامک از این ساخته می‌شه.

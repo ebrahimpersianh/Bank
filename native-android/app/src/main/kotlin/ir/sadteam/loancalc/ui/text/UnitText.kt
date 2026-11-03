@@ -122,9 +122,18 @@ private val LATIN_COMMA_BETWEEN_FA = Regex("(?<=[۰-۹]),(?=[۰-۹]{3})")
  * → «٫»، کامای لاتین («۴۰۷,۵۵۰») → «٬». فقط نمایش؛ کادرهای ورودی دست نمی‌خورند.
  */
 private fun uniformDigits(s: String): String {
-    if ('.' !in s && ',' !in s) return s
-    return s.replace(LATIN_DOT_BETWEEN_FA, "٫").replace(LATIN_COMMA_BETWEEN_FA, "٬")
+    val sep = noZeroLookalikeSeparator(s)
+    if ('.' !in sep && ',' !in sep) return sep
+    return sep.replace(LATIN_DOT_BETWEEN_FA, "٫").replace(LATIN_COMMA_BETWEEN_FA, "٬")
 }
+
+/**
+ * ۱۱ آبان (تستِ شبیه‌ساز، سخت‌گیرانه): «·» کنارِ رقمِ فارسی شبیهِ **صفرِ فارسی** (۰) است -
+ * «شرکت‌کننده‌ها · ۲ نفر» خوانده می‌شد «۲۰ نفر»، «۱ ساله» → «۱۰ ساله». جداکننده‌ی میانِ دو تکه‌ی
+ * متن («A · B») همه‌جا یک خطِ نازک می‌شود؛ یک‌دست و بی‌ابهام. نقطه‌های پنهان‌کردنِ مبلغ («•••») دست نمی‌خورند.
+ */
+private fun noZeroLookalikeSeparator(s: String): String =
+    if ('·' !in s) s else s.replace(" · ", "  |  ").replace("·", " | ")
 
 private val PURE_AMOUNT = Regex(
     "^[\\s\\u2066-\\u2069+\\u2212-]*[0-9۰-۹•][0-9۰-۹•٬,٫.]*[\\u2066-\\u2069]*" +

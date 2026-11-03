@@ -506,6 +506,10 @@ class AccountRepository(
     /** تاییدِ یه تراکنشِ خودکار - از همین لحظه رو موجودی و گزارش‌ها اثر می‌ذاره. */
     suspend fun confirmTransaction(id: Long) {
         transactionDao.confirm(id)
+        // 🚨 ۱۱ آبان: جابه‌جایی دو سمت دارد. قبلاً فقط سمتی که کاربر تأیید کرد تأیید می‌شد و سمتِ دیگر
+        // (مثلاً واریزِ ساخته‌شده از روی مقصدِ پیامک) برای همیشه «منتظر» می‌ماند - پول از حسابِ اول کم
+        // می‌شد ولی به حسابِ دوم نمی‌رسید.
+        transactionDao.byId(id)?.let { tx -> transferLegsOf(tx).forEach { if (!it.confirmed) transactionDao.confirm(it.id) } }
         gamification?.awardDailyLog()
     }
 
@@ -541,6 +545,28 @@ class AccountRepository(
             return
         }
         transactionDao.deleteAll(legs)
+    }
+
+    /**
+     * ۱۱ آبان (کاربر: «اعلانِ انتقال از حسابِ خودم به حسابِ خودم خیلی داغونه و هوشمند نیست»):
+     * بعد از جفت‌شدن، اعلان و پیامِ صندوق باید بگویند «جابه‌جایی از A به B»، نه «خرج شد».
+     * `null` = این تراکنش جابه‌جایی نیست. [removed] = تراکنشِ تازه تکراری بود و حذف شد (سمتِ دیگرش قبلاً
+     * از روی پیامکِ اول ساخته شده بود) - پس نه اعلان لازم است نه پیام.
+     */
+    data class TransferInfo(val fromName: String, val toName: String, val otherLegId: Long?, val removed: Boolean = false)
+
+    suspend fun transferInfo(txId: Long): TransferInfo? {
+        val tx = transactionDao.byId(txId) ?: return TransferInfo("", "", null, removed = true)
+        val legs = transferLegsOf(tx)
+        if (legs.size < 2) return null
+        val accounts = observeAccounts().first().associateBy { it.id }
+        val out = legs.firstOrNull { it.type == TransactionType.WITHDRAWAL.name } ?: return null
+        val inn = legs.firstOrNull { it.type == TransactionType.DEPOSIT.name } ?: return null
+        return TransferInfo(
+            fromName = accounts[out.accountId]?.name.orEmpty(),
+            toName = accounts[inn.accountId]?.name.orEmpty(),
+            otherLegId = legs.firstOrNull { it.id != txId && it.originLabel != AUTO_DEST_LEG_LABEL }?.id,
+        )
     }
 
     private suspend fun transferLegsOf(transaction: AccountTransactionEntity): List<AccountTransactionEntity> {

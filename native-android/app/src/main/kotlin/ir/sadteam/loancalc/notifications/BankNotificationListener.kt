@@ -231,15 +231,23 @@ class BankNotificationListener : NotificationListenerService() {
                 val dest = if (parsed.type == TransactionType.WITHDRAWAL) accountRepository.ownDestinationOf(body, account.id) else null
                 if (dest != null) accountRepository.markOwnTransfer(txId, dest.id) else accountRepository.pairAutoTransfer(txId)
             }
+            // ۱۱ آبان: جابه‌جایی؟ اعلان/پیام باید همین را بگویند. تکراریِ حذف‌شده (سمتِ دیگرش قبلاً از
+            // پیامکِ اول ساخته شده) نه پیام می‌خواهد نه اعلان.
+            val transfer = runCatching { accountRepository.transferInfo(txId) }.getOrNull()
+            val skipNotice = transfer?.removed == true
+            // پیامِ «برداشتِ تازه»ِ سمتِ اول دیگر معنا ندارد - همین جابه‌جایی جایش را می‌گیرد.
+            transfer?.otherLegId?.let { runCatching { inboxRepository.resolveByRefId(it.toString(), done = true) } }
             // منبعِ واحد: پیام اول اینجا ساخته می‌شه؛ اعلانِ گوشی از رو همین ردیف ساخته
             // می‌شه، نه مستقل.
             // واحد **تومان** و رقمِ فارسی (بندِ ۲ی README + لایه‌ی ارقام) - قبلاً «ریال»ِ
             // لاتین بود، هم این‌جا هم تو BankSmsReceiver.
             val amountToman = fmt(rialToToman(parsed.amountRial.toLong()).toDouble()).faDigits()
-            inboxRepository.post(
+            if (!skipNotice) inboxRepository.post(
                 kind = InboxMessageEntity.Kind.DETECTED_TX,
-                title = if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه",
-                body = if (confident) {
+                title = if (transfer != null) "جابه‌جایی بینِ حساب‌هایت" else if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه",
+                body = if (transfer != null) {
+                    "$amountToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} از «${transfer.fromName}» به «${transfer.toName}» - خرج یا درآمد حساب نمی‌شود. درست است؟"
+                } else if (confident) {
                     "$amountToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} از «${account.name}» - دسته: $category. تایید می‌کنی؟"
                 } else {
                     "$amountToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} از «${account.name}» - دسته‌بندیش نامشخصه، لمس کن و خودت انتخاب کن."
@@ -252,7 +260,7 @@ class BankNotificationListener : NotificationListenerService() {
             // تا باز کردنِ برنامه خبردار نمی‌شد. فریمِ 50b و AutoTxNotifier همین را می‌بندند.
             // تصمیمِ ثبت‌شده: **همیشه** اعلان بدهد، چون دومین کارش گفتنِ «سیستم کار می‌کند»
             // است - کسی که خبری نمی‌گیرد فرض می‌کند خراب است.
-            if (uiPrefs.autoTxNotifyEnabled.first()) AutoTxNotifier.notify(
+            if (!skipNotice && uiPrefs.autoTxNotifyEnabled.first()) AutoTxNotifier.notify(
                 context = applicationContext,
                 txId = txId,
                 amountRial = parsed.amountRial,
@@ -262,6 +270,7 @@ class BankNotificationListener : NotificationListenerService() {
                 confident = confident,
                 privacyMode = uiPrefs.privacyModeEnabled.first(),
                 sourceLabel = "اعلانِ ${appLabelOf(packageName)}",
+                    transfer = transfer,
             )
             uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
             val updated = account.copy(lastSmsAt = System.currentTimeMillis())
