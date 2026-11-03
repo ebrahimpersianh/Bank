@@ -514,7 +514,7 @@ private fun SettingsMainContent(
                         Icons.Filled.Storefront,
                         SettingsRoute.COLOR_THEME,
                         tone = SettingsTone.PURPLE,
-                        status = "تم، آیکون، قلم و نمادها",
+                        status = "تم، پس‌زمینه، آیکون و نماد",
                     ) { onOpen(SettingsRoute.COLOR_THEME) }
                     SettingsDivider()
                 }

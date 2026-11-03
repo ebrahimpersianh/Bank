@@ -315,38 +315,37 @@ internal fun LoanEditRowAmountDialog(
     var editAmountText by editAmountTextState
     var applyAllPromptAmount by applyAllPromptAmountState
     if (editingRowM != null) {
-        JibakAlertDialog(
+        val editToman = editAmountText.toLongOrNull() ?: 0L
+        ir.sadteam.loancalc.ui.components.JibakFormSheet(
             onDismissRequest = { editingRowM = null },
-            title = { Text("ویرایش مبلغ قسط ${toFa(editingRowM ?: 0)}") },
-            text = {
-                OutlinedTextField(
- textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
-                    value = editAmountText,
-                    onValueChange = { editAmountText = cleanNum(it) },
-                    visualTransformation = ThousandsSeparatorTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    // 🚨 فیلد **تومان** می‌گیرد (برچسبش هم همین را می‌گفت) ولی مقدارش ریالِ
-                    // خام می‌نشست - یعنی عددی که کاربر می‌دید ده برابر بود و ذخیره‌اش هم
-                    // ده‌برابرِ چیزی که تایپ کرده. قاعده‌ی «دیتابیس ریال، نمایش تومان».
-                    val newAmount = editAmountText.toLongOrNull()?.let { tomanToRial(it).toDouble() }
-                    val m = editingRowM
-                    if (newAmount != null && newAmount > 0 && m != null) {
-                        viewModel.setRowInstallment(loan, m, newAmount) {
-                            applyAllPromptAmount = newAmount
-                        }
+            title = "مبلغِ قسطِ ${toFa(editingRowM ?: 0)}",
+            primaryLabel = "ذخیره",
+            primaryEnabled = editToman > 0,
+            onPrimary = {
+                // 🚨 فیلد **تومان** می‌گیرد؛ دیتابیس ریال (قاعده‌ی «دیتابیس ریال، نمایش تومان»).
+                val newAmount = editAmountText.toLongOrNull()?.let { tomanToRial(it).toDouble() }
+                val m = editingRowM
+                if (newAmount != null && newAmount > 0 && m != null) {
+                    viewModel.setRowInstallment(loan, m, newAmount) {
+                        applyAllPromptAmount = newAmount
                     }
-                    editingRowM = null
-                }, enabled = (editAmountText.toLongOrNull() ?: 0L) > 0) { Text("ذخیره") }
+                }
+                editingRowM = null
             },
-            dismissButton = {
-                TextButton(onClick = { editingRowM = null }) { Text("انصراف") }
-            },
-        )
+        ) {
+            OutlinedTextField(
+                textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
+                value = editAmountText,
+                onValueChange = { editAmountText = cleanNum(it).take(13) },
+                visualTransformation = ThousandsSeparatorTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                suffix = { Text(ir.sadteam.loancalc.ui.jibak.unitFa(), color = AppMuted, fontSize = 13.sp) },
+                colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+            )
+            if (editToman > 0) Text(ir.sadteam.loancalc.ui.jibak.amountWordsCaption(editToman.toDouble()), color = AppMuted, fontSize = 11.sp)
+        }
     }
 }
 

@@ -570,11 +570,16 @@ private fun ContributeDialog(
     val toman = amountText.toDoubleOrNull() ?: 0.0
     val valid = toman > 0.0
 
-    JibakAlertDialog(
+    ir.sadteam.loancalc.ui.components.JibakFormSheet(
         onDismissRequest = onDismiss,
-        containerColor = AppSurface,
-        title = { Text(goal.title, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black) },
-        text = {
+        title = goal.title,
+        primaryLabel = "ثبت",
+        primaryEnabled = valid,
+        onPrimary = {
+            val rial = tomanToRial(toman.toLong()).toDouble()
+            onConfirm(if (isWithdraw) -rial else rial)
+        },
+    ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SegmentedToggle(
                     options = listOf("گذاشتم", "برداشتم"),
@@ -605,18 +610,5 @@ private fun ContributeDialog(
                     lineHeight = 18.sp,
                 )
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val rial = tomanToRial(toman.toLong()).toDouble()
-                    onConfirm(if (isWithdraw) -rial else rial)
-                },
-                enabled = valid,
-            ) {
-                Text("ثبت", color = if (valid) AppPrimaryInk else AppMuted)
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("انصراف", color = AppMuted) } },
-    )
+    }
 }

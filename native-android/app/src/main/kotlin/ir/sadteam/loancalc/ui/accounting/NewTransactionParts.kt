@@ -473,29 +473,29 @@ internal fun NewTxSaveTemplateDialog(
     var category by categoryState
         if (showSaveTemplate) {
             var tName by remember { mutableStateOf(description.ifBlank { category ?: "" }) }
-            ir.sadteam.loancalc.ui.components.JibakAlertDialog(
+            ir.sadteam.loancalc.ui.components.JibakFormSheet(
                 onDismissRequest = { showSaveTemplate = false },
-                title = { Text("ذخیره به‌عنوانِ الگو") },
-                text = {
-                    OutlinedTextField(
- textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),value = tName, onValueChange = { tName = it.take(30) }, singleLine = true, placeholder = { Text("مثلاً نون، بنزین") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                title = "ذخیره به‌عنوانِ الگو",
+                subtitle = "دفعه‌ی بعد با یک لمس همین تراکنش پر می‌شود.",
+                primaryLabel = "ذخیره‌ی الگو",
+                primaryEnabled = tName.isNotBlank(),
+                onPrimary = {
+                    extrasViewModel.saveTemplate(
+                        tName,
+                        if (kind == NewTxKind.INCOME) TransactionType.DEPOSIT.name else TransactionType.WITHDRAWAL.name,
+                        tomanToRial(amountText.toLongOrNull() ?: 0L).toDouble(),
+                        category,
+                        accountId,
+                    )
+                    showSaveTemplate = false
                 },
-                confirmButton = {
-                    GradientButton(onClick = {
-                        if (tName.isNotBlank()) {
-                            extrasViewModel.saveTemplate(
-                                tName,
-                                if (kind == NewTxKind.INCOME) TransactionType.DEPOSIT.name else TransactionType.WITHDRAWAL.name,
-                                tomanToRial(amountText.toLongOrNull() ?: 0L).toDouble(),
-                                category,
-                                accountId,
-                            )
-                        }
-                        showSaveTemplate = false
-                    }, enabled = tName.isNotBlank()) { Text("ذخیره") }
-                },
-                dismissButton = { androidx.compose.material3.TextButton(onClick = { showSaveTemplate = false }) { Text("انصراف") } },
-            )
+            ) {
+                OutlinedTextField(
+                    textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(), value = tName, onValueChange = { tName = it.take(30) }, singleLine = true,
+                    label = { Text("نامِ الگو") }, placeholder = { Text("مثلاً نون، بنزین") }, modifier = Modifier.fillMaxWidth(),
+                    colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                )
+            }
         }
 }
 

@@ -153,7 +153,7 @@ fun CalculationHistoryScreen(onBack: () -> Unit, viewModel: CalculationHistoryVi
         }
 
         if (shown.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp), contentAlignment = Alignment.TopCenter) {
                 // دو حالتِ کاملاً متفاوت: «هیچ‌وقت چیزی نبوده» در برابر «هست ولی جستجو چیزی پیدا نکرد».
                 if (history.isEmpty()) {
                     EmptyState(

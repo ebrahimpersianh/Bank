@@ -492,7 +492,7 @@ private fun ProductCard(
         Text(
             item.label,
             color = AppText,
-            fontSize = 11.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Black,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -501,7 +501,7 @@ private fun ProductCard(
         Text(
             item.blurb,
             color = AppLabel,
-            fontSize = 9.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -515,7 +515,7 @@ private fun ProductCard(
                 RowState.ACTIVE -> ActivePill()
                 RowState.OWNED -> UsePill()
                 RowState.SOON -> Pill("به‌زودی", AppIconFrame, AppMuted)
-                RowState.BADGE_LOCKED -> Pill("نشان لازم است", AppIconFrame, AppMuted)
+                RowState.BADGE_LOCKED -> Pill("با نشانِ ماهِ منظم", AppIconFrame, AppMuted)
                 // قیمت **یکدست** است: سکه و عدد کنارِ هم در یک قرص، نه دو جای کارت.
                 else -> CoinPrice(item.price)
             }
@@ -526,7 +526,7 @@ private fun ProductCard(
                 Text(
                     "خرید",
                     color = Color.White,
-                    fontSize = 10.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier
                         .clip(RoundedCornerShape(AppRadius.button))
@@ -571,7 +571,7 @@ private fun CompactProductCard(
                 Text(
                     item.label,
                     color = AppText,
-                    fontSize = 11.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -579,8 +579,8 @@ private fun CompactProductCard(
                 Text(
                     item.blurb,
                     color = AppLabel,
-                    fontSize = 9.5.sp,
-                    lineHeight = 13.sp,
+                    fontSize = 11.sp,
+                    lineHeight = 16.sp,
                     fontWeight = FontWeight.Bold,
                     // همیشه جای دو خط: توضیحِ یک‌خطی کارت را از جفتش کوتاه‌تر می‌کرد.
                     minLines = 2,
@@ -593,7 +593,7 @@ private fun CompactProductCard(
                         RowState.ACTIVE -> ActivePill()
                         RowState.OWNED -> UsePill()
                         RowState.SOON -> Pill("به‌زودی", AppIconFrame, AppMuted)
-                        RowState.BADGE_LOCKED -> Pill("نشان لازم است", AppIconFrame, AppMuted)
+                        RowState.BADGE_LOCKED -> Pill("با نشانِ ماهِ منظم", AppIconFrame, AppMuted)
                         else -> CoinPrice(item.price)
                     }
                 }
@@ -614,7 +614,7 @@ private fun CoinPrice(price: Int) {
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         CoinIcon(size = 11.dp)
-        Text(toFa(price), color = AppGoldInk, fontSize = 10.sp, fontWeight = FontWeight.Black)
+        Text(toFa(price), color = AppGoldInk, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
     }
 }
 /** ارتفاعِ ثابتِ همه‌ی برچسب‌های کارت (قیمت/استفاده/فعال) تا با فعال‌شدن اندازه‌ی کارت نپرد. */
@@ -632,7 +632,7 @@ internal fun ActivePill() {
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
-        Text("فعال", color = Color.White, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
+        Text("فعال", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
     }
 }
 /** قلمِ خریده‌شده ولی غیرفعال: دکمه‌ی خطیِ «استفاده». */
@@ -645,7 +645,7 @@ internal fun UsePill() {
             .height(PILL_H)
             .padding(horizontal = 11.dp),
         contentAlignment = Alignment.Center,
-    ) { Text("استفاده", color = AppPrimary, fontSize = 9.5.sp, fontWeight = FontWeight.Black) }
+    ) { Text("استفاده", color = AppPrimary, fontSize = 11.sp, fontWeight = FontWeight.Black) }
 }
 @Composable
 internal fun Pill(text: String, bg: Color, ink: Color) {
@@ -656,7 +656,7 @@ internal fun Pill(text: String, bg: Color, ink: Color) {
             .height(PILL_H)
             .padding(horizontal = 11.dp),
         contentAlignment = Alignment.Center,
-    ) { Text(text, color = ink, fontSize = 9.5.sp, fontWeight = FontWeight.Black) }
+    ) { Text(text, color = ink, fontSize = 11.sp, fontWeight = FontWeight.Black) }
 }
 /**
  * کارتِ قلمِ کمیاب - بالای تب‌ها، با شمارشِ روزِ باقی‌مانده.

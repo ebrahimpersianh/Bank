@@ -309,15 +309,18 @@ fun DangCreateScreen(
         }
     }
     if (showExpensePicker) {
-        ir.sadteam.loancalc.ui.components.JibakAlertDialog(
+        ir.sadteam.loancalc.ui.components.JibakListSheet(
             onDismissRequest = { showExpensePicker = false },
-            title = { Text("کدام خرج؟") },
-            text = {
-                LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+            title = "کدام خرج؟",
+            subtitle = "مبلغ و تاریخش خودش در فرم پر می‌شود.",
+        ) {
+                LazyColumn(modifier = Modifier.heightIn(max = 480.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
                     items(expenses.size) { i ->
                         val e = expenses[i]
                         Column(
                             modifier = Modifier.fillMaxWidth()
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                                .background(ir.sadteam.loancalc.ui.theme.AppSurface2)
                                 .clickable {
                                     pickedExpenseId = e.id
                                     title = e.description.take(40)
@@ -325,7 +328,7 @@ fun DangCreateScreen(
                                     year = e.year; month = e.month; day = e.day
                                     showExpensePicker = false
                                 }
-                                .padding(vertical = 10.dp),
+                                .padding(horizontal = 12.dp, vertical = 11.dp),
                         ) {
                             Text(e.description.ifBlank { "خرج" }, color = AppText, fontWeight = FontWeight.Bold, maxLines = 1)
                             Text(
@@ -335,10 +338,7 @@ fun DangCreateScreen(
                         }
                     }
                 }
-            },
-            confirmButton = {},
-            dismissButton = { TextButton(onClick = { showExpensePicker = false }) { Text("انصراف") } },
-        )
+        }
     }
 
     val participants = remember { mutableStateOf(listOf(DangParticipantDraft(counterpartyId = null, name = ME_NAME), DangParticipantDraft(counterpartyId = -2L, name = "دوستِ ${toFa(2)}"))) }

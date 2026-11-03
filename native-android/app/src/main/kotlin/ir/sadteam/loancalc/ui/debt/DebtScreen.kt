@@ -472,10 +472,16 @@ private fun DebtList(
         }
         if (counterparties.isNotEmpty()) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                    SummaryTile("طلب دارم", totalOwed, AppTxIn, privacyMode, Modifier.weight(1f))
-                    SummaryTile("بدهکارم", totalOwe, AppTxOut, privacyMode, Modifier.weight(1f))
-                    SummaryTile("خالص", totalOwed - totalOwe, if (totalOwed >= totalOwe) AppTxIn else AppTxOut, privacyMode, Modifier.weight(1f), signed = true)
+                // ۱۳ آبان: سه کاشیِ رنگیِ قاب‌دار (سبز/قرمز/سبز) شلوغ بود → یک کارت، سه ستون، خطِ جداکننده.
+                AppCard {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        SummaryTile("طلب دارم", totalOwed, if (totalOwed > 0) AppTxIn else AppText, privacyMode, Modifier.weight(1f))
+                        Box(Modifier.width(1.dp).height(34.dp).background(ir.sadteam.loancalc.ui.theme.AppLine))
+                        SummaryTile("بدهکارم", totalOwe, if (totalOwe > 0) AppTxOut else AppText, privacyMode, Modifier.weight(1f))
+                        Box(Modifier.width(1.dp).height(34.dp).background(ir.sadteam.loancalc.ui.theme.AppLine))
+                        val net = totalOwed - totalOwe
+                        SummaryTile("خالص", net, when { net > 0 -> AppTxIn; net < 0 -> AppTxOut; else -> AppText }, privacyMode, Modifier.weight(1f), signed = net != 0.0)
+                    }
                 }
             }
             item {
@@ -567,20 +573,16 @@ private fun DebtList(
 private fun SummaryTile(label: String, rial: Double, ink: androidx.compose.ui.graphics.Color, privacyMode: Boolean, modifier: Modifier, signed: Boolean = false) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(ink.copy(alpha = 0.12f))
-            .border(1.dp, ink.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
-            .padding(vertical = 10.dp, horizontal = 4.dp),
+        modifier = modifier.padding(horizontal = 4.dp),
     ) {
-        Text(label, color = ink, fontSize = 11.sp)
+        Text(label, color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
         val toman = rialToToman(rial.toLong())
         AutoShrinkText(
             maskIfPrivate(privacyMode, (if (signed) toman.toFaSignedMoney() else toman.toFaMoney())) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
             color = ink,
-            maxFontSize = 13.sp,
+            maxFontSize = 15.sp,
             fontWeight = FontWeight.Black,
-            modifier = Modifier.padding(top = 3.dp),
+            modifier = Modifier.padding(top = 4.dp),
         )
     }
 }
@@ -993,10 +995,13 @@ private fun EditCounterpartyDialog(
     var phone by remember { mutableStateOf(counterparty.phone ?: "") }
     var shape by remember { mutableStateOf(runCatching { AvatarShape.valueOf(counterparty.avatarShape) }.getOrDefault(AvatarShape.BOY)) }
 
-    JibakAlertDialog(
+    ir.sadteam.loancalc.ui.components.JibakFormSheet(
         onDismissRequest = onDismiss,
-        title = { Text("ویرایشِ شخص") },
-        text = {
+        title = "ویرایشِ شخص",
+        primaryLabel = "ذخیره",
+        primaryEnabled = name.isNotBlank(),
+        onPrimary = { onSave(counterparty.copy(name = name.trim(), phone = phone.trim().takeIf { it.isNotBlank() }, avatarShape = shape.name)) },
+    ) {
             Column {
                 OutlinedTextField(
  textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
@@ -1026,21 +1031,7 @@ private fun EditCounterpartyDialog(
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    if (name.isNotBlank()) {
-                        onSave(counterparty.copy(name = name.trim(), phone = phone.trim().takeIf { it.isNotBlank() }, avatarShape = shape.name))
-                    }
-                },
-                enabled = name.isNotBlank(),
-            ) { Text("ذخیره") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("انصراف") }
-        },
-    )
+    }
 }
 
 private fun CounterpartyEntity.toAvatar(): Avatar = Avatar(
@@ -1050,25 +1041,20 @@ private fun CounterpartyEntity.toAvatar(): Avatar = Avatar(
 
 @Composable
 private fun DebtTypeChip(label: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Box(
+    // ۱۳ آبان: کارتِ بلندِ ۶۴ پیکسلی برای هر فیلتر سنگین بود → قرصِ هم‌شکلِ بقیه‌ی برنامه.
+    Text(
+        label,
+        color = if (selected) androidx.compose.ui.graphics.Color.White else AppText,
+        fontSize = 13.sp,
+        fontWeight = FontWeight.Bold,
+        maxLines = 1,
+        softWrap = false,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         modifier = modifier
-            .pressScaleClickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        AppCard(
-            backgroundColor = if (selected) AppPrimary.copy(alpha = 0.16f) else null,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(
-                label,
-                color = if (selected) AppPrimary else AppMuted,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                softWrap = false,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
+            .clip(RoundedCornerShape(999.dp))
+            .background(if (selected) AppPrimary else ir.sadteam.loancalc.ui.theme.AppSurface)
+            .border(1.dp, if (selected) AppPrimary else ir.sadteam.loancalc.ui.theme.AppLine, RoundedCornerShape(999.dp))
+            .pressScaleClickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+    )
 }

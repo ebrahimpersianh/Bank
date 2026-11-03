@@ -118,8 +118,6 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
     var searching by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(InboxFilter.ALL) }
-    var filterMenu by remember { mutableStateOf(false) }
-    var showAllPersonal by remember { mutableStateOf(false) }
     var showAllJibak by remember { mutableStateOf(false) }
     var showContact by remember { mutableStateOf(false) }
     fun visible(m: InboxMessageEntity): Boolean {
@@ -178,19 +176,15 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.weight(1f),
             )
-            Box {
-                ir.sadteam.loancalc.ui.components.HeaderIconButton(
-                    icon = Icons.Filled.Tune, description = "فیلتر",
-                    active = filter != InboxFilter.ALL, onClick = { filterMenu = true },
-                )
-                DropdownMenu(expanded = filterMenu, onDismissRequest = { filterMenu = false }) {
-                    InboxFilter.entries.forEach { f ->
-                        DropdownMenuItem(
-                            text = { Text(f.label, fontWeight = if (f == filter) FontWeight.Black else FontWeight.Normal) },
-                            onClick = { filter = f; filterMenu = false },
-                        )
-                    }
-                }
+            // ۱۳ آبان (کاربر: «منوی پیام‌ها گیجم می‌کند»): فیلتر دو جا بود (منوی سربرگ + تب‌ها) → فقط تب‌ها.
+            // سطلِ زباله فقط وقتی چیزی در آن هست، کنارِ جستجو.
+            if (bin.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                        .clickable { binOpen = !binOpen }
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                ) { TrashBinIcon(count = bin.size) }
             }
             ir.sadteam.loancalc.ui.components.HeaderIconButton(
                 icon = Icons.Filled.Search, description = "جستجو", active = searching,
@@ -215,7 +209,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 14.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             InboxFilter.entries.forEach { f -> FilterTab(f, selected = f == filter) { filter = f } }
         }
@@ -237,112 +231,92 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                 }
             }
 
-            // ── سطل‌زباله‌ی تراکنش‌های ردشده (۳۰ روز) ──────────────────────────────
-            run {
-                item {
-                    // ۱۶ مهر: سطلِ زباله‌ی واقعی - خالی = درِ نیمه‌باز، پر = کاغذ بیرون زده و تکانِ ریز.
-                    // ۲۱ مهر، خواسته‌ی کاربر: «جلوش هیچی ننویسه، فقط همون آیکون» - بی کادر و بی نوشته؛ تعداد
-                    // روی نشانِ سطل است و لمسش (وقتی پر است) فهرست را باز/بسته می‌کند.
-                    Box(
-                        modifier = Modifier
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-                            .clickable(enabled = bin.isNotEmpty()) { binOpen = !binOpen }
-                            .padding(horizontal = 6.dp, vertical = 4.dp),
-                    ) {
-                        TrashBinIcon(count = bin.size)
-                    }
-                }
-                if (binOpen) {
-                    items(bin, key = { "bin_" + it.tx.id }) { item ->
-                        ir.sadteam.loancalc.ui.components.AppCard(contentPadding = 12.dp) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        (if (item.tx.type == "DEPOSIT") "واریز " else "برداشت ") +
-                                            rialToToman(item.tx.amount.toLong()).let { toFa(it) } + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
-                                        color = AppText,
-                                        fontSize = 13.sp,
-                                    )
-                                    Text(item.tx.originLabel ?: "", color = AppMuted, fontSize = 10.sp)
-                                }
-                                androidx.compose.material3.TextButton(onClick = { viewModel.restore(item) }) { Text("برگردون") }
+            // ── سطل‌زباله‌ی تراکنش‌های ردشده (۳۰ روز) - با آیکونِ سربرگ باز می‌شود ──
+            if (binOpen && bin.isNotEmpty()) {
+                item(key = "bin_label") { SectionLabel("ردشده‌ها · تا ۳۰ روز برمی‌گردند") }
+                items(bin, key = { "bin_" + it.tx.id }) { item ->
+                    ir.sadteam.loancalc.ui.components.AppCard(contentPadding = 12.dp) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    (if (item.tx.type == "DEPOSIT") "واریز " else "برداشت ") +
+                                        rialToToman(item.tx.amount.toLong()).let { toFa(it) } + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
+                                    color = AppText,
+                                    fontSize = 13.sp,
+                                )
+                                Text(item.tx.originLabel ?: "", color = AppMuted, fontSize = 11.sp)
                             }
+                            androidx.compose.material3.TextButton(onClick = { viewModel.restore(item) }) { Text("برگردان") }
                         }
                     }
                 }
             }
 
-            // ── پیام‌های شما ─────────────────────────────────────────────────────
-            item(key = "personal") {
-                MessageSection(
-                    icon = Icons.Filled.Person,
-                    title = "پیام‌های شما",
-                    subtitle = "تراکنش‌ها، پرداخت‌ها، یادآوری‌ها و رویدادهای حساب شما",
-                    count = personal.size,
-                    green = false,
-                    onMarkAllRead = if (personal.any { it.readAt == null }) {
-                        { viewModel.markAllNewsRead() }
-                    } else {
-                        null
-                    },
-                ) {
-                    if (personal.isEmpty()) {
-                        EmptyLine(if (query.isBlank() && filter == InboxFilter.ALL) "فعلاً پیامی برای حسابت نیست." else "پیامی با این جستجو یا فیلتر پیدا نشد.")
-                    }
-                    val list = if (showAllPersonal) personal else personal.take(3)
-                    list.forEach { message ->
-                        val gap = remember(message.id, message.refId) { parseBalanceGap(message) }
-                            // ۱۰ آبان: دکمه فقط روی جدیدترین پیامِ هر حساب **و** فقط پیامی که مانده‌ی بانک را دارد.
-                            ?.takeIf { message.id in latestGapIds && it.bankBalanceRial != null }
-                        NewsCard(
-                            message = message,
-                            onRead = { viewModel.markRead(message.id) },
-                            gapRial = gap?.gapRial,
-                            onFixGap = { viewModel.markRead(message.id); viewModel.fixBalanceGap(message) },
-                            txCategory = message.refId?.toLongOrNull()?.let { txCategories[it] },
-                            linkAccounts = if (message.refId?.startsWith(ir.sadteam.loancalc.data.LINK_SOURCE_PREFIX) == true) linkAccountChoices else emptyList(),
-                            onLink = { id -> viewModel.linkSource(message, id) },
-                            onClick = {
-                                viewModel.markRead(message.id)
-                                // ۱۴ مهر: تراکنشِ خودکار → پنجره‌ی دسته (متنِ پیام از همان‌جا).
-                                val txId = message.refId?.toLongOrNull()
-                                if (message.kind == InboxMessageEntity.Kind.DETECTED_TX && txId != null) quickCatOf = message
-                                else if (message.sourceText != null) sourceOf = message
-                            },
-                        )
-                    }
-                    if (personal.size > 3) {
-                        SeeAllButton(
-                            if (showAllPersonal) "نمایشِ کمتر" else "مشاهده همه پیام‌های شما",
-                            green = false,
-                        ) { showAllPersonal = !showAllPersonal }
-                    }
+            // ۱۳ آبان: دو قابِ رنگیِ بزرگ (حتی خالی) + «فقط ۳تا، بقیه با مشاهده‌ی همه» گیج‌کننده بود.
+            // حالا: اطلاعیه‌های جیبک (اگر هست) بالا، بعد همه‌ی پیام‌های تو یک فهرستِ ساده؛ خالی = یک پیامِ خالی.
+            val showJibak = filter == InboxFilter.ALL && jibak.isNotEmpty()
+            if (personal.isEmpty() && !showJibak && actionable.isEmpty()) {
+                item(key = "empty") {
+                    ir.sadteam.loancalc.ui.components.EmptyState(
+                        icon = Icons.Filled.Inbox,
+                        title = if (query.isBlank() && filter == InboxFilter.ALL) "پیامی نداری" else "چیزی پیدا نشد",
+                        description = if (query.isBlank() && filter == InboxFilter.ALL) "تراکنش‌های خودکار، یادآورها و خبرهای جیبک این‌جا می‌آیند."
+                        else "جستجو یا تبِ دیگری را امتحان کن.",
+                    )
                 }
             }
 
-            // ── پیام‌های جیبک (اطلاعیه‌های عمومیِ سرور) ───────────────────────────
-            // ۲۱ مهر، خواسته‌ی کاربر: «پیام‌های جیبک» فقط در تبِ «همه»؛ در مالی/یادآوری/خوانده‌نشده نه.
-            if (filter == InboxFilter.ALL) item(key = "jibak") {
-                Spacer(Modifier.height(10.dp))
-                MessageSection(
-                    icon = Icons.Filled.Campaign,
-                    title = "پیام‌های جیبک",
-                    subtitle = "خبرها و قابلیت‌های جدید",
-                    count = jibak.size,
-                    green = true,
-                    onMarkAllRead = null,
-                ) {
-                    if (jibak.isEmpty()) EmptyLine("فعلاً اطلاعیه‌ی تازه‌ای نیست.")
-                    val list = if (showAllJibak) jibak else jibak.take(2)
-                    list.forEach { message ->
-                        AnnouncementCard(message, onAction = { a -> viewModel.markRead(message.id); runAction(a) }) { if (isGift(message) && message.readAt == null) celebrate = message else viewModel.markRead(message.id) }
+            // ── پیام‌های جیبک (اطلاعیه‌های عمومیِ سرور) - فقط در تبِ «همه»، آبی ──
+            if (showJibak) {
+                item(key = "jibak_label") { SectionLabel("از طرفِ جیبک") }
+                val list = if (showAllJibak) jibak else jibak.take(2)
+                items(list, key = { "j_" + it.id }) { message ->
+                    AnnouncementCard(message, onAction = { a -> viewModel.markRead(message.id); runAction(a) }) { if (isGift(message) && message.readAt == null) celebrate = message else viewModel.markRead(message.id) }
+                }
+                if (jibak.size > 2) item(key = "jibak_more") {
+                    SeeAllButton(if (showAllJibak) "نمایشِ کمتر" else "همه‌ی خبرهای جیبک (${toFa(jibak.size)})", green = true) { showAllJibak = !showAllJibak }
+                }
+            }
+
+            // ── پیام‌های تو ─────────────────────────────────────────────────────
+            if (personal.isNotEmpty()) {
+                item(key = "personal_label") {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Box(Modifier.weight(1f)) { SectionLabel("پیام‌های تو · ${toFa(personal.size)}") }
+                        if (personal.any { it.readAt == null }) {
+                            Text(
+                                "خواندنِ همه",
+                                color = ir.sadteam.loancalc.ui.theme.AppPrimaryInk,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                                    .clickable { viewModel.markAllNewsRead() }
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                            )
+                        }
                     }
-                    if (jibak.size > 2) {
-                        SeeAllButton(
-                            if (showAllJibak) "نمایشِ کمتر" else "مشاهده همه پیام‌های جیبک",
-                            green = true,
-                        ) { showAllJibak = !showAllJibak }
-                    }
+                }
+                items(personal, key = { "p_" + it.id }) { message ->
+                    val gap = remember(message.id, message.refId) { parseBalanceGap(message) }
+                        // ۱۰ آبان: دکمه فقط روی جدیدترین پیامِ هر حساب **و** فقط پیامی که مانده‌ی بانک را دارد.
+                        ?.takeIf { message.id in latestGapIds && it.bankBalanceRial != null }
+                    NewsCard(
+                        message = message,
+                        onRead = { viewModel.markRead(message.id) },
+                        gapRial = gap?.gapRial,
+                        onFixGap = { viewModel.markRead(message.id); viewModel.fixBalanceGap(message) },
+                        txCategory = message.refId?.toLongOrNull()?.let { txCategories[it] },
+                        linkAccounts = if (message.refId?.startsWith(ir.sadteam.loancalc.data.LINK_SOURCE_PREFIX) == true) linkAccountChoices else emptyList(),
+                        onLink = { id -> viewModel.linkSource(message, id) },
+                        onClick = {
+                            viewModel.markRead(message.id)
+                            // ۱۴ مهر: تراکنشِ خودکار → پنجره‌ی دسته (متنِ پیام از همان‌جا).
+                            val txId = message.refId?.toLongOrNull()
+                            if (message.kind == InboxMessageEntity.Kind.DETECTED_TX && txId != null) quickCatOf = message
+                            else if (message.sourceText != null) sourceOf = message
+                        },
+                    )
                 }
             }
 
@@ -451,7 +425,7 @@ private fun SourceDialog(
 // «مهم»ِ طرح ساخته نشد: برنامه قابلیتِ نشان‌کردنِ پیام ندارد؛ «خوانده‌نشده» واقعی است.
 private enum class InboxFilter(val label: String, val icon: ImageVector) {
     ALL("همه", Icons.Filled.Inbox),
-    FINANCE("مالی", Icons.Filled.CreditCard),
+    FINANCE("تراکنش‌ها", Icons.Filled.CreditCard),
     REMINDERS("یادآوری‌ها", Icons.Filled.CalendarMonth),
     UNREAD("خوانده‌نشده", Icons.Filled.MarkEmailUnread),
 }
@@ -473,16 +447,16 @@ private fun FilterTab(f: InboxFilter, selected: Boolean, onClick: () -> Unit) {
             .background(if (selected) AppPrimary else AppSurface)
             .border(1.dp, if (selected) AppPrimary else AppLine, RoundedCornerShape(16.dp))
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 13.dp, vertical = 7.dp),
+            .padding(horizontal = 10.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(f.icon, contentDescription = null, tint = if (selected) Color.White else AppMuted, modifier = Modifier.size(17.dp))
+        Icon(f.icon, contentDescription = null, tint = if (selected) Color.White else AppMuted, modifier = Modifier.size(16.dp))
         Text(
             f.label,
             color = if (selected) Color.White else AppText,
             fontSize = 12.sp,
             fontWeight = FontWeight.Black,
-            modifier = Modifier.padding(start = 6.dp),
+            modifier = Modifier.padding(start = 5.dp),
         )
     }
 }

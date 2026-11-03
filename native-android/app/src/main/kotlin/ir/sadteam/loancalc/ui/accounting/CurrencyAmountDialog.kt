@@ -75,10 +75,13 @@ fun CurrencyAmountDialog(
     val toman = a * r
     val name = CURRENCIES.first { it.first == code }.second
 
-    JibakAlertDialog(
+    ir.sadteam.loancalc.ui.components.JibakFormSheet(
         onDismissRequest = onDismiss,
-        title = { Text("مبلغ به ارز") },
-        text = {
+        title = "مبلغ به ارز",
+        primaryLabel = "ثبت",
+        primaryEnabled = toman > 0,
+        onPrimary = { onConfirm(toman, "${a.toFaMoney()} $name × ${r.toFaMoney()}") },
+    ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     items(CURRENCIES) { (c, n) -> AppChip(label = n, selected = c == code, onClick = { code = c }) }
@@ -104,10 +107,5 @@ fun CurrencyAmountDialog(
                     color = if (toman > 0) AppPrimary else AppMuted, fontSize = 16.sp, fontWeight = FontWeight.Black,
                 )
             }
-        },
-        confirmButton = {
-            TextButton(enabled = toman > 0, onClick = { onConfirm(toman, "${a.toFaMoney()} $name × ${r.toFaMoney()}") }) { Text("ثبت") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("انصراف", color = AppText) } },
-    )
+    }
 }

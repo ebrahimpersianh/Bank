@@ -194,10 +194,16 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
         var amountText by remember(bill) { mutableStateOf(if (bill.lastAmount > 0) (bill.lastAmount.toLong() / ir.sadteam.loancalc.ui.jibak.unitDiv).toString() else "") }
         var accountId by remember(bill) { mutableStateOf(accounts.singleOrNull()?.id) }
         var payId by remember(bill) { mutableStateOf("") }
-        JibakAlertDialog(
+        ir.sadteam.loancalc.ui.components.JibakFormSheet(
             onDismissRequest = { paying = null },
-            title = { Text("پرداختِ قبضِ ${bill.name}") },
-            text = {
+            title = "پرداختِ قبضِ ${bill.name}",
+            primaryLabel = "پرداخت شد",
+            onPrimary = {
+                val rial = (amountText.toLongOrNull() ?: 0L) * ir.sadteam.loancalc.ui.jibak.unitDivD
+                viewModel.markBillPaid(bill, today.y, today.m, rial, accountId)
+                paying = null
+            },
+        ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     // مبلغ داخلِ شناسه‌ی پرداخت است؛ با واردکردنش مبلغ خودش پر می‌شود.
                     Ltr {
@@ -239,16 +245,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         }
                     }
                 }
-            },
-            confirmButton = {
-                GradientButton(onClick = {
-                    val rial = (amountText.toLongOrNull() ?: 0L) * ir.sadteam.loancalc.ui.jibak.unitDivD
-                    viewModel.markBillPaid(bill, today.y, today.m, rial, accountId)
-                    paying = null
-                }) { Text("پرداخت شد") }
-            },
-            dismissButton = { TextButton(onClick = { paying = null }) { Text("انصراف") } },
-        )
+        }
     }
 
     if (adding || editing != null) {

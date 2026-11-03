@@ -218,44 +218,31 @@ internal fun AccountSettings(
         }
 
         if (showAvatarSheet) {
-            JibakAlertDialog(
+            ir.sadteam.loancalc.ui.components.JibakFormSheet(
                 onDismissRequest = { showAvatarSheet = false },
-                confirmButton = { TextButton(onClick = { showAvatarSheet = false }) { Text("تمام") } },
-                title = { Text("آدمکت را انتخاب کن", fontWeight = FontWeight.Black) },
-                text = { AvatarPicker(avatar = avatar, onChange = { avatarViewModel.save(it) }) },
-            )
+                title = "آدمکت را انتخاب کن",
+                primaryLabel = "تمام",
+                onPrimary = { showAvatarSheet = false },
+            ) { AvatarPicker(avatar = avatar, onChange = { avatarViewModel.save(it) }) }
         }
         if (showNameSheet) {
             var nameDraft by remember(savedName) { mutableStateOf(savedName ?: "") }
-            JibakAlertDialog(
+            ir.sadteam.loancalc.ui.components.JibakFormSheet(
                 onDismissRequest = { showNameSheet = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = { authViewModel.updateName(nameDraft); showNameSheet = false },
-                    ) {
-                        Text("ذخیره")
-                    }
-                },
-                dismissButton = { TextButton(onClick = { showNameSheet = false }) { Text("بی‌خیال") } },
-                title = { Text("نام", fontWeight = FontWeight.Black) },
-                text = {
-                    Column {
-                        OutlinedTextField(
- textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
-                            value = nameDraft,
-                            onValueChange = { if (it.length <= 30) nameDraft = it },
-                            singleLine = true,
-                            placeholder = { Text("مثلاً ابراهیم") },
-                            modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                        Text(
-                            "رو سربرگِ خروجیِ PDF و اکسل نوشته می‌شه. خالی گذاشتنش هیچ مشکلی نداره.",
-                            color = AppMuted,
-                            fontSize = 10.5.sp,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
-                    }
-                },
-            )
+                title = "نامِ تو",
+                subtitle = "روی سربرگِ خروجیِ PDF و اکسل نوشته می‌شود. خالی گذاشتنش هیچ مشکلی ندارد.",
+                primaryLabel = "ذخیره",
+                onPrimary = { authViewModel.updateName(nameDraft); showNameSheet = false },
+            ) {
+                OutlinedTextField(
+                    textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
+                    value = nameDraft,
+                    onValueChange = { if (it.length <= 30) nameDraft = it },
+                    singleLine = true,
+                    placeholder = { Text("مثلاً ابراهیم") },
+                    modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                )
+            }
         }
         AppCard(
             backgroundColor = AppPrimaryPill,

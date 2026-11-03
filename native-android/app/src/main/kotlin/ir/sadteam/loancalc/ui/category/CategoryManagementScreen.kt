@@ -469,11 +469,13 @@ private fun RenameCategoryDialog(
     var name by remember { mutableStateOf(entity.name) }
     val taken = isTaken(name)
     val valid = name.isNotBlank() && name.trim() != entity.name && !taken
-    JibakAlertDialog(
+    ir.sadteam.loancalc.ui.components.JibakFormSheet(
         onDismissRequest = onDismiss,
-        containerColor = AppSurface,
-        title = { Text("تغییرِ نامِ دسته", color = AppText, fontWeight = FontWeight.Black) },
-        text = {
+        title = "تغییرِ نامِ دسته",
+        primaryLabel = "ذخیره",
+        primaryEnabled = valid,
+        onPrimary = { onRename(name.trim()) },
+    ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
  textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
@@ -507,12 +509,5 @@ private fun RenameCategoryDialog(
                     )
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { onRename(name.trim()) }, enabled = valid) {
-                Text("ذخیره", color = if (valid) AppPrimaryInk else AppMuted)
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("انصراف", color = AppMuted) } },
-    )
+    }
 }

@@ -138,45 +138,41 @@ fun BudgetTabScreen(
     editingRow?.let { r ->
         val entity = budgets.firstOrNull { it.categoryName == r.category.name }
         var capText by remember(r) { mutableStateOf((r.cap / ir.sadteam.loancalc.ui.jibak.unitDiv).toLong().toString()) }
-        ir.sadteam.loancalc.ui.components.JibakAlertDialog(
+        ir.sadteam.loancalc.ui.components.JibakFormSheet(
             onDismissRequest = { editingRow = null },
-            title = { ir.sadteam.loancalc.ui.text.Text("بودجه‌ی ${r.category.name}") },
-            text = {
-                androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
-                    ir.sadteam.loancalc.ui.text.Text("سقفِ ماهانه")
-                    androidx.compose.material3.OutlinedTextField(
-                        value = capText,
-                        onValueChange = { capText = ir.sadteam.loancalc.core.cleanNum(it).take(13) },
-                        visualTransformation = ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation(),
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        suffix = { ir.sadteam.loancalc.ui.text.Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}") },
-                        textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
-                        colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
-                        shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
-                    )
+            title = "بودجه‌ی ${r.category.name}",
+            primaryLabel = "ذخیره",
+            onPrimary = {
+                val toman = capText.toLongOrNull() ?: 0L
+                if (toman > 0L && entity != null) {
+                    viewModel.setBudget(r.category.name, toman * ir.sadteam.loancalc.ui.jibak.unitDivD, entity.id, entity.accountId)
                 }
+                editingRow = null
             },
-            confirmButton = {
-                androidx.compose.material3.TextButton(onClick = {
-                    val toman = capText.toLongOrNull() ?: 0L
-                    if (toman > 0L && entity != null) {
-                        viewModel.setBudget(r.category.name, toman * ir.sadteam.loancalc.ui.jibak.unitDivD, entity.id, entity.accountId)
-                    }
-                    editingRow = null
-                }) { ir.sadteam.loancalc.ui.text.Text("ذخیره") }
+            primaryEnabled = (capText.toLongOrNull() ?: 0L) > 0L,
+            secondaryLabel = "حذفِ بودجه",
+            secondaryColor = ir.sadteam.loancalc.ui.theme.AppDanger,
+            onSecondary = {
+                entity?.let { viewModel.deleteBudget(it) }
+                editingRow = null
             },
-            dismissButton = {
-                androidx.compose.foundation.layout.Row {
-                    androidx.compose.material3.TextButton(onClick = {
-                        entity?.let { viewModel.deleteBudget(it) }
-                        editingRow = null
-                    }) { ir.sadteam.loancalc.ui.text.Text("حذفِ بودجه", color = ir.sadteam.loancalc.ui.theme.AppDanger) }
-                    androidx.compose.material3.TextButton(onClick = { editingRow = null }) { ir.sadteam.loancalc.ui.text.Text("انصراف") }
-                }
-            },
-        )
+        ) {
+            androidx.compose.material3.OutlinedTextField(
+                value = capText,
+                onValueChange = { capText = ir.sadteam.loancalc.core.cleanNum(it).take(13) },
+                visualTransformation = ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation(),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                label = { ir.sadteam.loancalc.ui.text.Text("سقفِ ماهانه") },
+                suffix = { ir.sadteam.loancalc.ui.text.Text(ir.sadteam.loancalc.ui.jibak.unitFa()) },
+                textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
+                colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
+                shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+            )
+            val toman = capText.toLongOrNull() ?: 0L
+            if (toman > 0L) ir.sadteam.loancalc.ui.text.Text(ir.sadteam.loancalc.ui.jibak.amountWordsCaption(toman.toDouble()), fontSize = 11.sp)
+        }
     }
     val totalCap = rows.sumOf { it.cap }
     val totalSpent = rows.sumOf { it.spent }

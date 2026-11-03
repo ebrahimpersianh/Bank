@@ -36,6 +36,12 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -496,18 +502,26 @@ fun HomeScreen(
             }
             if (!simple && dueBills.isNotEmpty()) {
                 item {
+                    // ۱۳ آبان: ایموجی 🧾 و «برق · لمس کن و…» (نام تکرارِ عنوان بود) → ردیفِ آیکون‌دارِ یک‌دست.
                     ir.sadteam.loancalc.ui.components.AppCard(modifier = Modifier.clickable { showHomeBills = true }) {
-                        Text(
-                            "🧾 " + if (dueBills.size == 1) "قبضِ ${ir.sadteam.loancalc.ui.extras.billKindLabel(dueBills[0].kind)} نزدیکِ موعده"
-                            else "${dueBills.size.toFa()} قبض نزدیکِ موعدن",
-                            fontWeight = FontWeight.Black,
-                            fontSize = 14.sp,
-                        )
-                        Text(
-                            dueBills.joinToString("، ") { it.name } + " · لمس کن و پرداخت‌شده بزن",
-                            color = ir.sadteam.loancalc.ui.theme.AppMuted,
-                            fontSize = 11.5.sp,
-                        )
+                        androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier.size(40.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(ir.sadteam.loancalc.ui.theme.AppRadius.icon)).background(ir.sadteam.loancalc.ui.theme.AppPrimaryPill),
+                                contentAlignment = androidx.compose.ui.Alignment.Center,
+                            ) {
+                                Icon(Icons.Filled.ReceiptLong, contentDescription = null, tint = ir.sadteam.loancalc.ui.theme.AppPrimary, modifier = Modifier.size(21.dp))
+                            }
+                            androidx.compose.foundation.layout.Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                                Text(
+                                    if (dueBills.size == 1) "موعدِ قبضِ ${ir.sadteam.loancalc.ui.extras.billKindLabel(dueBills[0].kind)} نزدیک است"
+                                    else "موعدِ ${dueBills.size.toFa()} قبض نزدیک است",
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 14.sp,
+                                )
+                                Text("پرداخت کردی؟ بزن و ثبتش کن", color = ir.sadteam.loancalc.ui.theme.AppMuted, fontSize = 12.sp)
+                            }
+                            Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = ir.sadteam.loancalc.ui.theme.AppMuted, modifier = Modifier.size(20.dp))
+                        }
                     }
                 }
             }

@@ -544,11 +544,14 @@ private fun EditTransactionDialog(
     var description by remember { mutableStateOf(tx.description) }
     val toman = amountText.toLongOrNull() ?: 0L
 
-    JibakAlertDialog(
+    ir.sadteam.loancalc.ui.components.JibakFormSheet(
         onDismissRequest = onDismiss,
-        containerColor = AppSurface,
-        title = { Text("ویرایشِ تراکنش", color = AppText, fontWeight = FontWeight.Black) },
-        text = {
+        title = "ویرایشِ تراکنش",
+        primaryLabel = "ذخیره",
+        primaryEnabled = toman > 0,
+        // اگر مبلغ دست نخورد، ریالِ دقیقِ اولیه می‌ماند (نه نسخه‌ی گردشده).
+        onPrimary = { onSave(if (toman == rialToToman(tx.amount.toLong())) tx.amount else tomanToRial(toman).toDouble(), description) },
+    ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = amountText,
@@ -594,14 +597,5 @@ private fun EditTransactionDialog(
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                // اگر مبلغ دست نخورد، ریالِ دقیقِ اولیه می‌ماند (نه نسخه‌ی گردشده).
-                onClick = { onSave(if (toman == rialToToman(tx.amount.toLong())) tx.amount else tomanToRial(toman).toDouble(), description) },
-                enabled = toman > 0,
-            ) { Text("ذخیره", color = if (toman > 0) AppPrimaryInk else AppMuted) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("انصراف", color = AppMuted) } },
-    )
+    }
 }

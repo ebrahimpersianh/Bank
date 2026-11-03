@@ -89,7 +89,7 @@ internal fun SectionLabel(text: String) {
     Text(
         text,
         color = AppMuted,
-        fontSize = 10.5.sp,
+        fontSize = 12.sp,
         fontWeight = FontWeight.Black,
         modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
     )

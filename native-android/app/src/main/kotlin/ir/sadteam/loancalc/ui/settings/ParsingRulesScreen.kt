@@ -338,30 +338,24 @@ private fun RuleSheet(
         matches = previewCount(pattern)
     }
 
-    JibakAlertDialog(
+    ir.sadteam.loancalc.ui.components.JibakFormSheet(
         onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                enabled = pattern.isNotBlank() && category.isNotBlank(),
-                onClick = {
-                    onSave(
-                        pattern.trim(),
-                        category.trim(),
-                        when (typeIndex) {
-                            1 -> TransactionType.WITHDRAWAL.name
-                            2 -> TransactionType.DEPOSIT.name
-                            else -> null
-                        },
-                    )
+        title = if (rule == null) "قاعده‌ی تازه" else "ویرایشِ قاعده",
+        primaryLabel = "ذخیره",
+        primaryEnabled = pattern.isNotBlank() && category.isNotBlank(),
+        onPrimary = {
+            onSave(
+                pattern.trim(),
+                category.trim(),
+                when (typeIndex) {
+                    1 -> TransactionType.WITHDRAWAL.name
+                    2 -> TransactionType.DEPOSIT.name
+                    else -> null
                 },
-            ) {
-                Text("ذخیره")
-            }
+            )
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("بی‌خیال") } },
-        title = { Text(if (rule == null) "قاعده‌ی تازه" else "ویرایشِ قاعده", fontWeight = FontWeight.Black) },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+    ) {
+            Column {
                 OutlinedTextField(
  textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = pattern,
@@ -372,7 +366,7 @@ private fun RuleSheet(
                 Text(
                     "بخشی از نامِ فروشنده کافیه - «رفاه» هم «فروشگاه رفاه» رو می‌گیره.",
                     color = AppLabel,
-                    fontSize = 9.sp,
+                    fontSize = 11.sp,
                     modifier = Modifier.padding(top = 4.dp),
                 )
                 if (!sampleBody.isNullOrBlank()) {
@@ -455,8 +449,7 @@ private fun RuleSheet(
                     )
                 }
             }
-        },
-    )
+    }
 }
 
 private val AppMutedColorFallback = androidx.compose.ui.graphics.Color(0xFF757575)
@@ -508,18 +501,14 @@ private fun SmsTestDialog(
     LaunchedEffect(Unit) {
         if (initialBody.isNotBlank()) { result = runTest(initialBody); tested = true }
     }
-    JibakAlertDialog(
+    ir.sadteam.loancalc.ui.components.JibakFormSheet(
         onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                enabled = body.isNotBlank(),
-                onClick = { scope.launch { result = runTest(body); tested = true } },
-            ) { Text("آزمایش") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("بستن") } },
-        title = { Text("آزمایشِ تشخیص", fontWeight = FontWeight.Black) },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        title = "آزمایشِ تشخیص",
+        primaryLabel = "آزمایش",
+        primaryEnabled = body.isNotBlank(),
+        onPrimary = { scope.launch { result = runTest(body); tested = true } },
+    ) {
+            Column {
                 OutlinedTextField(
  textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = body,
@@ -530,7 +519,7 @@ private fun SmsTestDialog(
                 Text(
                     "فقط آزمایشه - هیچ تراکنشی ثبت نمی‌شه.",
                     color = AppLabel,
-                    fontSize = 9.sp,
+                    fontSize = 11.sp,
                     modifier = Modifier.padding(top = 4.dp),
                 )
                 AnimatedVisibility(visible = tested) {
@@ -581,8 +570,7 @@ private fun SmsTestDialog(
                     }
                 }
             }
-        },
-    )
+    }
 }
 
 @Composable

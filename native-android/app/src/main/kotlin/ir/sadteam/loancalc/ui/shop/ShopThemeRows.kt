@@ -173,7 +173,7 @@ internal fun ShopRow(
                 RowState.BADGE_LOCKED -> Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Lock, contentDescription = null, tint = AppMuted, modifier = Modifier.size(11.dp))
                     Spacer(modifier = Modifier.width(5.dp))
-                    Text("نشان لازم است", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
+                    Text("با نشانِ ماهِ منظم", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Black)
                 }
                 // ردیفِ گران خاموش می‌شود، پنهان نه - با کمبودِ نوشته‌شده (`18c`).
                 RowState.POOR -> Column(horizontalAlignment = Alignment.End) {

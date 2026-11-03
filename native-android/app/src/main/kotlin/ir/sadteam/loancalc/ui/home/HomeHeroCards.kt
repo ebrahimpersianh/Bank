@@ -310,7 +310,7 @@ internal fun MonthBudgetCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("بودجهٔ $monthLabel", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
+            Text("بودجه‌ی $monthLabel", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
             Text(
                 "${(percent).toFa()}٪",
                 color = if (ratio >= 1f) AppDangerInk else AppPrimaryInk,
@@ -326,7 +326,8 @@ internal fun MonthBudgetCard(
             Icon(
                 Icons.Filled.AutoAwesome,
                 contentDescription = null,
-                tint = AppWarningInk,
+                // ۱۳ آبان: «می‌مونه» خبرِ خوب است - نارنجیِ هشدار فقط وقتی کم می‌آوری.
+                tint = if (leftover >= 0) AppPrimaryInk else AppDangerInk,
                 modifier = Modifier.size(11.dp),
             )
             PrivacyCrossfade(privacyMode) { masked ->
@@ -336,8 +337,8 @@ internal fun MonthBudgetCard(
                     } else {
                         "با این روند، ${maskIfPrivate(masked, (-leftover).rialToFaCompact())} ${ir.sadteam.loancalc.ui.jibak.unitFa()} کم میاری"
                     },
-                    color = AppWarningInk,
-                    fontSize = 10.sp,
+                    color = if (leftover >= 0) AppPrimaryInk else AppDangerInk,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 5.dp),
                 )

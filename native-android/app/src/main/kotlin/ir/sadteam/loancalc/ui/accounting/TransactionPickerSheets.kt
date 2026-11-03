@@ -57,10 +57,10 @@ fun AccountPickerSheet(
     // ⚠️ «۰ تومان» نشان می‌داد: موجودیِ **روزِ شروع** بود، نه موجودیِ فعلی.
     val allTx by accountViewModel.transactions.collectAsState()
     val privacy = ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current
-    JibakAlertDialog(
+    ir.sadteam.loancalc.ui.components.JibakListSheet(
         onDismissRequest = onDismiss,
-        title = { Text("حساب‌ها", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
-        text = {
+        title = "کدام حساب؟",
+    ) {
             if (accounts.isEmpty()) {
                 EmptyState(
                     icon = Icons.Filled.Add,
@@ -69,7 +69,7 @@ fun AccountPickerSheet(
                 )
             } else {
                 LazyColumn(
-                    modifier = Modifier.heightIn(max = 380.dp),
+                    modifier = Modifier.heightIn(max = 480.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     items(accounts, key = { it.id }) { account ->
@@ -97,10 +97,7 @@ fun AccountPickerSheet(
                     }
                 }
             }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("انصراف") } },
-    )
+    }
 }
 
 /** انتخابگرِ دسته‌بندی - لیستِ کاملِ دسته‌های همون نوع (خرج یا دخل)، با آیکون و رنگِ خودشون. */

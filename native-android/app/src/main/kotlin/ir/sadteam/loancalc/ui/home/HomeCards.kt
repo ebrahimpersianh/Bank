@@ -287,7 +287,7 @@ internal fun CategoryBreakdownCard(
                 }
             }
             Column(modifier = Modifier.weight(1f).padding(start = if (top.size > 1) 16.dp else 0.dp)) {
-                Text("جمعِ خرجِ این ماه", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text("جمع", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 PrivacyCrossfade(privacyMode) { masked ->
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(

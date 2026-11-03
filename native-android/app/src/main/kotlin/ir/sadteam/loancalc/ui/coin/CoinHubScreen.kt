@@ -222,14 +222,14 @@ private fun CoinHero(coins: Int, activeDays: Int, earnedToday: Int) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text(toFa(coins), color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black, maxLines = 1)
-                    Text("سکه", color = AppMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+                    Text(toFa(coins), color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 1)
+                    Text("سکه", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
                 }
+                // ۱۳ آبان: «امروز +۱۵ از ۵۰ | ۱ روز» نامفهوم بود؛ زنجیره در تبِ «کیف» کامل نوشته شده.
                 Text(
-                    "امروز +${toFa(earnedToday)} از ${toFa(CoinReason.DAILY_COIN_CAP)}" +
-                        if (activeDays > 0) " · ${toFa(activeDays)} روز" else "",
+                    "امروز ${toFa(earnedToday)} از ${toFa(CoinReason.DAILY_COIN_CAP)} سکه",
                     color = AppPrimaryInk,
-                    fontSize = 9.5.sp,
+                    fontSize = 10.5.sp,
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                     modifier = Modifier

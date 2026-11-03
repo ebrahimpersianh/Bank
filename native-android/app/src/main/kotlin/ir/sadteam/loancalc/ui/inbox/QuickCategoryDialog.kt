@@ -116,12 +116,12 @@ fun QuickCategoryDialog(
     val others by viewModel.otherAccounts.collectAsState()
     var transferOpen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val t = tx
-    JibakAlertDialog(
+    ir.sadteam.loancalc.ui.components.JibakListSheet(
         onDismissRequest = onDismiss,
-        title = { Text("دسته‌ی این تراکنش؟", fontSize = 16.sp, fontWeight = FontWeight.Black) },
-        text = {
+        title = "دسته‌ی این تراکنش؟",
+    ) {
             Column(
-                modifier = Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()),
+                modifier = Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (t != null) {
@@ -211,8 +211,10 @@ fun QuickCategoryDialog(
                     }
                 }
             }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("بعداً") } },
-        dismissButton = onShowSource?.let { show -> { TextButton(onClick = show) { Text("متنِ پیام") } } },
-    )
+            Row(modifier = Modifier.fillMaxWidth()) {
+                if (onShowSource != null) TextButton(onClick = onShowSource) { Text("متنِ پیام", color = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, fontWeight = FontWeight.Bold) }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onDismiss) { Text("بعداً", color = AppMuted, fontWeight = FontWeight.Bold) }
+            }
+    }
 }

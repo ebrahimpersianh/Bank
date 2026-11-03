@@ -553,7 +553,7 @@ private fun AssetsHeader(
         Column(modifier = Modifier.weight(1f)) {
             Text("دارایی", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
             Text(
-                "نمای کلیِ دارایی‌های شما",
+                "دارایی‌هایت در یک نگاه",
                 color = AppMuted,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,

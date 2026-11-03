@@ -170,26 +170,12 @@ fun AdminShopScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
         var isNew by remember(item) { mutableStateOf(cfg.newOn.containsKey(item.id)) }
         var deal by remember(item) { mutableStateOf(cfg.dealId == item.id) }
         var pct by remember(item) { mutableStateOf((cfg.dealPercent ?: 30).toString()) }
-        JibakAlertDialog(
+        val isServerTheme = item.id.startsWith("theme:r_")
+        ir.sadteam.loancalc.ui.components.JibakFormSheet(
             onDismissRequest = { editing = null },
-            title = { Text(item.label) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(label, { label = it.take(40) }, textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(), label = { Text("نام") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(price, { price = cleanNum(it).take(6) }, textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(), label = { Text("قیمت (سکه)") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("نشانِ «تازه» (۱۴ روز)", color = AppText, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                        Switch(checked = isNew, onCheckedChange = { isNew = it })
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("تخفیفِ امروز", color = AppText, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                        Switch(checked = deal, onCheckedChange = { deal = it })
-                    }
-                    if (deal) OutlinedTextField(pct, { pct = cleanNum(it).take(2) }, textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(), label = { Text("درصدِ تخفیف") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
+            title = item.label,
+            primaryLabel = "ذخیره",
+            onPrimary = {
                     val p = price.toIntOrNull()
                     var c = cfg
                     c = c.copy(prices = if (p == null || p == item.price) c.prices - item.id else c.prices + (item.id to p))
@@ -204,20 +190,29 @@ fun AdminShopScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
                     }
                     cfg = c
                     editing = null
-                }) { Text("باشه") }
             },
-            dismissButton = {
-                if (item.id.startsWith("theme:r_")) {
-                    TextButton(onClick = {
-                        val tid = item.id.removePrefix("theme:r_")
-                        cfg = cfg.copy(themes = cfg.themes.filter { it.id != tid })
-                        editing = null
-                    }) { Text("حذفِ تم", color = ir.sadteam.loancalc.ui.theme.AppDangerInk) }
-                } else {
-                    TextButton(onClick = { editing = null }) { Text("انصراف") }
+            secondaryLabel = if (isServerTheme) "حذفِ تم" else null,
+            secondaryColor = ir.sadteam.loancalc.ui.theme.AppDangerInk,
+            onSecondary = {
+                val tid = item.id.removePrefix("theme:r_")
+                cfg = cfg.copy(themes = cfg.themes.filter { it.id != tid })
+                editing = null
+            },
+        ) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(label, { label = it.take(40) }, textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(), label = { Text("نام") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(price, { price = cleanNum(it).take(6) }, textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(), label = { Text("قیمت (سکه)") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("نشانِ «تازه» (۱۴ روز)", color = AppText, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                        Switch(checked = isNew, onCheckedChange = { isNew = it })
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("تخفیفِ امروز", color = AppText, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                        Switch(checked = deal, onCheckedChange = { deal = it })
+                    }
+                    if (deal) OutlinedTextField(pct, { pct = cleanNum(it).take(2) }, textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(), label = { Text("درصدِ تخفیف") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
                 }
-            },
-        )
+        }
     }
 
     if (addTheme) {
@@ -227,21 +222,12 @@ fun AdminShopScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
         var light by remember { mutableStateOf("#") }
         var price by remember { mutableStateOf("150") }
         val ok = name.isNotBlank() && RemoteShop.parseHex(primary) != null
-        JibakAlertDialog(
+        ir.sadteam.loancalc.ui.components.JibakFormSheet(
             onDismissRequest = { addTheme = false },
-            title = { Text("تمِ رنگیِ تازه") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(name, { name = it.take(24) }, textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(), label = { Text("نام (مثلاً «یاقوتی»)") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), modifier = Modifier.fillMaxWidth())
-                    ColorField("رنگِ اصلی", primary) { primary = it }
-                    ColorField("تیره (پس‌زمینه‌ی تمِ تیره)", dark) { dark = it }
-                    ColorField("روشن (برای تمِ تیره)", light) { light = it }
-                    OutlinedTextField(price, { price = cleanNum(it).take(5) }, textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(), label = { Text("قیمت (سکه)") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
-                    Text("رنگ‌ها را از ChatGPT بگیر: «سه hex برای تمِ … : اصلی، خیلی تیره، خیلی روشن».", color = AppMuted, fontSize = 11.sp)
-                }
-            },
-            confirmButton = {
-                TextButton(enabled = ok, onClick = {
+            title = "تمِ رنگیِ تازه",
+            primaryLabel = "افزودن",
+            primaryEnabled = ok,
+            onPrimary = {
                     val id = "t" + System.currentTimeMillis().toString(36)
                     cfg = cfg.copy(
                         themes = cfg.themes + RemoteTheme(
@@ -251,10 +237,17 @@ fun AdminShopScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
                         ),
                     )
                     addTheme = false
-                }) { Text("افزودن") }
             },
-            dismissButton = { TextButton(onClick = { addTheme = false }) { Text("انصراف") } },
-        )
+        ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(name, { name = it.take(24) }, textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(), label = { Text("نام (مثلاً «یاقوتی»)") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), modifier = Modifier.fillMaxWidth())
+                    ColorField("رنگِ اصلی", primary) { primary = it }
+                    ColorField("تیره (پس‌زمینه‌ی تمِ تیره)", dark) { dark = it }
+                    ColorField("روشن (برای تمِ تیره)", light) { light = it }
+                    OutlinedTextField(price, { price = cleanNum(it).take(5) }, textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(), label = { Text("قیمت (سکه)") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
+                    Text("رنگ‌ها را از ChatGPT بگیر: «سه hex برای تمِ … : اصلی، خیلی تیره، خیلی روشن».", color = AppMuted, fontSize = 11.sp)
+                }
+        }
     }
 }
 

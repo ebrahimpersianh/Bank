@@ -2,6 +2,8 @@ package ir.sadteam.loancalc.ui.components
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import ir.sadteam.loancalc.ui.jibak.faCardTail
 import androidx.compose.ui.unit.sp
@@ -38,18 +40,23 @@ fun AccountPickerDialog(
         dismissHint?.let { android.widget.Toast.makeText(ctx, it, android.widget.Toast.LENGTH_LONG).show() }
         onDismiss()
     }
-    JibakAlertDialog(
+    ir.sadteam.loancalc.ui.components.JibakListSheet(
         onDismissRequest = dismiss,
-        title = { Text(title) },
-        text = {
-            Column {
+        title = title,
+    ) {
+            Column(
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
+                modifier = Modifier.heightIn(max = 480.dp).verticalScroll(androidx.compose.foundation.rememberScrollState()),
+            ) {
                 accounts.forEach { account ->
                     // لوگوی بانک + نام؛ حسابِ نقدی «()»ِ خالی نشان نمی‌داد (گزارشِ کاربر، ۶ مهر).
                     androidx.compose.foundation.layout.Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                            .background(ir.sadteam.loancalc.ui.theme.AppSurface2)
                             .clickable { onSelect(account) }
-                            .padding(vertical = 10.dp),
+                            .padding(horizontal = 12.dp, vertical = 12.dp),
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                     ) {
                         // تستِ ۱۳ آبان: حسابِ نقدی (بی بانک) «؟» می‌گرفت - حالا آیکونِ خودِ حساب.
@@ -80,10 +87,5 @@ fun AccountPickerDialog(
                     }
                 }
             }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = dismiss) { Text("انصراف") }
-        },
-    )
+    }
 }

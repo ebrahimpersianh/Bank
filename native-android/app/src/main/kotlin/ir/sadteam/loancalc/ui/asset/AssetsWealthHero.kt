@@ -173,7 +173,7 @@ internal fun TotalWealthHero(
                     }
                     Text(
                         // صادقانه: تا وقتی عکسِ روزانه جمع نشده، نمودار فقط نقد را می‌گوید.
-                        if (trendIsReal) "۳۰ روزِ گذشته" else "نقدِ ۳۰ روزِ گذشته",
+                        if (trendIsReal) "۳۰ روزِ گذشته" else "حساب‌ها · ۳۰ روزِ گذشته",
                         color = HeroMuted,
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold,

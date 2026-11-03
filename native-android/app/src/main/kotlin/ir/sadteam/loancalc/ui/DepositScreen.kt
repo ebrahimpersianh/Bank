@@ -301,15 +301,16 @@ private fun DepositRow(label: String, rial: Double, privacyMode: Boolean) {
         Text(
             label,
             color = AppMuted,
-            fontSize = 10.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f),
         )
         PrivacyCrossfade(privacyMode) { masked ->
+            // ۱۳ آبان: واحد کنارِ عدد نبود (قاعده‌ی «واحد همیشه کنارِ عدد»).
             Text(
-                maskIfPrivate(masked, amountToman(countUpDouble(rial))),
+                maskIfPrivate(masked, ir.sadteam.loancalc.core.fmt(kotlin.math.round(countUpDouble(rial) / ir.sadteam.loancalc.ui.jibak.unitDivD)).faDigits()) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                 color = AppText,
-                fontSize = 11.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Black,
             )
         }
