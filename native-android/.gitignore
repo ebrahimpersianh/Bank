@@ -3,3 +3,6 @@ build/
 local.properties
 .idea/
 *.iml
+
+# پوشه‌ی موقتِ کامپایلرِ کاتلین (بیلدِ لوکال)
+.kotlin/
