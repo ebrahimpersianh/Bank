@@ -86,7 +86,10 @@ internal fun BillCard(
                     contentAlignment = Alignment.Center,
                 ) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }
                 Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-                    Text("قبضِ ${billKindLabel(bill.kind)} · ${bill.name}", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    val kindLabel = billKindLabel(bill.kind)
+                    // نامِ پیش‌فرض همان نوع است؛ «قبضِ برق · برق» تکراری می‌شد.
+                    val title = if (bill.name.isBlank() || bill.name.trim() == kindLabel) "قبضِ $kindLabel" else "قبضِ $kindLabel · ${bill.name}"
+                    Text(title, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                     val number = bill.phone?.takeIf { it.isNotBlank() } ?: bill.billId?.takeIf { it.isNotBlank() }
                     if (number != null) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
