@@ -65,13 +65,13 @@ fun JibakAlertDialog(
                 .clip(RoundedCornerShape(AppRadius.sheet))
                 .background(AppSurface)
                 .border(1.5.dp, AppLine, RoundedCornerShape(AppRadius.sheet))
-                .padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (title != null) {
                 CompositionLocalProvider(
                     LocalContentColor provides AppText,
-                    LocalTextStyle provides TextStyle(color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.Black),
+                    LocalTextStyle provides TextStyle(color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black),
                 ) { title() }
             }
             if (text != null) {
@@ -84,12 +84,15 @@ fun JibakAlertDialog(
                     ) { text() }
                 }
             }
+            // ۱۳ آبان (کاربر: «این صفحه قشنگ نیست»): کنشِ اصلی کوچک و گوشه‌ی **چپ** بود. قاعده‌ی
+            // [ConfirmDialog]: کنش سمتِ راست (زیرِ شست در RTL)، «انصراف» کنارش.
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp, androidx.compose.ui.Alignment.End),
+                modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, androidx.compose.ui.Alignment.Start),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
-                dismissButton?.invoke()
                 confirmButton()
+                dismissButton?.invoke()
             }
         }
     }

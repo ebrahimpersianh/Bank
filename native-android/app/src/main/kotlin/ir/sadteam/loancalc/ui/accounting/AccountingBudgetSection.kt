@@ -1,5 +1,10 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -591,6 +596,7 @@ private fun BudgetRow(
  * دومرحله‌ای. حساب‌کتاب پیش‌فرض «همه حساب‌کتاب‌ها»ست (یعنی `null`)، دقیقاً مثلِ رفتارِ قبلیِ
  * بودجه‌ها - پس کسی که این فیلد رو دست نزنه، همون چیزی رو می‌گیره که قبلاً می‌گرفت.
  */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 internal fun NewBudgetSheet(
     categories: List<CategoryEntry>,
@@ -604,7 +610,6 @@ internal fun NewBudgetSheet(
     var selectedCat by remember { mutableStateOf(initialCategory) }
     var selectedAccountId by remember { mutableStateOf<Long?>(null) }
     var showAccountPicker by remember { mutableStateOf(false) }
-    var showCategoryPicker by remember { mutableStateOf(false) }
 
     if (showAccountPicker) {
         JibakAlertDialog(
@@ -629,73 +634,85 @@ internal fun NewBudgetSheet(
         )
     }
 
-    if (showCategoryPicker) {
-        JibakAlertDialog(
-            onDismissRequest = { showCategoryPicker = false },
-            title = { Text("دسته‌بندی", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
-            text = {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    categories.forEach { c ->
-                        TextButton(
-                            onClick = { selectedCat = c; showCategoryPicker = false },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(c.icon, contentDescription = null, tint = c.color, modifier = Modifier.size(18.dp))
-                                Text(c.name, modifier = Modifier.padding(start = 8.dp))
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = { TextButton(onClick = { showCategoryPicker = false }) { Text("انصراف") } },
-        )
-    }
-
     val accountLabel = accounts.firstOrNull { it.id == selectedAccountId }?.name ?: "همه حساب‌ها"
 
-    JibakAlertDialog(
+    // ۱۳ آبان (تستِ شبیه‌ساز، سخت‌گیرانه): پنجره‌ی کوچکِ «مقدار ← حساب ← دسته» با «ثبت»ِ کم‌رنگ،
+    // ترتیبِ برعکس داشت (سؤالِ اصلی «بودجه‌ی چه؟» آخر بود و پنجره‌ی دومی باز می‌کرد). حالا برگه‌ی
+    // پایین: دسته (قرص‌ها، بی پنجره‌ی دوم) ← سقف ← حساب فقط اگر بیش از یکی ← دکمه‌ی تمام‌عرض.
+    val capValue = capText.toDoubleOrNull() ?: 0.0
+    val canSave = capValue > 0 && selectedCat != null
+    val sheet = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    androidx.compose.material3.ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text("بودجه‌ی جدید", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("مقدار بودجه", color = AppMuted, fontSize = 11.sp)
-                OutlinedTextField(
- textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
-                    value = capText,
-                    onValueChange = { capText = cleanNum(it) },
-                    visualTransformation = ThousandsSeparatorTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    suffix = { Text("${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                val rial = (capText.toLongOrNull() ?: 0L) * ir.sadteam.loancalc.ui.jibak.unitDiv
-                if (rial > 0) {
-                    Text("${numberToWordsFa((rial / 10).toDouble())} تومان", color = AppMuted, fontSize = 11.sp)
-                }
-
-                Text("حساب", color = AppMuted, fontSize = 11.sp)
-                OutlinedButton(onClick = { showAccountPicker = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(accountLabel, modifier = Modifier.fillMaxWidth(), fontSize = 13.sp)
-                }
-
-                Text("دسته‌بندی", color = AppMuted, fontSize = 11.sp)
-                OutlinedButton(onClick = { showCategoryPicker = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(selectedCat?.name ?: "دسته‌بندی", modifier = Modifier.fillMaxWidth(), fontSize = 13.sp)
+        sheetState = sheet,
+        containerColor = ir.sadteam.loancalc.ui.theme.AppSurface,
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp)
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(bottom = 16.dp),
+        ) {
+            Text("بودجه‌ی تازه", color = ir.sadteam.loancalc.ui.theme.AppText, fontSize = 17.sp, fontWeight = FontWeight.Black)
+            Text("برای کدام دسته؟", color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            ) {
+                categories.forEach { c ->
+                    val sel = selectedCat?.name == c.name
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(if (sel) ir.sadteam.loancalc.ui.theme.AppPrimary else ir.sadteam.loancalc.ui.theme.AppSurface2)
+                            .clickable { selectedCat = c }
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                    ) {
+                        Icon(c.icon, contentDescription = null, tint = if (sel) androidx.compose.ui.graphics.Color.White else c.color, modifier = Modifier.size(17.dp))
+                        Text(
+                            c.name,
+                            color = if (sel) androidx.compose.ui.graphics.Color.White else ir.sadteam.loancalc.ui.theme.AppText,
+                            fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                            modifier = Modifier.padding(start = 6.dp),
+                        )
+                    }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
+            OutlinedTextField(
+                textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
+                value = capText,
+                onValueChange = { capText = cleanNum(it).take(13) },
+                visualTransformation = ThousandsSeparatorTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                label = { Text("سقفِ ماهانه") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                suffix = { Text(ir.sadteam.loancalc.ui.jibak.unitFa(), color = AppMuted, fontSize = 13.sp) },
+                colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
+                shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+            )
+            if (capValue > 0) Text(ir.sadteam.loancalc.ui.jibak.amountWordsCaption(capValue), color = AppMuted, fontSize = 11.sp)
+            // حساب فقط برای کسی که بیش از یک حساب دارد معنا دارد.
+            if (accounts.size > 1) Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clip(RoundedCornerShape(12.dp)).clickable { showAccountPicker = true }.padding(vertical = 6.dp, horizontal = 2.dp),
+            ) {
+                Text("روی: ", color = AppMuted, fontSize = 12.5.sp)
+                Text(accountLabel, color = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                Text("  |  تغییر", color = AppMuted, fontSize = 12.sp)
+            }
+            ir.sadteam.loancalc.ui.components.GradientButton(
                 onClick = {
-                    val cap = (capText.toDoubleOrNull() ?: 0.0) * ir.sadteam.loancalc.ui.jibak.unitDivD
                     val cat = selectedCat
-                    if (cap > 0 && cat != null) onSave(cat, cap, selectedAccountId)
+                    if (canSave && cat != null) onSave(cat, capValue * ir.sadteam.loancalc.ui.jibak.unitDivD, selectedAccountId)
                 },
-                enabled = (capText.toDoubleOrNull() ?: 0.0) > 0 && selectedCat != null,
-            ) { Text("ثبت بودجه") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("انصراف") } },
-    )
+                enabled = canSave,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            ) { Text(if (selectedCat == null) "اول یک دسته انتخاب کن" else "ساختنِ بودجه", fontWeight = FontWeight.Black) }
+        }
+    }
 }
