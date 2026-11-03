@@ -426,7 +426,8 @@ fun ChequeScreen(
                     }
                 }
 
-                item {
+                // ۱۳ آبان (تستِ چک): برای کاربرِ بی‌چک این‌ها همه «۰» بودند - فقط افزودن + حالتِ خالی.
+                if (allCheques.isNotEmpty()) item {
                     SegmentedToggle(
                         options = listOf("در جریان", "پاس‌شده", "بایگانی"),
                         selectedIndex = chequeTab,
@@ -434,7 +435,8 @@ fun ChequeScreen(
                     )
                 }
 
-                item {
+                // ۱۳ آبان (تستِ چک): برای کاربرِ بی‌چک این‌ها همه «۰» بودند - فقط افزودن + حالتِ خالی.
+                if (allCheques.isNotEmpty()) item {
                     ir.sadteam.loancalc.ui.components.PillSearchField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
@@ -442,10 +444,11 @@ fun ChequeScreen(
                     )
                 }
 
-                item {
-                    // وضعیتِ چک‌های وضع‌نشده - چندتا دریافتی و چندتا پرداختی هنوز منتظرن.
+                // ۱۳ آبان (تستِ چک): برای کاربرِ بی‌چک این‌ها همه «۰» بودند - فقط افزودن + حالتِ خالی.
+                if (allCheques.isNotEmpty()) item {
+                    // چک‌های در انتظار - چندتا دریافتی و چندتا پرداختی هنوز منتظرن.
                     AppCard {
-                        Text("وضعیت چک‌های وضع‌نشده", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                        Text("چک‌های در انتظار", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                         Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 Modifier.size(56.dp).clip(CircleShape).background(AppSurface2),
@@ -468,7 +471,8 @@ fun ChequeScreen(
                     }
                 }
 
-                item {
+                // ۱۳ آبان (تستِ چک): برای کاربرِ بی‌چک این‌ها همه «۰» بودند - فقط افزودن + حالتِ خالی.
+                if (allCheques.isNotEmpty()) item {
                     // دکمه‌های نوع، هم‌زمان فیلترِ لیستِ پایین هم هستن (دوباره زدن روی یکی که
                     // انتخابه، فیلتر رو برمی‌داره) - رنگ‌ها هم‌الگو با chequeStatusColor.
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -497,7 +501,8 @@ fun ChequeScreen(
                     }
                 }
 
-                item {
+                // ۱۳ آبان (تستِ چک): برای کاربرِ بی‌چک این‌ها همه «۰» بودند - فقط افزودن + حالتِ خالی.
+                if (allCheques.isNotEmpty()) item {
                     ChequeAnalyticsDashboard(stats)
                 }
 
@@ -602,6 +607,14 @@ private fun ChequeCard(
             }
             Column(modifier = Modifier.weight(1f)) {
                 // شماره‌ی چک ذاتاً چپ‌به‌راسته - فقط همون تکه تو `Ltr` می‌ره، نه کلِ سطر.
+                // ۱۳ آبان: مهم‌ترین سوالِ کاربر «چکِ کی؟» است - اسم بالا، بانک و شماره زیرش.
+                if (cheque.ownerName.isNotBlank()) Text(
+                    cheque.ownerName,
+                    color = AppText,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "${cheque.bankName} · ",
@@ -647,7 +660,7 @@ private fun ChequeCard(
                 }
             } else {
                 Text(
-                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, fmt(rialToToman((cheque.amount).toLong()).toDouble())),
+                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, fmt(rialToToman((cheque.amount).toLong()).toDouble())) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
                     color = AppText,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Black,

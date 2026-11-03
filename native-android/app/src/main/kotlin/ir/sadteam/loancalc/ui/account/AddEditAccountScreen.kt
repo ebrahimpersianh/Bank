@@ -42,8 +42,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.ui.graphics.Color
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.ui.jibak.rialToToman
@@ -269,35 +273,50 @@ fun AddEditAccountScreen(
         }
         // شماره‌حساب و شبا (خواسته‌ی کاربر، ۶ مهر): هر دو اختیاری‌اند و فقط برای این‌که انتقال به
         // حسابِ **خودت** از روی شماره‌ی مقصدِ پیامک شناخته شود و خرج حساب نشود.
+        // یافته‌ی ۲۶: دو کارتِ جدای «اختیاری» فرم را از فرمِ وام هم بلندتر می‌کرد - حالا یک کارت که
+        // فقط با لمس باز می‌شود (اگر از قبل پر شده باشد، باز).
         item {
-            AppCard(label = "شماره حساب (اختیاری)") {
-                Ltr {
-                    OutlinedTextField(
-                        value = accountNumberText,
-                        onValueChange = { accountNumberText = cleanNum(it).take(26) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+            var ibanOpen by remember { mutableStateOf(accountNumberText.isNotEmpty() || shebaText.isNotEmpty()) }
+            AppCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { ibanOpen = !ibanOpen }.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("شماره حساب و شبا (اختیاری)", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Icon(
+                        if (ibanOpen) androidx.compose.material.icons.Icons.Filled.ExpandLess else androidx.compose.material.icons.Icons.Filled.ExpandMore,
+                        contentDescription = null, tint = AppMuted,
+                    )
                 }
-            }
-        }
-        item {
-            AppCard(label = "شبا (اختیاری)") {
-                Ltr {
-                    OutlinedTextField(
-                        value = shebaText,
-                        onValueChange = { shebaText = cleanNum(it).take(24) },
-                        prefix = { Text("IR") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                if (ibanOpen) {
+                    Ltr {
+                        androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                            OutlinedTextField(
+                                value = accountNumberText,
+                                onValueChange = { accountNumberText = cleanNum(it).take(26) },
+                                placeholder = { Text("شماره حساب") },
+                                visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                            OutlinedTextField(
+                                value = shebaText,
+                                onValueChange = { shebaText = cleanNum(it).take(24) },
+                                placeholder = { Text("شبا") },
+                                prefix = { Text("IR") },
+                                visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                        }
+                    }
+                    Text(
+                        "با این دو، پولی که بینِ حساب‌های خودت جابه‌جا می‌کنی خرج حساب نمی‌شود.",
+                        color = AppMuted,
+                        fontSize = 10.sp,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
                 }
-                Text(
-                    "اگر شماره‌ی حساب و شبا را بزنی، وقتی از یک حسابت به حسابِ دیگرت پول می‌فرستی، برنامه آن را خرج حساب نمی‌کند (فقط جابه‌جاییِ پولِ خودت است).",
-                    color = AppMuted,
-                    fontSize = 10.sp,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
             }
         }
         item {
@@ -332,7 +351,7 @@ fun AddEditAccountScreen(
                         onValueChange = { smsSenderText = it.trim() },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        placeholder = { Text("مثلاً 100011111 یا BANKMELLAT", fontSize = 12.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                        placeholder = { Text("مثلاً ⁦100011111⁩ یا ⁦BANKMELLAT⁩", fontSize = 12.sp) } /* یافته‌ی ۲۸: جداسازِ LTR */, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
                 // خواسته‌ی صریحِ کاربر: به‌جای تایپِ دستی، بره تو پیامک‌های گوشی و همون‌جا انتخاب کنه.
                 // دکمه‌ی کپسولیِ خط‌چینِ سبز (طرحِ Claude Design، ۸ مهر).
@@ -433,15 +452,16 @@ fun AddEditAccountScreen(
                         "این رقمِ شروعِ حساب است. موجودیِ امروز از این رقم به‌علاوه‌ی تراکنش‌ها " +
                             "حساب می‌شود، پس عوض‌کردنش کلِ تاریخچه را جابه‌جا می‌کند."
                     },
-                    // جعبه‌ی راهنمای کهربایی (طرحِ Claude Design).
-                    color = androidx.compose.ui.graphics.Color(0xFF6B4A0E),
+                    // جعبه‌ی راهنمای کهربایی (طرحِ Claude Design). یافته‌ی ۲۹: رنگِ ثابتِ کرمی در حالتِ
+                    // تاریک توی چشم بود - حالا توکن‌های تم‌آگاه.
+                    color = ir.sadteam.loancalc.ui.theme.AppWarningInk,
                     fontSize = 11.5.sp,
                     lineHeight = 21.sp,
                     modifier = Modifier
                         .padding(top = 8.dp)
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .background(androidx.compose.ui.graphics.Color(0xFFFDF6E6))
+                        .background(ir.sadteam.loancalc.ui.theme.AppWarningPill)
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                 )
             }
@@ -529,6 +549,7 @@ internal fun appLabel(pkg: String): String {
 }
 
 /** فهرستِ اپ‌های نصب‌شده برای وصل‌کردنِ اعلانِ یک اپِ بانکی به همین حساب. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 internal fun NotifAppPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -544,37 +565,42 @@ internal fun NotifAppPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Uni
         }
     }
     var query by remember { mutableStateOf("") }
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("اپِ بانکِ این حساب") },
-        text = {
-            androidx.compose.foundation.layout.Column {
-                OutlinedTextField(
-                    value = query, onValueChange = { query = it }, singleLine = true,
-                    placeholder = { Text("جستجو…") }, modifier = Modifier.fillMaxWidth(),
-                    colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
-                )
-                LazyColumn(modifier = Modifier.height(380.dp).padding(top = 8.dp)) {
-                    val bankish = listOf("بانک", "bank", "blu", "بلو", "pay", "پی", "ملت", "ملی", "سامان", "پاسارگاد", "رسالت", "تجارت", "صادرات", "سپه", "رفاه", "شهر", "کشاورزی", "مسکن")
-                    val shown = apps
-                        .filter { query.isBlank() || it.second.contains(query, true) || it.first.contains(query, true) }
-                        .sortedBy { (pkg, label) -> if (bankish.any { label.contains(it, true) || pkg.contains(it, true) }) 0 else 1 }
-                    items(shown.size) { i ->
-                        val (pkg, label) = shown[i]
-                        androidx.compose.foundation.layout.Row(
-                            modifier = Modifier.fillMaxWidth().clickable { onPick(pkg) }.padding(vertical = 8.dp, horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            InstalledAppIconSmall(pkg)
-                            Text(label, color = AppText, fontSize = 14.sp, modifier = Modifier.padding(start = 12.dp))
-                        }
-                    }
-                }
+    // یافته‌ی ۳۰: پنجره‌ی پیش‌فرضِ اندروید (بنفش‌خاکستری) بود، نه ظاهرِ جیبک؛ و «پی»/«pay» نیمی از
+    // اپ‌ها را «بانکی» می‌کرد. حالا برگه‌ی پایینِ هم‌شکلِ انتخابِ بانک، اپ‌های بانکی با عنوانِ جدا اول.
+    val bankish = listOf("بانک", "bank", "blu", "بلو", "ملت", "ملی", "سامان", "پاسارگاد", "رسالت", "تجارت", "صادرات", "سپه", "رفاه", "شهر", "کشاورزی", "مسکن", "mobillet", "ir.bmi", "mellat", "saman", "pasargad", "tejarat", "sepah", "refah", "keshavarzi", "maskan", "parsian", "sina", "tosee")
+    fun isBank(pkg: String, label: String) = bankish.any { label.contains(it, true) || pkg.contains(it, true) }
+    val sheet = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = ir.sadteam.loancalc.ui.theme.AppSurface) {
+        androidx.compose.foundation.layout.Column(modifier = Modifier.padding(horizontal = 16.dp).navigationBarsPadding()) {
+            Text("اپِ بانکِ این حساب", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black)
+            Text(
+                "اعلانِ همین اپ خوانده و روی این حساب ثبت می‌شود",
+                color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp, bottom = 12.dp),
+            )
+            ir.sadteam.loancalc.ui.components.PillSearchField(value = query, onValueChange = { query = it }, placeholder = "جستجوی اپ")
+            val filtered = apps.filter { query.isBlank() || it.second.contains(query, true) || it.first.contains(query, true) }
+            val banksFirst = filtered.filter { isBank(it.first, it.second) }
+            val others = filtered.filterNot { isBank(it.first, it.second) }
+            LazyColumn(modifier = Modifier.heightIn(max = 440.dp).padding(top = 8.dp, bottom = 12.dp)) {
+                if (banksFirst.isNotEmpty()) item { Text("اپ‌های بانکی", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 6.dp)) }
+                items(banksFirst.size) { i -> NotifAppRow(banksFirst[i], onPick) }
+                if (others.isNotEmpty()) item { Text("بقیه‌ی اپ‌ها", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp, bottom = 6.dp)) }
+                items(others.size) { i -> NotifAppRow(others[i], onPick) }
             }
-        },
-        confirmButton = {},
-        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text("انصراف") } },
-    )
+        }
+    }
+}
+
+@Composable
+private fun NotifAppRow(app: Pair<String, String>, onPick: (String) -> Unit) {
+    val (pkg, label) = app
+    androidx.compose.foundation.layout.Row(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { onPick(pkg) }.padding(vertical = 10.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        InstalledAppIconSmall(pkg)
+        Text(label, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 12.dp))
+    }
 }
 
 

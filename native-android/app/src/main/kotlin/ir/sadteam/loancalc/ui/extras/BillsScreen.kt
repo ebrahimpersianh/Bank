@@ -216,7 +216,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         value = amountText,
                         onValueChange = { amountText = cleanNum(it).take(12) },
                         singleLine = true,
-                        placeholder = { Text("مبلغ (${ir.sadteam.loancalc.ui.jibak.unitFa()})") },
+                        placeholder = { Text("مبلغ") },
                         // ۲۰ مهر (خواسته‌ی کاربر): واحد کنارِ عدد و حروفش زیرِ کادر، مثلِ بقیه‌ی فیلدهای مبلغ.
                         suffix = { Text(ir.sadteam.loancalc.ui.jibak.unitFa(), color = AppMuted, fontSize = 13.sp) },
                         visualTransformation = ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation(),

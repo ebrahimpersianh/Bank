@@ -264,7 +264,8 @@ internal fun CategoryBreakdownCard(
             modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CategoryDonut(
+            // یافته‌ی ۵۳: با یک دسته، حلقه‌ی پر همان ردیفِ «۱۰۰٪» زیرش است - تکراری.
+            if (top.size > 1) CategoryDonut(
                 slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
                 size = 80.dp,
                 strokeWidth = 9.dp,
@@ -285,7 +286,7 @@ internal fun CategoryBreakdownCard(
                     )
                 }
             }
-            Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
+            Column(modifier = Modifier.weight(1f).padding(start = if (top.size > 1) 16.dp else 0.dp)) {
                 Text("جمعِ خرجِ این ماه", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 PrivacyCrossfade(privacyMode) { masked ->
                     Row(verticalAlignment = Alignment.Bottom) {

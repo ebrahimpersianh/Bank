@@ -1136,7 +1136,10 @@ internal fun LoanCalcApp(
                 title = { Text("نسخه‌ی تازه لازم است") },
                 text = { Text(ir.sadteam.loancalc.data.RemoteApp.config.minVersionText ?: "این نسخه دیگر پشتیبانی نمی‌شود. برای ادامه، برنامه را از استور به‌روز کن.") },
                 confirmButton = {
-                    androidx.compose.material3.TextButton(onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(storeUrl))) } }) { Text("به‌روزرسانی") }
+                    // یافته‌ی ۳۳: تنها کارِ ممکن در این پنجره، دکمه‌ی متنیِ کم‌رنگ بود - حالا دکمه‌ی اصلیِ سبز.
+                    ir.sadteam.loancalc.ui.components.GradientButton(onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(storeUrl))) } }) {
+                        Text(if (BuildConfig.FLAVOR == "myket") "به‌روزرسانی از مایکت" else "به‌روزرسانی از بازار", fontWeight = androidx.compose.ui.text.font.FontWeight.Black)
+                    }
                 },
             )
         }

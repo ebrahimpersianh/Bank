@@ -116,7 +116,8 @@ fun CompactTransactionRow(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    listOfNotNull(accountName, origin, timeOfTransaction(tx)).joinToString(" · "),
+                    // یافته‌ی ۴۶: خریدِ منتظرِ تأیید با بقیه فرقی نداشت.
+                    listOfNotNull(if (!tx.confirmed) "منتظرِ تأیید" else null, accountName, origin, timeOfTransaction(tx)).joinToString(" · "),
                     color = AppMuted,
                     fontSize = 10.sp,
                     maxLines = 1,
@@ -130,7 +131,7 @@ fun CompactTransactionRow(
                         masked,
                         rialToToman(tx.amount.toLong()).let { if (isIn) it else -it }.toFaSignedMoney(),
                     ),
-                    color = ink,
+                    color = if (tx.confirmed) ink else AppMuted,
                     maxFontSize = 13.sp,
                     fontWeight = FontWeight.Black,
                 )

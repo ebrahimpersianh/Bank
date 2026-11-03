@@ -71,7 +71,8 @@ object AutoTxNotifier {
 
         val builder = NotificationCompat.Builder(context, ReminderChannels.CHANNEL_AUTO_TX)
             .setSmallIcon(R.drawable.ic_notification)
-            .setLargeIcon(ReminderChannels.largeIcon(context, R.drawable.notif_sms))
+            // یافته‌ی ۳۶: تراکنشِ آمده از **اعلانِ** اپِ بانک تصویرِ پیامک می‌گرفت - فقط پیامک تصویرِ پیامک.
+            .setLargeIcon(if (sourceLabel?.startsWith("اعلان") == true) null else ReminderChannels.largeIcon(context, R.drawable.notif_sms))
             .setContentTitle(
                 if (privacyMode) {
                     if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه"

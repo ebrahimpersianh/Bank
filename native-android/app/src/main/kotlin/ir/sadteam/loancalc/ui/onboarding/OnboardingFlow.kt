@@ -71,7 +71,6 @@ import ir.sadteam.loancalc.data.accountIconChoices
 import ir.sadteam.loancalc.data.accountIconForKey
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
-import ir.sadteam.loancalc.ui.components.JibakBrandMark
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppAccent
@@ -127,7 +126,8 @@ fun OnboardingFlow(
             .padding(horizontal = 24.dp),
     ) {
         Spacer(Modifier.height(28.dp))
-        StepDots(current = step, total = lastStep + 1)
+        // اینترو (مرحله‌ی ۰) نقطه‌های خودش را دارد؛ این نقطه‌ها فقط برای چهار مرحله‌ی راه‌اندازی.
+        if (step > 0) StepDots(current = step - 1, total = lastStep)
 
         AnimatedContent(
             targetState = step,
@@ -141,7 +141,8 @@ fun OnboardingFlow(
             label = "onboarding-step",
         ) { current ->
             when (current) {
-                0 -> WelcomeStep(onNext = { step = 1 })
+                // ۱۳ آبان: اینتروی هفت‌صفحه‌ای جای صفحه‌ی خوش‌آمدِ تکی (یافته‌ی ۴، طرحِ Claude Design).
+                0 -> IntroPager(onDone = { step = 1 })
                 1 -> ThemeStep(
                     onPick = { viewModel.setThemeMode(it) },
                     onNext = { step = 2 },
@@ -216,52 +217,6 @@ private fun StepHeader(title: String, subtitle: String, image: Int? = null) {
             .fillMaxWidth()
             .padding(top = 10.dp),
     )
-}
-
-@Composable
-private fun WelcomeStep(onNext: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        // نشانِ برند: این **همان صفحه‌ی معرفیِ اولیه** است که فقط یک‌بار در عمرِ نصب دیده می‌شود،
-        // و تا الان جمله‌ی «به جیبک خوش اومدی» را می‌نوشت بی این‌که جیبک را نشان بدهد.
-        // `BenefitsScreen` حذف شده، پس این تنها جایی است که برند معرفی می‌شود.
-        Spacer(Modifier.height(34.dp))
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            JibakBrandMark(width = 64.dp)
-        }
-        StepHeader(
-            title = "به جیبک خوش اومدی",
-            subtitle = "درآمد و خرجت رو ساده ثبت کن، وام و چک و بودجه‌ت رو یک‌جا داشته باش.",
-            image = ir.sadteam.loancalc.R.drawable.jibak_onb_welcome,
-        )
-        Spacer(Modifier.height(28.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            WelcomeBullet("ثبتِ سریعِ درآمد و خرج")
-            WelcomeBullet("بودجه‌بندی و گزارشِ ماهانه")
-            WelcomeBullet("یادآوریِ قسط، چک و سررسید")
-            WelcomeBullet("پشتیبان‌گیریِ امن از اطلاعاتت")
-        }
-        Spacer(Modifier.weight(1f))
-        GradientButton(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
-            Text("بزن بریم")
-        }
-        Spacer(Modifier.height(24.dp))
-    }
-}
-
-@Composable
-private fun WelcomeBullet(text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(22.dp)
-                .clip(CircleShape)
-                .background(AppPrimaryPill),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Default.Check, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(14.dp))
-        }
-        Text(text, color = AppText, fontSize = 14.sp, modifier = Modifier.padding(start = 10.dp))
-    }
 }
 
 @Composable

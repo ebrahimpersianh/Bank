@@ -186,7 +186,8 @@ fun AffordScreen(
             }
             item {
                 // معادلِ حروفی **زیرِ** هیرو، نه داخلش: در هیرو با عددِ درشت رقابت می‌کند.
-                AppCard {
+                // یافته‌ی ۵۷: یک کارتِ کاملِ جدا برای یک خطِ حروف سنگین بود - حالا فقط یک خط.
+                androidx.compose.foundation.layout.Box(modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) {
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
                             maskIfPrivate(
@@ -205,7 +206,7 @@ fun AffordScreen(
 
         item {
             StaggerIn(0) {
-                AppCard(label = "مبلغی که می‌تونم ماهانه قسط بدم") {
+                AppCard(label = "قسطی که هر ماه می‌توانی بدهی") { // یافته‌ی ۵۷: لحنِ یکی با «می‌توانی بگیری»
                     OutlinedTextField(
                         value = payText,
                         onValueChange = { raw ->

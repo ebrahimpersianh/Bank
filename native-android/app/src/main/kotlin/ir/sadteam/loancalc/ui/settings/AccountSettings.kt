@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.filled.CheckCircle
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -443,21 +446,27 @@ internal fun AccountSettings(
             )
         }
     } else {
+        // یافته‌ی ۶۸: «ورود به حساب انجام نشده» سرد بود، «همگام‌سازیِ ابری» نامفهوم، و هیچ دلیلی برای
+        // ورود گفته نمی‌شد. حالا سه دلیلِ واقعی (هدیه‌ی کاربرِ تازه از سرور، `AuthRoutes`) + یک دکمه.
         AppCard(modifier = Modifier.padding(top = 8.dp)) {
-            Text("ورود به حساب انجام نشده", color = AppText, fontSize = 15.sp)
-            Text(
-                "برای همگام‌سازی ابری وارد شو",
-                color = AppMuted,
-                fontSize = 12.sp,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            GradientButton(onClick = onShowLoginPrompt, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                Text("ورود")
+            Text("با شماره‌ی موبایلت وارد شو", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black)
+            Column(modifier = Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    "۳۰ روز همه‌ی امکانات، رایگان",
+                    "۱٬۰۰۰ سکه‌ی خوش‌آمد",
+                    "با عوض‌شدنِ گوشی، اطلاعاتت گم نمی‌شود",
+                ).forEach { line ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(16.dp))
+                        Text(line, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
             }
-        }
-        AppCard(modifier = Modifier.padding(top = 8.dp)) {
-            OutlinedButton(onClick = onShowSubscription, modifier = Modifier.fillMaxWidth()) {
-                Text("مشاهده پلن‌های اشتراک")
+            GradientButton(onClick = onShowLoginPrompt, modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
+                Text("ورود با شماره‌ی موبایل", fontWeight = FontWeight.Black)
+            }
+            TextButton(onClick = onShowSubscription, modifier = Modifier.fillMaxWidth()) {
+                Text("دیدنِ پلن‌های اشتراک", color = AppMuted)
             }
         }
     }

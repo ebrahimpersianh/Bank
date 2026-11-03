@@ -94,12 +94,9 @@ internal fun guideSteps() = listOf(
     ir.sadteam.loancalc.ui.components.GuideStep("add_tx", "اولین خرج یا درآمدت", "این دکمه را بزن و یک خرج یا درآمد ثبت کن؛ از حسابت کم یا به آن اضافه می‌شود."),
     ir.sadteam.loancalc.ui.components.GuideStep(null, "ثبتِ خودکار با پیامکِ بانک", "اگر بخواهی خرج‌ها خودشان ثبت شوند: تنظیمات ← پیامک‌های بانکی. متنِ پیامک فقط روی گوشی خوانده می‌شود.", optional = true),
     ir.sadteam.loancalc.ui.components.GuideStep("tab_loan", "وام‌ها و چک‌ها", "روی «وام» بزن؛ وام‌هایت را بگذار تا سررسیدِ هر قسط یادت بیاید.", optional = true),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "افزودنِ وام", "در «وام‌های من» با دکمه‌ی + وام را اضافه کن؛ پرداختِ هر قسط از حسابت کم می‌شود.", optional = true),
     ir.sadteam.loancalc.ui.components.GuideStep("shortcuts", "همه‌ی ابزارها این‌جاست", "این دستگیره را بالا بکش یا بزن: چک، دنگ، قبض، تسویه‌ی بدهی و بقیه.", optional = true),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "بودجه و هشدار", "برای هر دسته سقفِ ماهانه بگذار؛ در ۸۰٪ خبرت می‌کنیم."),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "گزارش و دارایی", "نمودارِ خرج‌ها در «گزارش»؛ طلا، ارز و رمزارز با قیمتِ روز در «دارایی»."),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "چک، قبض، دنگ", "سررسیدِ چک و قبض یادآوری می‌شود؛ خرجِ مشترک را با دنگ تقسیم کن."),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "امن و همیشه همراه", "قفل با رمز یا اثرِ انگشت، حالتِ خصوصی، و ذخیره‌ی ابری روی هر گوشیِ تازه."),
+    // یافته‌ی ۲۵: ۱۳ مرحله زیاد بود - «افزودنِ وام» (تکرارِ مرحله‌ی قبل) رفت و چهار مرحله‌ی فقط‌متنی یکی شد.
+    ir.sadteam.loancalc.ui.components.GuideStep(null, "بقیه‌ی امکانات", "بودجه با هشدارِ ۸۰٪، گزارشِ خرج‌ها، طلا و ارز با قیمتِ روز، و یادآوریِ چک و قبض. قفل و پشتیبانِ ابری در تنظیمات."),
     ir.sadteam.loancalc.ui.components.GuideStep(null, "آماده‌ای! +۵۰ سکه", "۵۰ سکه‌ی جایزه به کیفت رفت (فقط بارِ اول). هر وقت خواستی این راهنما را از تنظیمات ← «راهنمای برنامه» دوباره ببین."),
 )
 /**

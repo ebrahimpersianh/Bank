@@ -599,7 +599,7 @@ private fun SettingsSectionLabel(text: String, subtitle: String? = null, accent:
 private fun routeHint(route: SettingsRoute): String? = when (route) {
     SettingsRoute.SMS -> "خواندن و ثبتِ خودکارِ پیامک‌های بانکی"
     SettingsRoute.BACKGROUND -> "برای ثبتِ خودکار و به‌روز ماندنِ اطلاعات"
-    SettingsRoute.DATA -> "پشتیبان‌گیری، بازیابی و پاک‌سازیِ داده‌ها"
+    SettingsRoute.DATA -> "پشتیبان‌گیری و بازیابیِ داده‌ها" // یافته‌ی ۷۸: گزینه‌ی پاک‌سازی این‌جا نیست
     SettingsRoute.REMINDERS -> "یادآوریِ سررسید، ثبتِ روزانه و دنگ"
     SettingsRoute.APPEARANCE -> "حالتِ روشن و تیره، اندازه‌ی متن، لرزشِ لمسی"
     SettingsRoute.SECURITY -> "قفل با رمزِ عددی و اثرِ انگشت"

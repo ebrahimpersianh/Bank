@@ -107,7 +107,8 @@ fun CalculatorHostScreen(
 
     // برگشت از یک حالت به فهرستِ انتخاب، قبل از اینکه دکمه‌ی برگشت تب را عوض کند.
     BackHandler(enabled = mode != null || showHistory) {
-        if (mode == CalcMode.INSTALLMENT && !showHistory) onLeaveInstallment()
+        // از فهرستِ همین تب آمده؟ برگشت = همین فهرست، نه «وام‌های من».
+        if (mode == CalcMode.INSTALLMENT && !showHistory && startInInstallment) onLeaveInstallment()
         showHistory = false
         mode = null
     }
@@ -130,7 +131,16 @@ fun CalculatorHostScreen(
                     .padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                // «قسط و سود» از این فهرست رفت: حالا همان صفحه‌ی «افزودنِ وام» است (۱۰ مهر).
+                // یافته‌ی ۵۶: بی «قسط و سود» این تب ماشین‌حساب نداشت - فقط دو ردیف و صفحه‌ی خالی. همان
+                // صفحه‌ی «افزودنِ وام» است؛ این‌جا فقط راهِ دومِ رسیدن به آن.
+                CalcChoiceCard(
+                    icon = Icons.Filled.Calculate,
+                    title = "قسط و سودِ وام",
+                    hint = "مبلغ، نرخ و مدت را بده؛ قسط و کلِ بازپرداخت را ببین",
+                    tint = AppPrimaryInk,
+                    tintBg = AppPrimaryPill,
+                    onClick = { mode = CalcMode.INSTALLMENT },
+                )
                 CalcChoiceCard(
                     icon = Icons.Filled.TrendingUp,
                     title = CalcMode.AFFORDABILITY.label,

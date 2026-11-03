@@ -544,7 +544,7 @@ fun ResultScreen(
                         0.0
                     }
                     RingLegend(AppPrimary, "اصل", 100.0 - interestShare)
-                    RingLegend(AppAccent, "سود", interestShare)
+                    RingLegend(AppAccent, "سود", interestShare, suffix = " از کلِ بازپرداخت")
                 }
             }
         }
@@ -781,11 +781,12 @@ private fun SummaryRow(label: String, value: String, emphasis: Boolean = false) 
 
 /** یک قلمِ افسانه‌ی حلقه - نقطه‌ی هم‌رنگِ کمان + برچسب + درصد. */
 @Composable
-private fun RingLegend(color: Color, label: String, percent: Double) {
+private fun RingLegend(color: Color, label: String, percent: Double, suffix: String = "") {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(color))
         Text(
-            "$label ${toFa(percent.roundToLong().toString())}٪",
+            // یافته‌ی ۱۳: «سود ۱۱٪» کنارِ «سود نسبت به اصل ۱۳٪» گیج می‌کرد - مبنای حلقه صریح شد.
+            "$label ${toFa(percent.roundToLong().toString())}٪$suffix",
             color = AppMuted,
             fontSize = 9.sp,
             fontWeight = FontWeight.Black,

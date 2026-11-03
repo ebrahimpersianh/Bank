@@ -225,6 +225,8 @@ fun ShopScreen(
     // (بیرونِ `item {}`) مجاز نیست - بررسیِ ایستای پروژه همین را گرفت.
     val featuredTrio = remember(catalog) {
         FEATURED_ITEM_IDS.mapNotNull { id -> catalog.firstOrNull { it.id == id } }
+            // یافته‌ی ۶۷: سه کارت در شبکه‌ی دوتایی = کارتِ سوم تنها و چسبیده به راست. همیشه زوج.
+            .let { if (it.size >= 2) it.take(it.size - it.size % 2) else it }
     }
     // «تازه» از روی `addedOn` هر قلم حساب می‌شود، نه از ترتیبِ کاتالوگ.
     val fresh = remember(catalog, todayKey) {

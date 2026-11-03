@@ -416,7 +416,8 @@ internal fun CategoryDonutCard(
     // ۱۶ مهر (طرحِ مرتب‌تر، مثلِ خانه): حلقه + فهرستِ هم‌ترازِ دسته‌ها با مبلغ و درصد.
     // جمعِ کل همین بالا در کارتِ سبز هست، پس این‌جا تکرارش نمی‌کنیم.
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        CategoryDonut(
+        // یافته‌ی ۵۳: با یک دسته، حلقه‌ی «۱۰۰٪ قبض» کنارِ ردیفِ «قبض … ۱۰۰٪» یک حرف را دو بار می‌زد.
+        if (top.size > 1) CategoryDonut(
             slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
             size = 80.dp,
             strokeWidth = 9.dp,
@@ -443,7 +444,7 @@ internal fun CategoryDonutCard(
             }
         }
         Column(
-            modifier = Modifier.weight(1f).padding(start = 14.dp),
+            modifier = Modifier.weight(1f).padding(start = if (top.size > 1) 14.dp else 0.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             top.forEachIndexed { i, entry ->

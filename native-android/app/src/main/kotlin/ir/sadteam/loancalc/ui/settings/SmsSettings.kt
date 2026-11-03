@@ -277,7 +277,8 @@ private fun smsStatusText(account: AccountEntity): String {
         if (hasSms) "پیامک ✓" else "پیامک ✗",
         if (hasNotif) "اعلانِ اپ ✓" else "اعلانِ اپ ✗",
     ).joinToString(" · ")
-    val last = account.lastSmsAt ?: return "$link · هنوز چیزی نیامده"
+    // یافته‌ی ۲۳: حسابِ تازه‌وصل با قرمزِ «هنوز چیزی نیامده» خراب به نظر می‌رسید - هنوز منتظر است، نه خراب.
+    val last = account.lastSmsAt ?: return "$link · منتظرِ اولین پیام"
     val days = ((System.currentTimeMillis() - last) / 86_400_000L).toInt()
     return link + " · " + when {
         days > 30 -> "۳۰ روز چیزی نیامده"
@@ -288,7 +289,7 @@ private fun smsStatusText(account: AccountEntity): String {
 }
 private fun smsStatusTone(account: AccountEntity): StatusTone {
     if (account.smsSender.isNullOrBlank()) return StatusTone.NEUTRAL
-    val last = account.lastSmsAt ?: return StatusTone.BROKEN
+    val last = account.lastSmsAt ?: return StatusTone.NEUTRAL
     val days = (System.currentTimeMillis() - last) / 86_400_000L
     return if (days > 30) StatusTone.BROKEN else StatusTone.NEUTRAL
 }

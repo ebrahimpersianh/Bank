@@ -23,6 +23,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -149,7 +150,13 @@ fun AddEditChequeScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            Text(if (existing == null) "افزودن چک" else "ویرایش چک", fontSize = 16.sp)
+            // سربرگِ هم‌شکلِ بقیه‌ی صفحه‌ها: فلشِ بازگشت + عنوانِ پررنگ (قبلاً متنِ سادهٔ ۱۶ بی فلش).
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = requestCancel) {
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
+                }
+                Text(if (existing == null) "افزودنِ چک" else "ویرایشِ چک", color = ir.sadteam.loancalc.ui.theme.AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
+            }
         }
         item {
             // دوتا کارتِ بزرگ به‌جای دو چیپِ کوچیک - هم‌الگو با toggleِ «نوع چک» تو عکسِ مرجعِ کاربر
@@ -243,6 +250,35 @@ fun AddEditChequeScreen(
                 }
             }
         }
+        // 🚨 ۱۳ آبان (تستِ چک از دیدِ کاربر): طرفِ چک، بانک و شماره **اجباری** بودند ولی زیرِ «اطلاعاتِ
+        // بیشتر» پنهان - کاربر مبلغ و تاریخ را می‌زد، «ذخیره» و تازه چهار خطا. حالا اجباری‌ها این‌جا.
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        AppCard(label = "طرفِ چک") {
+                            OutlinedButton(
+                                onClick = { showCounterpartyPicker = true },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(selectedCounterparty?.name ?: "انتخابِ شخص")
+                            }
+                        }
+                        AppCard(label = "بانک") {
+                            ir.sadteam.loancalc.ui.components.BankPickerField(value = bankName, onValueChange = { bankName = it })
+                        }
+                        AppCard(label = "شماره چک") {
+                            // Ltr: رجوع کن به کامنتِ Ltr.kt.
+                            Ltr {
+                                OutlinedTextField(
+                                    value = chequeNumber,
+                                    visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
+                                    onValueChange = { chequeNumber = cleanNum(it) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                            }
+                        }
+            }
+        }
         item {
             // بخشِ اختیاریِ «اطلاعات بیشتر» (شناسه/کد ملی + مانده‌ی قبلی/واریزی حساب) - جمع/مانده از
             // رو همین دو مقدار محاسبه می‌شه، فیلدِ جدا برای اون‌ها نیست.
@@ -269,21 +305,6 @@ fun AddEditChequeScreen(
                     val sumVal = previousBalanceVal + depositAmountVal
                     val remainingVal = sumVal - (amountText.toLongOrNull()?.toDouble() ?: 0.0)
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        AppCard(label = "شماره چک") {
-                            // Ltr: رجوع کن به کامنتِ Ltr.kt.
-                            Ltr {
-                                OutlinedTextField(
-                                    value = chequeNumber,
-                                    visualTransformation = ir.sadteam.loancalc.ui.components.PersianDigitsTransformation,
-                                    onValueChange = { chequeNumber = cleanNum(it) },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                            }
-                        }
-                        AppCard(label = "بانک") {
-                            ir.sadteam.loancalc.ui.components.BankPickerField(value = bankName, onValueChange = { bankName = it })
-                        }
                         AppCard(label = "شعبه (اختیاری)") {
                             OutlinedTextField(
                                 value = branchName,
@@ -291,23 +312,15 @@ fun AddEditChequeScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         }
-                        AppCard(label = if (type == ChequeType.RECEIVED) "نام پرداخت‌کننده" else "نام دریافت‌کننده") {
+                        AppCard(label = "نامِ روی چک (اگر با طرفِ چک فرق دارد)") {
                             OutlinedTextField(
                                 value = ownerName,
                                 onValueChange = { ownerName = it },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         }
-                        AppCard(label = "طرفِ چک") {
-                            OutlinedButton(
-                                onClick = { showCounterpartyPicker = true },
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Text(selectedCounterparty?.name ?: "انتخابِ شخص")
-                            }
-                        }
 
-                        AppCard(label = "شناسه ملی / کد ملی") {
+                        AppCard(label = "شناسه یا کدِ ملی (اختیاری)") {
                             // Ltr: بدونش، تایپِ عدد زیرِ RTLِ کلِ اپ از سمتِ راست جا می‌گرفت - رجوع
                             // کن به کامنتِ Ltr.kt.
                             Ltr {
@@ -320,6 +333,8 @@ fun AddEditChequeScreen(
                                     singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                             }
                         }
+                        // مانده‌ی حسابِ صادرکننده فقط برای چکِ **پرداختی** معنا دارد.
+                        if (type == ChequeType.PAID) {
                         AppCard(label = "مانده قبلی") {
                             OutlinedTextField(
                                 value = previousBalanceText,
@@ -359,6 +374,7 @@ fun AddEditChequeScreen(
                             AppCard(label = "مانده", modifier = Modifier.weight(1f)) {
                                 Text(fmt(remainingVal) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             }
+                        }
                         }
                         // ⚠️ شناسه‌ی صیادی، دسته‌چک، و یادداشت عمداً اینجان نه رو صفحه‌ی اصلیِ فرم -
                         // فریمِ ۷b فقط نوع/بانک/شماره‌چک/سررسید/مبلغ/عکس رو تو نمای پیش‌فرض می‌خواد.
@@ -415,14 +431,12 @@ fun AddEditChequeScreen(
                     onClick = {
                         val amount = tomanToRial(amountText.toLongOrNull() ?: 0L).toDouble()
                         error = when {
-                            amount <= 0 -> "مبلغ چک رو وارد کن"
-                            chequeNumber.trim().isEmpty() -> "شماره چک رو وارد کن"
-                            bankName.trim().isEmpty() -> "اسم بانک رو وارد کن"
-                            ownerName.trim().isEmpty() -> "این فیلد رو وارد کن"
+                            amount <= 0 -> "مبلغِ چک را بنویس"
+                            chequeNumber.trim().isEmpty() -> "شماره‌ی چک را بنویس"
+                            bankName.trim().isEmpty() -> "بانکِ چک را انتخاب کن"
                             counterpartyId == null -> "طرفِ چک را انتخاب کن"
                             else -> null
                         }
-                        if (error != null && amount > 0) showMoreInfo = true
                         if (error == null) {
                             if (existing == null) {
                                 viewModel.addCheque(
@@ -432,7 +446,7 @@ fun AddEditChequeScreen(
                                     sayadId = sayadId.trim(),
                                     bankName = bankName.trim(),
                                     branchName = branchName.trim(),
-                                    ownerName = ownerName.trim(),
+                                    ownerName = ownerName.trim().ifEmpty { selectedCounterparty?.name.orEmpty() },
                                     dueYear = dueYear,
                                     dueMonth = dueMonth,
                                     dueDay = dueDay,
@@ -454,7 +468,7 @@ fun AddEditChequeScreen(
                                         sayadId = sayadId.trim().takeIf { it.isNotBlank() },
                                         bankName = bankName.trim(),
                                         branchName = branchName.trim(),
-                                        ownerName = ownerName.trim(),
+                                        ownerName = ownerName.trim().ifEmpty { selectedCounterparty?.name.orEmpty() },
                                         dueYear = dueYear,
                                         dueMonth = dueMonth,
                                         dueDay = dueDay,

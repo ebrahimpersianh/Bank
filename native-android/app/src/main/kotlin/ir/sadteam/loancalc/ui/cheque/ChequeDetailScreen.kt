@@ -178,7 +178,10 @@ fun ChequeDetailScreen(
                     if (!sayadId.isNullOrBlank()) DetailRow("شناسه صیادی", toFa(sayadId))
                     DetailRow("بانک", cheque.bankName)
                     if (cheque.branchName.isNotBlank()) DetailRow("شعبه", cheque.branchName)
-                    DetailRow(if (cheque.type == "RECEIVED") "پرداخت‌کننده" else "دریافت‌کننده", cheque.ownerName)
+                    // همان اسمِ کارتِ «طرفِ چک» دو بار نیاید.
+                    if (cheque.ownerName.isNotBlank() && cheque.ownerName.trim() != counterparty?.name?.trim()) {
+                        DetailRow(if (cheque.type == "RECEIVED") "پرداخت‌کننده" else "دریافت‌کننده", cheque.ownerName)
+                    }
                     DetailRow(
                         "تاریخ سررسید",
                         "${ir.sadteam.loancalc.ui.jibak.toFaDate(cheque.dueYear, cheque.dueMonth, cheque.dueDay)}",
@@ -295,12 +298,19 @@ fun ChequeDetailScreen(
             }
         }
 
-        item {
+        // ۱۳ آبان (تستِ چک): کنشِ اصلیِ سبز «استعلامِ صیادی» بود؛ کارِ اصلیِ کاربر با چکِ در انتظار
+        // «پاس شد» است. استعلام دکمه‌ی دوم شد.
+        if (cheque.status == ChequeStatus.PENDING.name) item {
             GradientButton(
-                onClick = onSayadInquiry,
+                onClick = { if (accounts.isEmpty()) commitPass(null) else pendingPassStatus = true },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("استعلام چک صیادی")
+                Text("پاس شد", fontWeight = FontWeight.Black)
+            }
+        }
+        item {
+            OutlinedButton(onClick = onSayadInquiry, modifier = Modifier.fillMaxWidth()) {
+                Text("استعلامِ چکِ صیادی")
             }
         }
 

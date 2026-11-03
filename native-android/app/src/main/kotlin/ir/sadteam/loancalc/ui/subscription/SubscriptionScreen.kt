@@ -330,14 +330,7 @@ fun SubscriptionScreen(
                         }
                     }
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp).horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    HeroChip(Icons.Filled.AllInclusive, "بدونِ محدودیت")
-                    HeroChip(Icons.Filled.Lock, "امن و مطمئن")
-                    HeroChip(Icons.Filled.Bolt, "دسترسیِ کامل")
-                }
+                // یافته‌ی ۷۱: قرص‌های «بدونِ محدودیت / امن و مطمئن / دسترسیِ کامل» حرفِ کلی بودند - حذف؛ مزایای واقعی پایین‌تر.
             }
         }
 
@@ -411,6 +404,17 @@ fun SubscriptionScreen(
                             }
                         }
                     }
+                    // یافته‌ی ۶۹: بی اینترنت/استور قیمت‌ها برای همیشه «…» می‌ماندند و کاربر نمی‌فهمید چرا.
+                    var pricesLate by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) { kotlinx.coroutines.delay(6_000); pricesLate = true }
+                    if (pricesLate && subscriptionTiers.none { prices[it.first] != null }) {
+                        Text(
+                            "قیمت‌ها از ${if (ir.sadteam.loancalc.BuildConfig.FLAVOR == "myket") "مایکت" else "بازار"} نیامد - اینترنت و نصب‌بودنِ استور را بررسی کن.",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
                 }
             }
         }
@@ -424,7 +428,7 @@ fun SubscriptionScreen(
                     modifier = Modifier
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                         .fillMaxWidth()
-                        .height(64.dp)
+                        .height(56.dp)
                         .shadow(10.dp, RoundedCornerShape(32.dp), ambientColor = AppPrimary.copy(alpha = 0.3f), spotColor = AppPrimary.copy(alpha = 0.3f))
                         .clip(RoundedCornerShape(32.dp))
                         .background(AppPrimary)
@@ -432,12 +436,7 @@ fun SubscriptionScreen(
                         .padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(
-                        modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.18f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.Filled.ShoppingCart, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                    }
+                    // یافته‌ی ۷۲: سبد + دایره‌ی سفیدِ فلش + دو خط متن شلوغ بود - یک دکمه، یک جمله.
                     Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         if (busy) {
                             LottieSpinner(modifier = Modifier.size(24.dp))
@@ -448,19 +447,13 @@ fun SubscriptionScreen(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Black,
                             )
-                            Text(
-                                if (subscribed) "روزها به انتهای اشتراکِ فعلی اضافه می‌شوند" else "دسترسیِ کامل و بدونِ محدودیت",
+                            if (subscribed) Text(
+                                "روزها به انتهای اشتراکِ فعلی اضافه می‌شوند",
                                 color = Color.White.copy(alpha = 0.85f),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                             )
                         }
-                    }
-                    Box(
-                        modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.White),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
                     }
                 }
             }

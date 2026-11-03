@@ -82,8 +82,11 @@ fun BankPickerField(
     if (open) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         var query by remember { mutableStateOf("") }
-        val all = remember(includeCreditServices) { if (includeCreditServices) banks + creditServices else banks }
-        val shown = all.filter { query.isBlank() || it.name.contains(query.trim()) }
+        // یافته‌ی ۳۱: «بانک مرکزی» حسابِ شخصی ندارد؛ از انتخابگر بیرون (داده‌ی قدیمی دست نمی‌خورد).
+        val all = remember(includeCreditServices) {
+            (if (includeCreditServices) banks + creditServices else banks).filter { it.name != "بانک مرکزی" }
+        }
+        val shown = all.filter { query.isBlank() || bankMatches(it.name, query) }
         ModalBottomSheet(onDismissRequest = { open = false }, sheetState = sheetState, containerColor = AppSurface) {
             Column(modifier = Modifier.navigationBarsPadding().padding(horizontal = 16.dp)) {
                 Text("انتخابِ بانک", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Bold)
@@ -124,4 +127,24 @@ private fun BankRow(label: String, selected: Boolean, badgeName: String = label,
         Text(label, color = AppText, fontSize = 14.sp, modifier = Modifier.weight(1f))
         if (selected) Icon(Icons.Filled.Check, contentDescription = "انتخاب‌شده", tint = AppPrimary, modifier = Modifier.size(20.dp))
     }
+}
+
+/** نامِ لاتینِ رایجِ بانک‌ها - یافته‌ی ۳۱: «blu» بلوبانک را پیدا نمی‌کرد. */
+private val bankLatinAliases = mapOf(
+    "بلوبانک" to "blu blubank", "بانک ملی ایران" to "melli bmi", "بانک ملت" to "mellat",
+    "بانک صادرات" to "saderat bsi", "بانک تجارت" to "tejarat", "بانک سپه" to "sepah",
+    "بانک مسکن" to "maskan", "بانک کشاورزی" to "keshavarzi agri", "بانک رفاه کارگران" to "refah",
+    "پست بانک ایران" to "post postbank", "بانک اقتصاد نوین" to "eghtesad novin en",
+    "بانک پارسیان" to "parsian", "بانک پاسارگاد" to "pasargad bpi", "بانک سامان" to "saman sb24",
+    "بانک شهر" to "shahr city", "بانک دی" to "dey", "بانک گردشگری" to "gardeshgari tourism",
+    "بانک کارآفرین" to "karafarin", "بانک سینا" to "sina", "بانک سرمایه" to "sarmayeh",
+    "بانک خاورمیانه" to "khavarmianeh middle east", "بانک رسالت" to "resalat", "بانک ایران زمین" to "iran zamin",
+)
+
+/** جستجوی نامِ بانک: بی «بانک»ِ اول، بی فاصله، و با نامِ لاتین. */
+private fun bankMatches(name: String, rawQuery: String): Boolean {
+    fun norm(x: String) = x.lowercase().replace("بانک", "").replace(" ", "").replace("‌", "").replace('ي', 'ی').replace('ك', 'ک')
+    val q = norm(rawQuery.trim())
+    if (q.isEmpty()) return true
+    return norm(name).contains(q) || (bankLatinAliases[name]?.split(' ')?.any { it.startsWith(q) } == true)
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -81,11 +82,9 @@ internal fun StarryNightCollectionCard(owned: Set<String>, earned: Boolean, onVi
     val required = STARRY_IDS.toSet()
     val collected = required.count(owned::contains)
     val gold = Color(0xFFF2C14E)
-    AppCard(
-        modifier = Modifier.fillMaxWidth(),
-        accentGradient = Brush.linearGradient(listOf(Color(0xFF1B3A7A), Color(0xFF0B1A3A))),
-        contentPadding = 14.dp,
-    ) {
+    // یافته‌ی ۶۴: بنرِ سرمه‌ای با جعبه‌کادوی کلیپ‌آرت زبانِ تصویریِ جدایی داشت و حسِ تبلیغِ بیرونی
+    // می‌داد. حالا همان کارتِ قهرمانِ سبزِ بالای تب‌ها + یک ستاره‌ی ساده.
+    ir.sadteam.loancalc.ui.components.AppHeroCard(modifier = Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Pill(if (earned) "نشان گرفتی" else "ویژه", gold, Color(0xFF3A2A00))
@@ -112,20 +111,21 @@ internal fun StarryNightCollectionCard(owned: Set<String>, earned: Boolean, onVi
                         .padding(horizontal = 16.dp, vertical = 9.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("مشاهده", color = Color(0xFF0B1A3A), fontSize = 11.sp, fontWeight = FontWeight.Black)
+                    Text("مشاهده", color = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black)
                     Icon(
                         Icons.Filled.ChevronLeft,
                         contentDescription = null,
-                        tint = Color(0xFF0B1A3A),
+                        tint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk,
                         modifier = Modifier.padding(start = 4.dp).size(16.dp),
                     )
                 }
             }
-            Image(
-                painter = painterResource(R.drawable.banner_starry_gift),
-                contentDescription = null,
-                modifier = Modifier.size(118.dp),
-            )
+            Box(
+                modifier = Modifier.size(72.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color.White.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = gold, modifier = Modifier.size(34.dp))
+            }
         }
     }
 }

@@ -436,7 +436,7 @@ fun AccountDetailScreen(
 private fun BalanceHero(balance: Double, monthIn: Double, monthOut: Double, monthName: String) {
     val privacyMode = LocalPrivacyMode.current
     AppHeroCard {
-        Text("موجودیِ نقدی", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+        Text("موجودی", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
                 maskIfPrivate(masked, rialToToman(balance.toLong()).toFaMoney()) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",

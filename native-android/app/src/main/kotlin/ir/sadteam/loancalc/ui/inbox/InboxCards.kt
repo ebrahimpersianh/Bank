@@ -499,7 +499,7 @@ internal fun NewsCard(
                     color = AppText,
                     fontSize = 14.5.sp,
                     fontWeight = FontWeight.Black,
-                    maxLines = if (expanded) 3 else 1,
+                    maxLines = if (expanded) 3 else 2, // یافته‌ی ۸۲: تک‌خط مهم‌ترین واژه را می‌برید
                     overflow = TextOverflow.Ellipsis,
                 )
             }
