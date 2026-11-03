@@ -24,6 +24,8 @@ class MainActivity : Activity() {
     private lateinit var prefs: Prefs
     private lateinit var list: LinearLayout
     private lateinit var main: Button
+    private lateinit var status: TextView
+    private lateinit var showMe: Button
     private var batteryTaps = 0
     private val autostartSeen get() = getSharedPreferences("volume", Context.MODE_PRIVATE)
     private val density get() = resources.displayMetrics.density
@@ -63,6 +65,19 @@ class MainActivity : Activity() {
         }
         root.addView(main, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(54)).apply { topMargin = dp(20) })
 
+        // ۱۳ آبان (گوشیِ کاربر: «معلوم نیست کجاست»): وضعیت + دکمه‌ی بیرون‌آوردنِ قرص.
+        status = text("", 13.5f, muted).apply { gravity = Gravity.CENTER; setPadding(0, dp(12), 0, 0) }
+        root.addView(status, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        showMe = Button(this).apply {
+            text = "نشانم بده کجاست"
+            textSize = 15f
+            isAllCaps = false
+            setTextColor(green)
+            background = round(Color.WHITE, dp(16), green)
+            setOnClickListener { OverlayService.show(this@MainActivity) }
+        }
+        root.addView(showMe, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(50)).apply { topMargin = dp(10) })
+
         root.addView(
             text(
                 "طرزِ کار: کشیدنِ بالا و پایین صدا را کم و زیاد می‌کند. زدن روی نیمه‌ی بالا یا پایین، یک پله. " +
@@ -72,7 +87,11 @@ class MainActivity : Activity() {
             ).apply { setPadding(0, dp(18), 0, 0); setLineSpacing(0f, 1.35f) },
         )
 
-        setContentView(ScrollView(this).apply { addView(root) })
+        setContentView(ScrollView(this).apply {
+            isFillViewport = true
+            setBackgroundColor(Color.rgb(238, 243, 241))
+            addView(root)
+        })
     }
 
     override fun onResume() {
@@ -117,6 +136,21 @@ class MainActivity : Activity() {
         val on = prefs.enabled && Setup.overlayOk(this)
         main.text = if (on) "خاموش کردنِ دکمه" else "روشن کردنِ دکمه"
         main.background = round(if (on) Color.rgb(120, 132, 127) else green, dp(16))
+        showMe.visibility = if (on) View.VISIBLE else View.GONE
+        status.removeCallbacks(statusTick)
+        status.postDelayed(statusTick, 600)
+    }
+
+    /** وضعیتِ واقعیِ قرص (سرویس کمی بعد از روشن‌شدن بالا می‌آید، پس با تأخیر خوانده می‌شود). */
+    private val statusTick = Runnable {
+        val on = prefs.enabled && Setup.overlayOk(this)
+        status.text = when {
+            !Setup.overlayOk(this) -> "اول «نمایش روی برنامه‌های دیگر» را روشن کن."
+            !on -> "دکمه خاموش است."
+            OverlayService.showing -> "دکمه روی صفحه است؛ اگر نمی‌بینی‌اش، کنارِ صفحه رفته. «نشانم بده» را بزن."
+            OverlayService.lastError != null -> "گوشی اجازه‌ی نمایشِ دکمه را نداد. ردیف‌های بالا را دوباره نگاه کن."
+            else -> "در حالِ روشن‌شدن…"
+        }
     }
 
     private fun toggleMain() {
@@ -129,7 +163,8 @@ class MainActivity : Activity() {
             OverlayService.stop(this)
         } else {
             prefs.enabled = true
-            OverlayService.start(this)
+            // روشن‌کردن = همان لحظه وسطِ لبه بیرون بیاید تا کاربر ببیند کجاست.
+            OverlayService.show(this)
         }
         render()
     }

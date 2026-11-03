@@ -71,6 +71,13 @@ class OverlayService : Service() {
             return START_NOT_STICKY
         }
         if (!added && Settings.canDrawOverlays(this)) addPill()
+        if (intent?.action == ACTION_SHOW && added) {
+            // «نشانم بده»: وسطِ لبه، کامل بیرون.
+            lp.y = (screenH() - pillH()) / 2
+            prefs.y = lp.y
+            docked = true
+            wake()
+        }
         return START_STICKY
     }
 
@@ -85,6 +92,7 @@ class OverlayService : Service() {
         anim?.cancel()
         if (added) runCatching { wm.removeView(view) }
         added = false
+        showing = false
         super.onDestroy()
     }
 
@@ -117,11 +125,13 @@ class OverlayService : Service() {
             .setContentIntent(open)
             .setOngoing(true)
             .build()
-        if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(NOTIF_ID, n)
-        }
+        runCatching {
+            if (Build.VERSION.SDK_INT >= 34) {
+                startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            } else {
+                startForeground(NOTIF_ID, n)
+            }
+        }.onFailure { lastError = "fg_failed" }
     }
 
     // ── قرص ──────────────────────────────────────────────────────────────────────
@@ -144,8 +154,11 @@ class OverlayService : Service() {
         }
         lp.x = edgeX(false)
         view.setOnTouchListener { _, e -> onTouch(e) }
-        wm.addView(view, lp)
-        added = true
+        // بعضی گوشی‌ها (شیائومی) بی اجازه‌ی پنجره‌ی بازشو خطا می‌دهند؛ برنامه نباید بسته شود.
+        added = runCatching { wm.addView(view, lp) }.isSuccess
+        lastError = if (added) null else "add_failed"
+        if (!added) return
+        showing = true
         refresh()
         scheduleDock()
     }
@@ -184,7 +197,7 @@ class OverlayService : Service() {
     private val dockRunnable = Runnable {
         if (!moving) {
             docked = true
-            animateX(edgeX(true), 0.5f)
+            animateX(edgeX(true), 0.85f)
         }
     }
 
@@ -321,6 +334,11 @@ class OverlayService : Service() {
         private const val CHANNEL = "pill"
         private const val NOTIF_ID = 1
         const val ACTION_STOP = "ir.sadteam.volume.STOP"
+        const val ACTION_SHOW = "ir.sadteam.volume.SHOW"
+
+        /** برای صفحه‌ی اصلی: دکمه الان روی صفحه است؟ */
+        @Volatile var showing = false
+        @Volatile var lastError: String? = null
 
         private const val HOLD_MS = 1200L
         private const val IDLE_MS = 5000L
@@ -329,10 +347,15 @@ class OverlayService : Service() {
         private const val STEP_DP = 16f
         private const val SLOP_DP = 12f
         private const val EDGE_DP = 6f
-        private const val PEEK_DP = 7f
+        private const val PEEK_DP = 10f
 
         fun start(context: Context) {
             val i = Intent(context, OverlayService::class.java)
+            runCatching { context.startForegroundService(i) }
+        }
+
+        fun show(context: Context) {
+            val i = Intent(context, OverlayService::class.java).setAction(ACTION_SHOW)
             runCatching { context.startForegroundService(i) }
         }
 

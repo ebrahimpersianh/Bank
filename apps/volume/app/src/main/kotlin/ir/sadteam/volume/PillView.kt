@@ -29,7 +29,13 @@ class PillView(context: Context) : View(context) {
     var moving = false
         set(value) { field = value; invalidate() }
 
-    private val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(150, 22, 32, 28) }
+    private val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(170, 22, 32, 28) }
+    // ۱۳ آبان (گوشیِ کاربر): روی پس‌زمینه‌ی تیره قرصِ تیره اصلاً دیده نمی‌شد → حاشیه‌ی سفیدِ نازک.
+    private val outline = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = dp(1.2f)
+        color = Color.argb(200, 255, 255, 255)
+    }
     private val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = dp(2f)
@@ -64,6 +70,9 @@ class PillView(context: Context) : View(context) {
         val r = w / 2f
         rect.set(0f, 0f, w, h)
         canvas.drawRoundRect(rect, r, r, bg)
+        rect.inset(dp(0.6f), dp(0.6f))
+        canvas.drawRoundRect(rect, r, r, outline)
+        rect.set(0f, 0f, w, h)
         if (moving) {
             rect.inset(dp(1f), dp(1f))
             canvas.drawRoundRect(rect, r, r, ring)
