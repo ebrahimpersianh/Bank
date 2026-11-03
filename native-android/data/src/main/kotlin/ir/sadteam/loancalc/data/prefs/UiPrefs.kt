@@ -525,7 +525,9 @@ class UiPrefs(private val context: Context) {
     }
 
     /** پورت «پشتیبان‌گیری خودکار روزانه» اپ رقیب - رجوع کن به AutoBackupWorker/AutoBackupScheduler. */
-    val autoBackupEnabled: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.AUTO_BACKUP_ENABLED] ?: false }
+    // ۱۱ آبان (تست): پیش‌فرض **روشن** - کاربری که هرگز به این صفحه سر نزده با خراب‌شدنِ گوشی همه‌چیز را از دست می‌داد.
+    // کسی که خودش خاموشش کرده، خاموش می‌ماند (مقدارِ ذخیره‌شده).
+    val autoBackupEnabled: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.AUTO_BACKUP_ENABLED] ?: true }
 
     suspend fun setAutoBackupEnabled(value: Boolean) {
         context.uiPrefsDataStore.edit { it[Keys.AUTO_BACKUP_ENABLED] = value }

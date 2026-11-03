@@ -142,6 +142,11 @@ class BadgeEvaluator(
         if (month.isEmpty()) return 0f
         val blind = setOf("سایر هزینه", "سایر درآمد", "")
         val categorized = month.count { it.category !in blind }
-        return categorized.toFloat() / month.size
+        // 🚨 ۱۱ آبان (تست): با یک تراکنشِ دسته‌دار همان روزِ اول ۱۰۰٪ می‌شد و نشانِ «یک ماه» باز می‌شد.
+        // حالا هم به گذشتِ ماه بستگی دارد (فقط آخرِ ماه کامل می‌شود) هم به دستِ‌کم ۱۰ تراکنش.
+        val share = categorized.toFloat() / month.size
+        val monthDone = today.d / JalaliCalendar.daysInMonth(today.y, today.m).toFloat()
+        val enough = (month.size / 10f).coerceAtMost(1f)
+        return share * monthDone * enough
     }
 }

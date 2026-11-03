@@ -121,9 +121,9 @@ internal fun AccountRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            val meta = account.smsSender?.takeIf { it.isNotBlank() }?.let { "پیامک $it" }
-                ?: account.bankName.ifBlank { null }
-                ?: "منبعِ نقدی"
+            // ۱۱ آبان (تست): «پیامک ir.sadteam.testblu» - سرشماره/بسته‌نامِ فنی زیرِ اسمِ حساب نشان داده
+            // می‌شد. حالا نامِ بانک (که کاربر می‌شناسد)؛ حسابِ بی‌بانک «نقدی».
+            val meta = account.bankName.ifBlank { null } ?: "نقدی"
             Text(
                 meta,
                 color = AppMuted,

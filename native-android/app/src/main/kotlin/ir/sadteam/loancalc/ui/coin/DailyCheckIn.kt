@@ -105,7 +105,13 @@ fun DailyCheckInHost(viewModel: DailyCheckInViewModel = hiltViewModel()) {
         onDismissRequest = viewModel::dismiss,
         title = {
             Text(
-                if (res.dayInWeek == 7) "هفت روزِ کامل! 🎉" else "خوش برگشتی!",
+                // ۱۱ آبان (تست): کاربرِ تازه در اولین باز کردن «خوش برگشتی!» می‌دید.
+                when {
+                    res.dayInWeek == 7 -> "هفت روزِ کامل! 🎉"
+                    // روزِ اولِ زنجیره (کاربرِ تازه یا بعد از وقفه) - متنِ خنثی که برای هر دو درست است.
+                    res.streak <= 1 -> "سلام! 🌱"
+                    else -> "خوش برگشتی!"
+                },
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,

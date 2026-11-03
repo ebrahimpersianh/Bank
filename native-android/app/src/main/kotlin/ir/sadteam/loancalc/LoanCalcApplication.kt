@@ -96,6 +96,14 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         // تنظیمات) چون نباید به بازکردنِ اون صفحه وابسته باشه. خودِ Worker قبل از هر اعلان
         // پرچمِ comeBackReminderEnabled رو چک می‌کنه، پس زمان‌بندیِ بی‌قیدش بی‌ضرره.
         comeBackScheduler.schedule()
+        // ۱۱ آبان: پشتیبانِ خودکار (پیش‌فرض روشن) از اولِ برنامه زمان‌بندی شود، نه فقط با باز کردنِ صفحه‌ی تنظیمات.
+        CoroutineScope(Dispatchers.IO).launch {
+            runCatching {
+                if (uiPrefs.autoBackupEnabled.first()) {
+                    ir.sadteam.loancalc.notifications.AutoBackupScheduler(this@LoanCalcApplication).schedule()
+                }
+            }
+        }
         ir.sadteam.loancalc.notifications.AdminAlertWorker.schedule(this)
         // بازبینیِ ۹ مهر: خلاصه‌ی هفتگی از قبل در DueDateReminderWorker بود (با حالتِ خصوصی) - دومی
         // جمعه‌ها اعلانِ تکراری می‌داد. کارِ قبلاً زمان‌بندی‌شده هم لغو می‌شود.
