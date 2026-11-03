@@ -184,7 +184,7 @@ fun StatementImportScreen(onBack: () -> Unit, vm: StatementImportViewModel = hil
             }
             items(list.take(30)) { r ->
                 Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("${toFa(r.date.d)}/${toFa(r.date.m)}", color = AppMuted, fontSize = 11.5.sp, modifier = Modifier.width(44.dp))
+                    Text(ir.sadteam.loancalc.ui.jibak.toFaDateShort(r.date.m, r.date.d), color = AppMuted, fontSize = 11.5.sp, maxLines = 1, modifier = Modifier.width(64.dp))
                     Text(r.description, color = AppText, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     Text(
                         ir.sadteam.loancalc.ui.jibak.isoSigned(r.deposit, r.amount.rialToFaCompact()) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),

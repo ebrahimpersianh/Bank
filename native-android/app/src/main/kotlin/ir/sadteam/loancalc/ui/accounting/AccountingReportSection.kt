@@ -408,7 +408,7 @@ internal fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Categ
     val scope = rememberCoroutineScope()
     val banner = rememberInAppBanner()
     val accountLabel = accounts.firstOrNull { it.id == selectedAccountId }?.name ?: "همه‌ی حساب‌ها"
-    val rangeLabel = "${toFa(fromYear)}/${toFa(fromMonth)}/${toFa(fromDay)} تا ${toFa(toYear)}/${toFa(toMonth)}/${toFa(toDay)}"
+    val rangeLabel = "${ir.sadteam.loancalc.ui.jibak.toFaDate(fromYear, fromMonth, fromDay)} تا ${ir.sadteam.loancalc.ui.jibak.toFaDate(toYear, toMonth, toDay)}"
 
     val createPdfLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/pdf"),

@@ -516,7 +516,7 @@ private fun SenderRow(
 private fun smsFullDateLabel(ms: Long): String = runCatching {
     val zoned = java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneId.systemDefault())
     val j = ir.sadteam.loancalc.core.JalaliCalendar.fromGregorian(zoned.year, zoned.monthValue, zoned.dayOfMonth)
-    "${toFa(j.y)}/${toFa(j.m)}/${toFa(j.d)} · ${toFa(zoned.hour)}:${toFa(zoned.minute).padStart(2, '۰')}"
+    "${ir.sadteam.loancalc.ui.jibak.toFaDate(j.y, j.m, j.d)} · ${toFa(zoned.hour)}:${toFa(zoned.minute).padStart(2, '۰')}"
 }.getOrDefault("")
 
 /** طبقه‌ی دوم: یک پیامکِ همان فرستنده. بدونِ مبلغِ قابلِ‌خواندن، دکمه‌ی افزودن ندارد. */

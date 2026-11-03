@@ -185,7 +185,7 @@ internal fun DangReceiptCard(
         if (!showBack) {
             // رو: یک عدد و یک شمارش. همین و بس.
             Text(
-                "${toFa(event.day)}/${toFa(event.month)}/${toFa(event.year)} · " +
+                "${ir.sadteam.loancalc.ui.jibak.toFaDate(event.year, event.month, event.day)} · " +
                     "${toFa(participants.size)} نفر",
                 color = AppMuted,
                 fontSize = 11.sp,
@@ -200,7 +200,7 @@ internal fun DangReceiptCard(
             )
         } else {
             Text(
-                "${toFa(event.day)}/${toFa(event.month)}/${toFa(event.year)}",
+                "${ir.sadteam.loancalc.ui.jibak.toFaDate(event.year, event.month, event.day)}",
                 color = ink.copy(alpha = 0.7f),
                 fontSize = 11.sp,
                 modifier = Modifier.padding(top = 2.dp, bottom = 10.dp),
@@ -327,7 +327,7 @@ fun DangCreateScreen(
                         ) {
                             Text(e.description.ifBlank { "خرج" }, color = AppText, fontWeight = FontWeight.Bold, maxLines = 1)
                             Text(
-                                "${fmt(e.amount / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()} · ${toFa(e.year)}/${toFa(e.month)}/${toFa(e.day)}",
+                                "${fmt(e.amount / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()} · ${ir.sadteam.loancalc.ui.jibak.toFaDate(e.year, e.month, e.day)}",
                                 color = AppMuted, fontSize = 11.sp,
                             )
                         }

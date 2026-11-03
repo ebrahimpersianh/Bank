@@ -142,7 +142,7 @@ internal fun SecuritySettings(
         Icons.Filled.Shield,
         "امنیت و حریمِ خصوصی",
         "قفلِ برنامه روی همین گوشی و پنهان‌کردنِ مبلغ‌ها",
-        badge = if (hasLock) "قفل فعال" else "بی‌قفل",
+        
     )
     SettingsGroupLabel("قفلِ برنامه")
     SettingsGroup {
@@ -246,27 +246,7 @@ internal fun SecuritySettings(
             checked = privacyMode,
             onCheckedChange = { privacyViewModel.toggle() },
         )
-        // پیش‌نمایشِ دو حالت با عددِ نمونه - مبلغِ واقعیِ کاربر این‌جا نشان داده نمی‌شود.
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 14.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            listOf(false to "۱۲٬۳۴۵٬۶۷۸", true to "••••••").forEach { (hidden, sample) ->
-                val active = hidden == privacyMode
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (active) AppPrimaryPill else AppSurface2)
-                        .border(if (active) 1.5.dp else 0.dp, if (active) AppPrimary else Color.Transparent, RoundedCornerShape(14.dp))
-                        .padding(vertical = 10.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(sample, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
-                    Text(if (hidden) "پنهان" else "نمایان", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
+        // یافته‌ی ۷۳: دو کارتِ «نمایان/پنهان» زیرِ کلید همان کار را دوباره می‌کرد - حذف.
         // کلیدِ «ارسالِ آمار» به خواسته‌ی صاحبِ برنامه (۷ مهر) از تنظیمات برداشته شد؛ آمار بی‌نام است و
         // در سیاستِ حریمِ خصوصیِ استور اعلام می‌شود. `UsageStats.setEnabled` برای برگرداندنش مانده.
     }

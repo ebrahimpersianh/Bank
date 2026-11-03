@@ -270,7 +270,7 @@ private fun CenterNote(text: String) {
 private fun smsDateLabel(ms: Long): String = runCatching {
     val zoned = java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneId.systemDefault())
     val j = ir.sadteam.loancalc.core.JalaliCalendar.fromGregorian(zoned.year, zoned.monthValue, zoned.dayOfMonth)
-    "${toFa(j.m)}/${toFa(j.d)} · ${toFa(zoned.hour)}:${toFa(zoned.minute).padStart(2, '۰')}"
+    "${ir.sadteam.loancalc.ui.jibak.toFaDateShort(j.m, j.d)} · ${toFa(zoned.hour)}:${toFa(zoned.minute).padStart(2, '۰')}"
 }.getOrDefault("")
 
 /** یک پیامکِ صندوقِ ورودی - برای صفحه‌ی «افزودن از پیامک‌ها». */

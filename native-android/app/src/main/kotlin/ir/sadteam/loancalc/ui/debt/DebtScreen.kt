@@ -896,7 +896,7 @@ private fun CounterpartyDetail(
                             )
                             Text("سهمش از دنگِ «${event.title}»", color = AppMuted, fontSize = 12.sp)
                             Text(
-                                "${toFa(event.year)}/${toFa(event.month)}/${toFa(event.day)}" + if (share.settled) " - داد ✓" else "",
+                                "${ir.sadteam.loancalc.ui.jibak.toFaDate(event.year, event.month, event.day)}" + if (share.settled) " - داد ✓" else "",
                                 color = AppMuted, fontSize = 11.sp,
                             )
                         }
@@ -931,7 +931,7 @@ private fun CounterpartyDetail(
                                     Text(debt.description, color = AppMuted, fontSize = 12.sp)
                                 }
                                 Text(
-                                    "${toFa(debt.year)}/${toFa(debt.month)}/${toFa(debt.day)}" +
+                                    "${ir.sadteam.loancalc.ui.jibak.toFaDate(debt.year, debt.month, debt.day)}" +
                                         if (debt.settled) " - تسویه‌شده" else "",
                                     color = AppMuted,
                                     fontSize = 11.sp,

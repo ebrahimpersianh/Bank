@@ -171,7 +171,7 @@ class GlobalSearchViewModel @Inject constructor(
             txs.sortedByDescending { it.year * 10_000 + it.month * 100 + it.day }.forEach { t ->
                 val title = t.description.ifBlank { t.category ?: "تراکنش" }
                 add(SearchHit(SearchKind.TX, t.id, title,
-                    "${toFa(t.year)}/${toFa(t.month)}/${toFa(t.day)} · ${accName[t.accountId] ?: ""}" + (t.category?.let { " · $it" } ?: ""),
+                    "${ir.sadteam.loancalc.ui.jibak.toFaDate(t.year, t.month, t.day)} · ${accName[t.accountId] ?: ""}" + (t.category?.let { " · $it" } ?: ""),
                     t.amount,
                     normalizeForSearch("${t.description} ${t.category.orEmpty()} ${t.tags.orEmpty()} ${accName[t.accountId].orEmpty()} ${t.amount.toLong()} ${(t.amount / 10).toLong()}"),
                     accountId = t.accountId))
@@ -182,7 +182,7 @@ class GlobalSearchViewModel @Inject constructor(
             }
             cheques.forEach { c ->
                 add(SearchHit(SearchKind.CHEQUE, c.id, c.ownerName.ifBlank { "چک ${c.chequeNumber}" },
-                    "${c.bankName} · ${toFa(c.dueYear)}/${toFa(c.dueMonth)}/${toFa(c.dueDay)}", c.amount,
+                    "${c.bankName} · ${ir.sadteam.loancalc.ui.jibak.toFaDate(c.dueYear, c.dueMonth, c.dueDay)}", c.amount,
                     normalizeForSearch("${c.ownerName} ${c.bankName} ${c.branchName} ${c.chequeNumber} ${c.sayadId.orEmpty()} ${c.notes} ${c.amount.toLong()} ${(c.amount / 10).toLong()}")))
             }
         }
@@ -204,7 +204,7 @@ class GlobalSearchViewModel @Inject constructor(
             }
             notes.forEach { n ->
                 add(SearchHit(SearchKind.NOTE, n.id, n.text.lineSequence().firstOrNull().orEmpty().take(60),
-                    "${toFa(n.year)}/${toFa(n.month)}/${toFa(n.day)}", null, normalizeForSearch(n.text)))
+                    "${ir.sadteam.loancalc.ui.jibak.toFaDate(n.year, n.month, n.day)}", null, normalizeForSearch(n.text)))
             }
         }
     }
@@ -223,7 +223,7 @@ class GlobalSearchViewModel @Inject constructor(
             debts.forEach { d ->
                 val who = personName[d.counterpartyId].orEmpty()
                 add(SearchHit(SearchKind.DEBT, d.id, d.description.ifBlank { who.ifBlank { "طلب/بدهی" } },
-                    "$who · ${toFa(d.year)}/${toFa(d.month)}/${toFa(d.day)}" + if (d.settled) " · تسویه‌شده" else "",
+                    "$who · ${ir.sadteam.loancalc.ui.jibak.toFaDate(d.year, d.month, d.day)}" + if (d.settled) " · تسویه‌شده" else "",
                     d.amount,
                     normalizeForSearch("${d.description} $who ${d.amount.toLong()} ${(d.amount / 10).toLong()}"),
                     accountId = d.counterpartyId))
@@ -237,7 +237,7 @@ class GlobalSearchViewModel @Inject constructor(
                     normalizeForSearch("${g.title} ${g.targetRial.toLong()} ${(g.targetRial / 10).toLong()}")))
             }
             dangs.forEach { e ->
-                add(SearchHit(SearchKind.DANG, e.id, e.title, "${toFa(e.year)}/${toFa(e.month)}/${toFa(e.day)}", e.totalAmount,
+                add(SearchHit(SearchKind.DANG, e.id, e.title, "${ir.sadteam.loancalc.ui.jibak.toFaDate(e.year, e.month, e.day)}", e.totalAmount,
                     normalizeForSearch("${e.title} ${e.totalAmount.toLong()} ${(e.totalAmount / 10).toLong()}")))
             }
             recurring.forEach { r ->
@@ -394,21 +394,10 @@ fun GlobalSearchScreen(
     }
 }
 
+// یافته‌ی ۶۳: ده رنگ برای ده نوع - رنگین‌کمان. نوع را آیکون می‌گوید؛ رنگ یکی است.
+@Suppress("UnusedReceiverParameter")
 @Composable
-private fun SearchKind.tint(): Color = when (this) {
-    SearchKind.TX -> AppPrimary
-    SearchKind.LOAN -> AppPurple
-    SearchKind.CHEQUE -> AppInfo
-    SearchKind.ACCOUNT -> AppPrimary
-    SearchKind.PERSON -> AppWarning
-    SearchKind.BILL -> AppDanger
-    SearchKind.NOTE -> AppWarning
-    SearchKind.DEBT -> AppWarning
-    SearchKind.ASSET -> AppInfo
-    SearchKind.GOAL -> AppPrimary
-    SearchKind.DANG -> AppPurple
-    SearchKind.RECURRING -> AppDanger
-}
+private fun SearchKind.tint(): Color = AppPrimary
 
 /** حالتِ پیش از تایپ: کارتِ خط‌چینِ سبکِ حالت‌های خالیِ برنامه + این‌که کجاها را می‌گردد. */
 @Composable

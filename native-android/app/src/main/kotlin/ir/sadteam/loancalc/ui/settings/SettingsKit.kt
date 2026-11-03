@@ -97,25 +97,14 @@ enum class SettingsTone {
     NEUTRAL,
     ;
 
+    // یافته‌های ۵۸/۷۱/۷۴ (۱۳ آبان، هدفِ «یک‌دست و مینیمال»): آیکون‌ها رنگین‌کمانی بودند - سبز،
+    // طلایی، بنفش، نارنجی، و **قرمز برای امنیت** (قرمز = خطر). حالا همه یک رنگِ برند؛ لحن‌ها
+    // فقط معنای مستند می‌مانند تا فراخوان‌ها دست نخورند.
     val fill: Color
-        @Composable get() = when (this) {
-            GREEN -> AppPrimaryPill
-            BLUE -> AppInfoPill
-            PURPLE -> AppPurplePill
-            ORANGE -> AppWarningPill
-            RED -> AppDangerPill
-            NEUTRAL -> AppSurface2
-        }
+        @Composable get() = AppPrimaryPill
 
     val ink: Color
-        @Composable get() = when (this) {
-            GREEN -> AppPrimary
-            BLUE -> AppInfo
-            PURPLE -> AppPurple
-            ORANGE -> AppWarningInk
-            RED -> AppDanger
-            NEUTRAL -> AppMuted
-        }
+        @Composable get() = AppPrimaryInk
 }
 
 /** رنگِ زیرنویسِ وضعیت. اگه داده‌ای نیست زیرنویس **حذف** می‌شه - «نامشخص» نوشته نمی‌شه. */
@@ -123,7 +112,9 @@ enum class StatusTone { HEALTHY, NEUTRAL, BROKEN }
 
 /** برچسبِ گروه - خطِ رنگیِ کوچکِ کنارش و زیرنویسِ اختیاری (بسته‌ی تنظیماتِ ChatGPT). */
 @Composable
-fun SettingsGroupLabel(text: String, subtitle: String? = null, accent: Color = AppPrimary) {
+fun SettingsGroupLabel(text: String, subtitle: String? = null, @Suppress("UNUSED_PARAMETER") accent: Color = AppPrimary) {
+    // یافته‌ی ۳۴/۷۴: خطِ کنارِ عنوان هر صفحه یک رنگ بود (سبز/بنفش/قهوه‌ای/قرمز) - همیشه برند.
+    val accent = AppPrimary
     Row(
         modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = AppSpacing.betweenCards + 4.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -233,6 +224,8 @@ fun SettingsRowItem(
         when {
             checked != null && onCheckedChange != null -> AppSwitch(checked = checked, onCheckedChange = onCheckedChange)
             value != null -> Text(value, color = AppLabel, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            // یافته‌ی ۵۹: ردیفِ بی‌کلیک (گزینه‌ها زیرِ خودش‌اند) فلشِ «برو تو» می‌گرفت و جایی نمی‌رفت.
+            rowClick == null -> Unit
             else -> Box(
                 modifier = Modifier.size(30.dp).clip(CircleShape).background(AppSurface2),
                 contentAlignment = Alignment.Center,
@@ -303,42 +296,17 @@ fun SettingsHero(
     modifier: Modifier = Modifier,
     extra: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
-    AppHeroCard(modifier = modifier.padding(top = 4.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier.size(46.dp).clip(RoundedCornerShape(AppRadius.icon)).background(Color.White.copy(alpha = 0.20f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
-            }
-            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-                Text(title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Black)
-                Text(
-                    subtitle,
-                    color = Color.White.copy(alpha = 0.85f),
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = 16.sp,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-            if (badge != null) {
-                Text(
-                    badge,
-                    color = Color.White,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Black,
-                    maxLines = 1,
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(Color.White.copy(alpha = 0.22f))
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
-                )
-            }
-        }
-        extra?.invoke(this)
-    }
+    // یافته‌ی ۷۵ (مینیمال): کارتِ سبزِ بزرگ با عنوانِ تکراریِ سرصفحه و قرصِ وضعیتی که ردیف‌های
+    // زیرش هم می‌گفتند، بالای هر زیرصفحه جا می‌گرفت. حالا فقط یک خطِ توضیحِ آرام زیرِ عنوان.
+    // امضا دست نخورد تا هفت فراخوان عوض نشوند.
+    Text(
+        subtitle,
+        color = AppMuted,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        modifier = modifier.fillMaxWidth().padding(top = 2.dp, bottom = 2.dp),
+    )
 }
 
 /**

@@ -62,7 +62,7 @@ object ChequePdfExporter {
             }
             val typeLabel = if (cheque.type == "RECEIVED") "دریافتی" else "پرداختی"
             val statusLabel = chequeStatusLabel(cheque.status)
-            val dateLabel = "${toFa(cheque.dueDay)}/${toFa(cheque.dueMonth)}/${toFa(cheque.dueYear)}"
+            val dateLabel = "${ir.sadteam.loancalc.ui.jibak.toFaDate(cheque.dueYear, cheque.dueMonth, cheque.dueDay)}"
             val line = "${cheque.ownerName} (${cheque.bankName}) — $typeLabel، ${fmt(ir.sadteam.loancalc.ui.jibak.rialToToman(cheque.amount.toLong()).toDouble())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}، " +
                 "سررسید $dateLabel، $statusLabel"
             y += drawRtlLine(canvas, line, labelPaint, y) + 6f

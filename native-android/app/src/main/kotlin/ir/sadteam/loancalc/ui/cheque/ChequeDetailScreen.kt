@@ -181,7 +181,7 @@ fun ChequeDetailScreen(
                     DetailRow(if (cheque.type == "RECEIVED") "پرداخت‌کننده" else "دریافت‌کننده", cheque.ownerName)
                     DetailRow(
                         "تاریخ سررسید",
-                        "${toFa(cheque.dueDay)}/${toFa(cheque.dueMonth)}/${toFa(cheque.dueYear)}",
+                        "${ir.sadteam.loancalc.ui.jibak.toFaDate(cheque.dueYear, cheque.dueMonth, cheque.dueDay)}",
                     )
                     if (cheque.notes.isNotBlank()) DetailRow("بابت", cheque.notes)
                 }

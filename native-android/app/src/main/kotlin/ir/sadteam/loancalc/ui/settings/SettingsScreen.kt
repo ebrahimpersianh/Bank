@@ -606,7 +606,7 @@ private fun routeHint(route: SettingsRoute): String? = when (route) {
     SettingsRoute.TOOLS -> "تقویمِ مالی و خروجی‌ها"
     else -> null
 }
-/** سرآیندِ مشترکِ همه‌ی زیرصفحه‌های تنظیمات (عنوان وسط + ضربدرِ بستن) - هم‌شکلِ اپِ مرجع. */
+/** سرآیندِ مشترکِ همه‌ی زیرصفحه‌های تنظیمات (عنوان وسط + فلشِ بازگشت). */
 @Composable
 internal fun SettingsSubPageScaffold(
     title: String,
@@ -624,17 +624,9 @@ internal fun SettingsSubPageScaffold(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .padding(4.dp)
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(AppRadius.icon))
-                    .background(AppSurface)
-                    .border(1.dp, AppLine, RoundedCornerShape(14.dp))
-                    .pressScaleClickable(onClick = onBack),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.Close, contentDescription = "بستن", tint = AppMuted)
+            // یافته‌ی ۳۵: این‌جا ✕ بود و بقیه‌ی برنامه فلشِ بازگشت - برگشت همیشه «یک صفحه عقب» است.
+            androidx.compose.material3.IconButton(onClick = onBack, modifier = Modifier.size(52.dp)) {
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
             }
             Text(
                 title,

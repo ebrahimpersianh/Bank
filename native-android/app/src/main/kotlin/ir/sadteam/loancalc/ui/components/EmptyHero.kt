@@ -51,7 +51,8 @@ fun EmptyHeroCard(
                 textAlign = TextAlign.Center, modifier = Modifier.padding(top = 10.dp),
             )
             Text(
-                description, color = AppMuted, fontSize = 12.5.sp, lineHeight = 22.sp, textAlign = TextAlign.Center,
+                // یافته‌ی ۵: خاکستری روی زمینه‌ی سبز در حالتِ تاریک خوانا نبود.
+                description, color = AppText.copy(alpha = 0.78f), fontSize = 12.5.sp, lineHeight = 22.sp, textAlign = TextAlign.Center,
                 modifier = Modifier.widthIn(max = 280.dp).padding(top = 6.dp),
             )
             GradientButton(onClick = onAction, modifier = Modifier.fillMaxWidth().padding(top = 16.dp).then(if (guideKey != null) Modifier.guideTarget(guideKey) else Modifier)) {

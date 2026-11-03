@@ -211,13 +211,14 @@ internal fun TodaySpendHero(
                 )
             }
             // درآمد و خرجِ امروز - یک خطِ ریز در پایینِ کارت (رنگ‌ها معنایی‌اند: سبزِ درآمد، قرمزِ خرج).
-            if (!simpleHero) Row(
+            // یافته‌ی ۷: «درآمدِ امروز +۰» بی‌معنی بود - خطِ صفر نمی‌آید، هر دو صفر = هیچ خطی.
+            if (!simpleHero && (todayIncome > 0.0 || todaySpend > 0.0)) Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                HeroFlowLine(label = "درآمدِ امروز", amount = todayIncome, income = true, privacyMode = privacyMode, modifier = Modifier.weight(1f, fill = false))
-                HeroFlowLine(label = "خرجِ امروز", amount = todaySpend, income = false, privacyMode = privacyMode, modifier = Modifier.weight(1f, fill = false).padding(start = 8.dp))
+                if (todayIncome > 0.0) HeroFlowLine(label = "درآمدِ امروز", amount = todayIncome, income = true, privacyMode = privacyMode, modifier = Modifier.weight(1f, fill = false))
+                if (todaySpend > 0.0) HeroFlowLine(label = "خرجِ امروز", amount = todaySpend, income = false, privacyMode = privacyMode, modifier = Modifier.weight(1f, fill = false).padding(start = 8.dp))
             }
         }
     }
@@ -254,7 +255,8 @@ private fun HeroFlowLine(
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
                 ir.sadteam.loancalc.ui.jibak.isoSigned(income, maskIfPrivate(masked, heroFlowAmount(amount))) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
-                color = if (income) HeroIncome else HeroExpense,
+                // یافته‌ی ۷: قرمز روی سبز کم‌خوانا بود؛ رنگِ جهت فقط روی فلش، عدد سفید.
+                color = Color.White,
                 fontSize = 10.5.sp,
                 fontWeight = FontWeight.Black,
                 maxLines = 1,

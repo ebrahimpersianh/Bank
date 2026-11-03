@@ -619,7 +619,7 @@ private fun ChequeCard(
                     }
                 }
                 Text(
-                    "${chequeStatusLabel(cheque.status)} · ${toFa(cheque.dueDay)}/${toFa(cheque.dueMonth)}/${toFa(cheque.dueYear)}",
+                    "${chequeStatusLabel(cheque.status)} · ${ir.sadteam.loancalc.ui.jibak.toFaDate(cheque.dueYear, cheque.dueMonth, cheque.dueDay)}",
                     color = if (overdue) AppDangerInk else AppMuted,
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Bold,

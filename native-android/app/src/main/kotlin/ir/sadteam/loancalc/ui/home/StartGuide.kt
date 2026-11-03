@@ -117,7 +117,7 @@ fun StartGuideCard(
         )
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             GuideStep(1, "یک حساب بساز", "کارتِ بانکی یا کیفِ پولِ نقدی", state.hasAccount, onAddAccount)
-            GuideStep(2, "اولین خرج یا درآمدت را ثبت کن", "با دکمه‌ی + پایینِ صفحه", state.hasTransaction, onAddTransaction)
+            GuideStep(2, "اولین خرج یا درآمدت را ثبت کن", "همین ردیف را لمس کن", state.hasTransaction, onAddTransaction)
             GuideStep(3, "وامت را اضافه کن", "تا سررسیدِ قسط‌ها یادت بیاید", state.hasLoan, onAddLoan)
             GuideStep(4, "پیامک یا اعلانِ بانک را وصل کن", "تا خرج‌ها خودشان ثبت شوند", state.bankLinked, onLinkBank)
         }

@@ -61,7 +61,7 @@ internal fun DataSettings(
                     iso.substring(5, 7).toInt(),
                     iso.substring(8, 10).toInt(),
                 )
-                "${toFa(date.d)}/${toFa(date.m)}/${toFa(date.y)}"
+                ir.sadteam.loancalc.ui.jibak.toFaDate(date.y, date.m, date.d)
             }.getOrNull()
         }
     }

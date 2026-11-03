@@ -163,7 +163,7 @@ internal fun LazyListScope.loanIdentityItem(
             ratePct = ratePct,
             startLabel = remember(loan) {
                 val sd = viewModel.getLoanStartDate(loan)
-                "${toFa(sd.y)}/${toFa(sd.m)}/${toFa(sd.d)}"
+                ir.sadteam.loancalc.ui.jibak.toFaDate(sd.y, sd.m, sd.d)
             },
             paidFraction = paidFraction,
             privacyMode = privacyMode,
