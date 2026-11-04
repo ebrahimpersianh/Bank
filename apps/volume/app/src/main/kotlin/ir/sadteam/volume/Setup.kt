@@ -98,6 +98,18 @@ object Setup {
         )
     }
 
+    /** سرویسِ دسترسی‌پذیریِ «ولوم» روشن است؟ */
+    fun a11yOk(c: Context): Boolean {
+        if (VolumeA11yService.running) return true
+        val list = Settings.Secure.getString(c.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
+        val me = ComponentName(c, VolumeA11yService::class.java)
+        return list.split(':').any { ComponentName.unflattenFromString(it) == me }
+    }
+
+    fun openA11y(c: Context) = openFirst(c, listOf(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS), appDetails(c)))
+
+    fun openAppDetails(c: Context) = openFirst(c, listOf(appDetails(c)))
+
     private fun appDetails(c: Context) =
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${c.packageName}"))
 

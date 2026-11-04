@@ -80,9 +80,9 @@ class MainActivity : Activity() {
 
         root.addView(
             text(
-                "طرزِ کار: کشیدنِ بالا و پایین صدا را کم و زیاد می‌کند. زدن روی نیمه‌ی بالا یا پایین، یک پله. " +
-                    "دو بار زدن، بی‌صدا. نگه‌داشتن تا بلرزد، بعد هر جا بکشی جابه‌جا می‌شود. " +
-                    "اگر ۵ ثانیه دست نزنی کنارِ صفحه می‌رود؛ باریکه‌اش را بزن تا برگردد. وسطِ تماس صدای مکالمه را عوض می‌کند.",
+                "طرزِ کار: انگشت را روی باریکه‌ی کنارِ صفحه بالا و پایین بکش تا صدا کم و زیاد شود. " +
+                    "زدن روی نیمه‌ی بالا یا پایینش، یک پله. دو بار زدن، بی‌صدا. " +
+                    "نگه‌داشتن تا بلرزد، بعد بالا و پایین (یا به لبه‌ی دیگر) جابه‌جا می‌شود. وسطِ تماس صدای مکالمه را عوض می‌کند.",
                 13f, muted,
             ).apply { setPadding(0, dp(18), 0, 0); setLineSpacing(0f, 1.35f) },
         )
@@ -129,6 +129,23 @@ class MainActivity : Activity() {
                 Setup.openXiaomiPopup(this)
             }
         }
+        // ۱۴ آبان (کاربر: «وسطِ تماس نبود»): صفحه‌ی تماس فقط پنجره‌ی دسترسی‌پذیری را نشان می‌دهد.
+        val a11yOn = Setup.a11yOk(this)
+        val a11yTried = autostartSeen.getBoolean("a11y_opened", false)
+        row(
+            "وسطِ تماس هم باشد",
+            "در صفحه‌ای که باز می‌شود «ولوم» (یا «برنامه‌های نصب‌شده» ← «ولوم») را روشن کن. " +
+                if (a11yTried && !a11yOn) "اگر خاکستری بود و نمی‌شد: صفحه‌ی برنامه باز می‌شود؛ سه‌نقطه‌ی بالا ← «اجازه‌ی تنظیماتِ محدود»، بعد دوباره همین را بزن." else "",
+            a11yOn,
+        ) {
+            if (a11yTried && !Setup.a11yOk(this)) {
+                autostartSeen.edit().putBoolean("a11y_opened", false).apply()
+                Setup.openAppDetails(this)
+            } else {
+                autostartSeen.edit().putBoolean("a11y_opened", true).apply()
+                Setup.openA11y(this)
+            }
+        }
         // ۱۳ آبان (کاربر: «اون دوتا اعلان بالا نیان»): اعلانِ خودمان را می‌شود خاموش کرد و دکمه می‌ماند؛
         // اعلانِ «Android System» مالِ خودِ گوشی است و فقط با نگه‌داشتنش خاموش می‌شود.
         val hideDone = autostartSeen.getBoolean("hide_opened", false)
@@ -155,7 +172,7 @@ class MainActivity : Activity() {
         status.text = when {
             !Setup.overlayOk(this) -> "اول «نمایش روی برنامه‌های دیگر» را روشن کن."
             !on -> "دکمه خاموش است."
-            OverlayService.showing -> "دکمه روی صفحه است؛ اگر نمی‌بینی‌اش، کنارِ صفحه رفته. «نشانم بده» را بزن."
+            OverlayService.isShowing() -> "باریکه کنارِ صفحه است. اگر نمی‌بینی‌اش «نشانم بده» را بزن."
             OverlayService.lastError != null -> "گوشی اجازه‌ی نمایشِ دکمه را نداد. ردیف‌های بالا را دوباره نگاه کن."
             else -> "در حالِ روشن‌شدن…"
         }
