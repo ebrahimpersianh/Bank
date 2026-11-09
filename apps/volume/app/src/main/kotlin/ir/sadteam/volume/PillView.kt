@@ -64,8 +64,11 @@ class PillView(context: Context) : View(context) {
         val r = barW
 
         if (!big) {
-            bg.color = Color.argb(115, 255, 255, 255)
+            // ۱۸ آبان (کاربر، نمونه‌ی ۳): سفیدِ پررنگ با حاشیه‌ی تیره تا روی هر پس‌زمینه‌ای پیدا باشد.
+            bg.color = Color.argb(235, 255, 255, 255)
             canvas.drawRoundRect(rect, r, r, bg)
+            outline.color = Color.argb(140, 0, 0, 0)
+            canvas.drawRoundRect(rect, r, r, outline)
             return
         }
 
@@ -92,8 +95,8 @@ class PillView(context: Context) : View(context) {
         /** پنجره‌ی لمسی (کمی بزرگ‌تر از خطی که دیده می‌شود تا انگشت راحت بگیرد). */
         const val WIDTH_DP = 22f
         const val HEIGHT_DP = 64f
-        const val REST_W_DP = 1.5f
-        const val REST_H_DP = 26f
+        const val REST_W_DP = 4f
+        const val REST_H_DP = 50f
         const val ACTIVE_W_DP = 6f
         const val ACTIVE_H_DP = 64f
         val GREEN = Color.rgb(61, 220, 150)
