@@ -24,6 +24,10 @@ class Volume(context: Context) {
 
     fun current(): Int = audio.getStreamVolume(stream)
 
+    /** کمترین پله و تعدادِ پله‌ها، برای حرکتِ پیوسته‌ی خطِ صدا زیرِ انگشت. */
+    fun minIndex(): Int = min(stream)
+    fun range(): Int = (max(stream) - min(stream)).coerceAtLeast(1)
+
     /** مقدارِ فعلی از ۰ تا ۱، برای خطِ روی قرص. */
     fun level(): Float {
         val s = stream

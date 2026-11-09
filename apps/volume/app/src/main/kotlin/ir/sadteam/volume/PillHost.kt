@@ -156,11 +156,13 @@ class PillHost(private val context: Context, private val windowType: Int) {
                     handler.removeCallbacks(holdRunnable)
                 }
                 if (sliding) {
-                    val steps = (-dy / dp(STEP_DP)).roundToInt()
-                    val target = startVol + steps
+                    // خط پیوسته همراهِ انگشت می‌رود؛ صدای واقعی پله‌پله دنبالش.
+                    val moved = -dy / dp(STEP_DP)
+                    view.dragLevel((startVol - volume.minIndex() + moved) / volume.range())
+                    val target = startVol + moved.roundToInt()
                     if (target != volume.current()) {
                         volume.set(target)
-                        refresh()
+                        view.muted = volume.isMuted()
                     }
                 }
             }
@@ -178,6 +180,8 @@ class PillHost(private val context: Context, private val windowType: Int) {
                     runCatching { wm.updateViewLayout(view, lp) }
                 } else if (!sliding && e.actionMasked == MotionEvent.ACTION_UP) {
                     onTap(e.y < view.height / 2f)
+                } else if (sliding) {
+                    refresh()
                 }
             }
         }
