@@ -211,11 +211,27 @@ class PillHost(private val context: Context, private val windowType: Int) {
             @Suppress("DEPRECATION")
             context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
         }
-        runCatching { v?.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE)) }
+        // ۱۸ آبان (کاربر: «نگه می‌دارم ویبره نمی‌زند»): شیائومی لرزشِ ساده‌ی سرویسِ پس‌زمینه را
+        // گاهی نادیده می‌گیرد؛ هم لرزشِ لمسیِ خودِ نما و هم لرزشِ «لمسی»ِ صریح و قوی‌تر.
+        runCatching {
+            @Suppress("DEPRECATION")
+            view.performHapticFeedback(
+                android.view.HapticFeedbackConstants.LONG_PRESS,
+                android.view.HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING,
+            )
+        }
+        runCatching {
+            val effect = VibrationEffect.createOneShot(60, 255)
+            if (Build.VERSION.SDK_INT >= 33) {
+                v?.vibrate(effect, android.os.VibrationAttributes.createForUsage(android.os.VibrationAttributes.USAGE_TOUCH))
+            } else {
+                v?.vibrate(effect)
+            }
+        }
     }
 
     private companion object {
-        const val HOLD_MS = 1200L
+        const val HOLD_MS = 600L
         const val DOUBLE_TAP_MS = 280L
         const val STEP_DP = 14f
         const val SLOP_DP = 10f
