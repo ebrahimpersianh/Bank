@@ -20,4 +20,15 @@ class Prefs(context: Context) {
     var y: Int
         get() = sp.getInt("y", -1)
         set(v) = sp.edit().putInt("y", v).apply()
+
+    /**
+     * ۱۹ آبان (کاربر): جای دستگیره برای عمودی و افقی جدا حفظ می‌شود.
+     * کسری از ارتفاعِ قابلِ‌استفاده (۰ = بالا، ۱ = پایین)؛ ۱- یعنی هنوز تنظیم نشده.
+     */
+    fun yFrac(landscape: Boolean): Float = sp.getFloat(if (landscape) "yf_l" else "yf_p", -1f)
+    fun setYFrac(landscape: Boolean, v: Float) = sp.edit().putFloat(if (landscape) "yf_l" else "yf_p", v).apply()
+
+    /** لبه‌ی چپ/راست هم برای هر حالت جدا؛ اگر نبود، همان تنظیمِ قدیمی. */
+    fun left(landscape: Boolean): Boolean = sp.getBoolean(if (landscape) "left_l" else "left_p", onLeft)
+    fun setLeft(landscape: Boolean, v: Boolean) = sp.edit().putBoolean(if (landscape) "left_l" else "left_p", v).apply()
 }

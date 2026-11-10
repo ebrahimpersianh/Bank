@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.PixelFormat
 import android.graphics.Rect
+import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -48,7 +49,8 @@ class PillHost(private val context: Context, private val windowType: Int) {
     fun add(): Boolean {
         if (added) return true
         view = PillView(context)
-        view.onLeft = prefs.onLeft
+        landscape = isLandscape()
+        view.onLeft = prefs.left(landscape)
         lp = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -60,7 +62,7 @@ class PillHost(private val context: Context, private val windowType: Int) {
         ).apply {
             // LEFT نه START: مختصات در گوشیِ فارسی هم از چپ شمرده شود.
             gravity = Gravity.TOP or Gravity.LEFT
-            y = (prefs.y.takeIf { it >= 0 } ?: (screenH() * 0.38f).roundToInt()).coerceIn(0, maxY())
+            y = savedY()
             if (Build.VERSION.SDK_INT >= 28) {
                 layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
             }
@@ -73,12 +75,16 @@ class PillHost(private val context: Context, private val windowType: Int) {
         }
         // بعضی گوشی‌ها (شیائومی) بی اجازه خطا می‌دهند؛ برنامه نباید بسته شود.
         added = runCatching { wm.addView(view, lp) }.isSuccess
-        if (added) refresh()
+        if (added) {
+            refresh()
+            runCatching { displays.registerDisplayListener(displayListener, handler) }
+        }
         return added
     }
 
     fun remove() {
         handler.removeCallbacksAndMessages(null)
+        runCatching { displays.unregisterDisplayListener(displayListener) }
         if (added) runCatching { wm.removeView(view) }
         added = false
     }
@@ -87,7 +93,7 @@ class PillHost(private val context: Context, private val windowType: Int) {
     fun show() {
         if (!added) return
         lp.y = (screenH() - pillH()) / 2
-        prefs.y = lp.y
+        savePosition()
         runCatching { wm.updateViewLayout(view, lp) }
         view.active = true
         handler.postDelayed({ if (added) view.active = false }, 1500)
@@ -95,8 +101,45 @@ class PillHost(private val context: Context, private val windowType: Int) {
     }
 
     fun onConfigurationChanged() {
-        if (!added) return
-        lp.y = lp.y.coerceIn(0, maxY())
+        applyPosition()
+        // بعضی گوشی‌ها اندازه‌ی تازه‌ی صفحه را کمی دیرتر می‌دهند.
+        handler.postDelayed({ applyPosition() }, 300)
+    }
+
+    // ── جای دستگیره، جدا برای عمودی و افقی (۱۹ آبان، خواسته‌ی کاربر) ─────────────────
+
+    private var landscape = false
+    private val displays = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) {}
+        override fun onDisplayRemoved(displayId: Int) {}
+        override fun onDisplayChanged(displayId: Int) {
+            if (isLandscape() != landscape) onConfigurationChanged()
+        }
+    }
+
+    private fun isLandscape() = screenW() > screenH()
+
+    private fun savedY(): Int {
+        val f = prefs.yFrac(landscape)
+        val legacy = prefs.y
+        val frac = when {
+            f >= 0f -> f
+            !landscape && legacy >= 0 && screenH() > 0 -> legacy.toFloat() / maxY().coerceAtLeast(1)
+            else -> 0.38f
+        }
+        return (frac.coerceIn(0f, 1f) * maxY()).roundToInt()
+    }
+
+    private fun savePosition() {
+        prefs.setYFrac(landscape, lp.y.toFloat() / maxY().coerceAtLeast(1))
+    }
+
+    private fun applyPosition() {
+        if (!added || moving) return
+        landscape = isLandscape()
+        view.onLeft = prefs.left(landscape)
+        lp.y = savedY()
         lp.x = edgeX()
         runCatching { wm.updateViewLayout(view, lp) }
     }
@@ -106,7 +149,7 @@ class PillHost(private val context: Context, private val windowType: Int) {
     private fun pillW() = dp(PillView.WIDTH_DP)
     private fun pillH() = dp(PillView.HEIGHT_DP)
     private fun maxY() = (screenH() - pillH()).coerceAtLeast(0)
-    private fun edgeX() = if (prefs.onLeft) 0 else screenW() - pillW()
+    private fun edgeX() = if (prefs.left(landscape)) 0 else screenW() - pillW()
 
     private fun refresh() {
         view.level = volume.level()
@@ -173,9 +216,9 @@ class PillHost(private val context: Context, private val windowType: Int) {
                     moving = false
                     view.moving = false
                     // انگشت تا نیمه‌ی دیگرِ صفحه رفته → لبه‌ی دیگر.
-                    prefs.onLeft = e.rawX < screenW() / 2f
-                    view.onLeft = prefs.onLeft
-                    prefs.y = lp.y
+                    prefs.setLeft(landscape, e.rawX < screenW() / 2f)
+                    view.onLeft = prefs.left(landscape)
+                    savePosition()
                     lp.x = edgeX()
                     runCatching { wm.updateViewLayout(view, lp) }
                 } else if (!sliding && e.actionMasked == MotionEvent.ACTION_UP) {
