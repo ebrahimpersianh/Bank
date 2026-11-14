@@ -1,2 +1,1 @@
-shot boot
-ui
+#END
