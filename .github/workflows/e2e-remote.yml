@@ -8,6 +8,11 @@ on:
       minutes:
         description: "حداکثر مدتِ آزمایش (دقیقه)"
         default: "60"
+      api:
+        description: "نسخه‌ی اندرویدِ گوشیِ تست: 34 = اندروید ۱۴ · 24 = اندروید ۷ (برای کرشِ فروشگاه)"
+        type: choice
+        options: ["34", "24", "25", "29"]
+        default: "34"
 
 jobs:
   remote:
@@ -35,7 +40,7 @@ jobs:
         env:
           E2E_MINUTES: ${{ inputs.minutes }}
         with:
-          api-level: 34
+          api-level: ${{ inputs.api || '34' }}
           target: google_apis
           arch: x86_64
           profile: pixel_5
