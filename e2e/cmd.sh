@@ -1,1 +1,2 @@
-#END
+shot boot
+ui
