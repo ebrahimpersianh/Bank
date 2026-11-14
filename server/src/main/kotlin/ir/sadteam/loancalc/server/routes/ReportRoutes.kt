@@ -137,13 +137,18 @@ private fun Route.reportEndpoints() {
 private suspend fun ApplicationCall.fullReport(): OwnerReport = Db.withConnection { conn ->
     OwnerReport(
         guide = "گزارشِ پنلِ مدیریتِ اپِ «جیبک» (اندروید، بازار و مایکت). " +
+            "مهم: این آدرس فقط‌خواندنی نیست؛ دسترسیِ کاملِ مدیریت است. علاوه بر خواندنِ آمار می‌توانی " +
+            "جواب پشتیبانی بدهی، وضعیتِ پیام را عوض کنی، و به یک کاربر یا یک گروه پیام و هدیه بدهی. " +
             "today/week/month: مقایسه‌ی این بازه با بازه‌ی قبل (now در برابرِ prev؛ روزها به وقتِ ایران). " +
             "stats: آمارِ کلی (نصب، کاربرِ فعال، مشترک‌ها، پیامک، کرش‌ها). " +
             "money: فروش و خریدهای اخیر (مبلغ به تومان، شماره‌ها نیمه‌پنهان). " +
             "users: ۳۰۰ کاربرِ اخیر (شماره کامل، اشتراک، استور، آخرین بازدید به UTC). " +
             "health: کرش/خطای همگام‌سازی/گوشیِ چندحسابه/ماهِ رایگانِ ردشده. support: پیام‌های پشتیبانی. " +
-            "broadcasts/segments: پیام‌های گروهی و اندازه‌ی گروه‌ها. usage: شمارِ استفاده از هر بخش در ۳۰ روز. " +
-            "برای کارها (جواب، وضعیت، پیام/هدیه) مسیرِ `/help` را از همین پایه (base) بگیر. " +
+            "broadcasts/segments: پیام‌های گروهی و اندازه‌ی گروه‌ها. usage: شمارِ کلیِ استفاده از هر بخش در ۳۰ روز (مجموعِ همه، نه تک‌کاربر). " +
+            "برای دیدنِ یک کاربرِ خاص (پرکاربردترین بخش‌هایش، فعالیتِ روزانه، خریدها، دستگاه، پشتیبانی) مسیرِ " +
+            "`user?code=<Uid یا شماره>` را بگیر. " +
+            "برای کارها (جوابِ پشتیبانی، تغییرِ وضعیت، پیام، هدیه‌ی سکه و اشتراک) مسیرِ `/help` را از همین پایه (base) بگیر. " +
+            "هدیه‌ی یک‌ماه اشتراک = ارسالِ پیام با days=30؛ سکه = همان با coins؛ هدیه و پیام داخلِ خودِ برنامه («پیام‌های جیبک») دیده می‌شود (پیامک نداریم). " +
             "برای صاحبِ برنامه به فارسیِ ساده خلاصه کن: مهم‌ترین تغییرها، خریدهای تازه، و هر مشکل یا کرش.",
         today = buildDigest(conn, "day"),
         week = buildDigest(conn, "week"),
@@ -222,11 +227,13 @@ private suspend fun ApplicationCall.doSend() {
 
 private const val REPORT_HELP =
     "Base = /api/report/<key>  OR  /api/owner with header 'Authorization: Bearer <key>' (or 'X-Report-Key: <key>'). " +
-        "Read: (base) full report · base/user?code=<Uid or phone> one user's history. " +
+        "This is FULL admin access, not read-only: you can reply, change status, and send messages or gifts (subscription days + coins). " +
+        "Read: (base) full report · base/user?code=<Uid or phone> one user's history, incl. their most-used screens/sections and daily activity. " +
         "Write (without &confirm=yes it is only a preview; nothing changes): " +
         "base/do/reply?ticket=<ticket>&text=<reply>[&close=0] → reply to a support message (shows in user's 'Jibak messages'); " +
         "base/do/status?ticket=<ticket>&status=open|answered|closed; " +
         "base/do/send?segment=<one|all|inactive7|inactive30|trial_ending|expired|free|new7|cafebazaar|myket|old_version|paid>" +
         "[&user=<Uid> for one]&title=<title>&body=<text>[&days=<sub days 0-365>][&coins=<0-100000>][&action=shop|subscription|update] " +
         "→ message (and gift) to one user or a group; preview returns the count. " +
+        "A 1-month subscription gift = &days=30. Gifts and messages appear inside the app ('Jibak messages'); there is no SMS. " +
         "Always show the owner the exact text and count and get their OK before adding confirm=yes. Write in friendly formal Persian (تو، می‌شود، را)."
