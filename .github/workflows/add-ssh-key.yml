@@ -1,0 +1,21 @@
+name: افزودنِ کلیدِ SSHِ کاربر (یک‌بار)
+
+# درخواستِ صریحِ کاربر (۱۳ مهر): کلیدِ عمومیِ sniper-deploy به authorized_keys اضافه شود.
+on:
+  workflow_dispatch:
+
+jobs:
+  add:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            K="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILEgjV50GwWFF2J5XCLb3HJG2WydV9Dd9RsZRDTxg3xY sniper-deploy"
+            mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys
+            grep -qF "$K" ~/.ssh/authorized_keys || echo "$K" >> ~/.ssh/authorized_keys
+            chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys
+            grep -c "sniper-deploy" ~/.ssh/authorized_keys

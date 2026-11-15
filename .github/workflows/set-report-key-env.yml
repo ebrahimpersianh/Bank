@@ -1,0 +1,32 @@
+name: تنظیمِ کلیدِ آدرسِ گزارش رو VPS (برای Claude Duet)
+
+# اجرای دستی. کلید از سکرتِ REPORT_KEY گیت‌هاب می‌آید و فقط در `.env`ِ سرور می‌نشیند
+# (هیچ‌وقت چاپ نمی‌شود). آدرس: /api/report/<کلید>. اجرای دوباره = کلیدِ تازه‌ی سکرت جایگزین می‌شود.
+on:
+  workflow_dispatch:
+
+jobs:
+  set-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: نوشتنِ REPORT_KEY تو .env و ری‌استارتِ سرویس
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: REPORT_KEY_INPUT
+          script: |
+            set -e
+            cd ~/VameMan
+            touch .env
+            [ ${#REPORT_KEY_INPUT} -ge 24 ] || { echo "سکرتِ REPORT_KEY کوتاه یا خالی است"; exit 1; }
+            sed -i '/^REPORT_KEY=/d' .env
+            printf '%s=%s\n' "REPORT_KEY" "$REPORT_KEY_INPUT" >> .env
+            chmod 600 .env
+            echo "REPORT_KEY ذخیره شد (عمداً چاپ نمی‌شود)."
+            pm2 restart loan-calc-api
+            sleep 3
+            pm2 describe loan-calc-api | grep -q "online" && echo "OK: سرویس بالاست" || (echo "سرویس بالا نیامد!"; exit 1)
+        env:
+          REPORT_KEY_INPUT: ${{ secrets.REPORT_KEY }}

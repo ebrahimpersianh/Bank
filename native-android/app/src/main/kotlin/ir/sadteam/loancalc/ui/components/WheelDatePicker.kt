@@ -1,0 +1,308 @@
+package ir.sadteam.loancalc.ui.components
+
+import android.view.SoundEffectConstants
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import ir.sadteam.loancalc.ui.text.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.jibak.faMonthName
+import ir.sadteam.loancalc.ui.theme.AppBg
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppText
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.roundToInt
+
+// ⚠️ کپیِ محلیِ نامِ ماه حذف شد. سه نمای انتخابِ تاریخ باید **یک زبان** داشته باشند
+// (خواسته‌ی صریحِ README) و اولین شرطش این است که نامِ ماه از یک جا بیاید:
+// `CalendarPickerScreen` از `faMonthName` می‌خورد، این و `InlineJalaliDateRow` هر کدام
+// لیستِ خودشان را داشتند - سه نما، سه منبع.
+
+/** بازه‌ی سالِ مشترکِ هر سه نما - قبلاً سه جا مستقل تکرار شده بود. */
+internal val JalaliYearRange = 1350..1410
+
+/**
+ * انتخابگر تاریخ شمسی به‌صورت چرخونه‌ی اسکرولی (spinner) - تپ روی تاریخ این صفحه رو باز می‌کنه،
+ * بدون کلیک با بالا/پایین اسکرول‌کردنِ سه ستون (روز/ماه/سال) تنظیم می‌شه و هر «کلیک» چرخونه
+ * یه لرزش خفیف + صدای تیکِ سیستم می‌ده (خواسته‌ی کاربر). دکمه‌ی «تأیید» تاریخ رو برمی‌گردونه.
+ */
+@Composable
+fun WheelDatePickerScreen(
+    initial: PersianDate,
+    onConfirm: (PersianDate) -> Unit,
+    onBack: () -> Unit,
+    yearRange: IntRange = JalaliYearRange,
+) {
+    val years = remember(yearRange) { yearRange.toList() }
+    var year by remember { mutableIntStateOf(initial.y.coerceIn(yearRange.first, yearRange.last)) }
+    var month by remember { mutableIntStateOf(initial.m.coerceIn(1, 12)) }
+    var day by remember { mutableIntStateOf(initial.d.coerceAtLeast(1)) }
+
+    val maxDay = JalaliCalendar.daysInMonth(year, month)
+    // 🚨 قبلاً `if (day > maxDay) day = maxDay` بود - **نوشتنِ state در میانه‌ی composition**.
+    // همان دسته‌ای که `historyOf`ِ تبِ دارایی داشت: Compose تضمین نمی‌کند این شاخه چند بار
+    // اجرا شود، و نوشتنِ بی‌`LaunchedEffect` می‌تواند حلقه‌ی recomposition بسازد. سناریوی
+    // واقعی‌اش: ۳۱ اسفند انتخاب است، کاربر ماه را به اسفند می‌چرخاند (۲۹ روز).
+    LaunchedEffect(maxDay) { if (day > maxDay) day = maxDay }
+    val days = remember(maxDay) { (1..maxDay).toList() }
+    val today = remember { JalaliCalendar.today() }
+
+    Surface(color = AppBg, modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
+                }
+                Text("انتخاب تاریخ", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+                // قابِ انتخاب حالا داخلِ هر ستون است (روز/ماه/سال هرکدام مستطیلِ خودش - ۱۶ مهر).
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    WheelColumn(
+                        items = days.map { toFa(it) },
+                        selectedIndex = days.indexOf(day).coerceAtLeast(0),
+                        onCentered = { day = days[it] },
+                        modifier = Modifier.weight(1f),
+                    )
+                    WheelColumn(
+                        items = remember { (1..12).map { faMonthName(it) } },
+                        selectedIndex = month - 1,
+                        onCentered = { month = it + 1 },
+                        modifier = Modifier.weight(1.4f),
+                    )
+                    WheelColumn(
+                        items = years.map { toFa(it) },
+                        selectedIndex = years.indexOf(year).coerceAtLeast(0),
+                        onCentered = { year = years[it] },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            // «امروز» فقط در `CalendarPickerScreen` بود. دو نمای یک کار، یکی میان‌برِ
+            // امروز دارد و یکی نه - و چرخونه بدترین جای نداشتنش است، چون رسیدن به امروز
+            // از سالِ ۱۳۵۰ سه اسکرولِ بلند است.
+            TextButton(
+                onClick = { year = today.y; month = today.m; day = today.d },
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            ) {
+                Text("امروز")
+            }
+
+            GradientButton(
+                onClick = {
+                    val safeDay = day.coerceAtMost(JalaliCalendar.daysInMonth(year, month))
+                    onConfirm(PersianDate(year, month, safeDay))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                // ⚠️ «تأیید» با همزه بود و `CalendarPickerScreen` «تایید» بی همزه - یک
+                // واژه با دو نوشتار در دو نمای همان کار.
+                Text("تایید", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+internal val WheelItemHeight = 46.dp
+
+/** نگه‌داشتنِ بی‌حرکتِ انگشت روی چرخونه‌ی قفل این‌قدر = «می‌خواهم بچرخانم». */
+private const val HoldToSpinMillis = 160L
+
+private enum class GateGesture { Tap, PageScroll }
+
+/**
+ * ستونِ چرخونه‌ی اسکرولی - [itemHeight]/[visibleRows] پارامتری شدن (پیش‌فرض همون مقادیرِ چرخونه‌ی
+ * تمام‌صفحه) تا همین کامپوننت رو نسخه‌ی جمع‌وجورِ اینلاینِ [InlineWheelDateRow] هم بشه استفاده کرد،
+ * بدون تکرارِ منطقِ اسنپ/هپتیک/محو‌شدنِ لبه‌ها.
+ */
+@Composable
+internal fun WheelColumn(
+    items: List<String>,
+    selectedIndex: Int,
+    onCentered: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    itemHeight: Dp = WheelItemHeight,
+    visibleRows: Int = 5,
+    scrollEnabled: Boolean = true,
+    onUnlock: (() -> Unit)? = null,
+) {
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex.coerceAtLeast(0))
+    val fling = rememberSnapFlingBehavior(lazyListState = listState)
+    val haptic = LocalHapticFeedback.current
+    val view = LocalView.current
+    val itemPx = with(LocalDensity.current) { itemHeight.toPx() }
+
+    // چرخونه یه کنترلِ خودکفا و محدوده‌ست - نباید اسکرول/فلینگِ ته‌مونده‌ش (وقتی سریع می‌چرخونی و
+    // به مرز لیست می‌رسه) به صفحه‌ی بیرونی درز کنه و کل صفحه رو هم یه‌کم پایین بیاره. با مصرفِ کاملِ
+    // مقدارِ باقی‌مونده تو postScroll/postFling جلوی این «درز» رو می‌گیریم.
+    val blockOverscrollLeak = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset =
+                available
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
+                available
+        }
+    }
+
+    val centered by remember {
+        derivedStateOf {
+            (listState.firstVisibleItemIndex + (listState.firstVisibleItemScrollOffset / itemPx).roundToInt())
+                .coerceIn(0, items.lastIndex.coerceAtLeast(0))
+        }
+    }
+
+    LaunchedEffect(centered) {
+        if (centered != selectedIndex) {
+            onCentered(centered)
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            view.playSoundEffect(SoundEffectConstants.CLICK)
+        }
+    }
+
+    // 🚨 یافته‌ی ۴۱: چرخونه‌ی اینلاین وسطِ فرمِ اسکرولی «اسکرولِ صفحه را می‌دزدید» - کاربر
+    // صفحه را می‌کشید، انگشتش روی چرخ بود و ماه بی‌صدا آبان → اسفند می‌شد. حالا با [onUnlock]
+    // چرخونه قفل است: کشیدنِ سریع = اسکرولِ صفحه؛ لمس = باز شدن برای کشیدن‌های بعدی؛ نگه‌داشتنِ
+    // بی‌حرکت ([HoldToSpinMillis]) = همان لحظه با همان انگشت بچرخان.
+    val scope = rememberCoroutineScope()
+    val enabledNow by rememberUpdatedState(scrollEnabled)
+    val gate = if (onUnlock == null) Modifier else Modifier.pointerInput(Unit) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            if (enabledNow) return@awaitEachGesture
+            val slop = viewConfiguration.touchSlop
+            val decided = withTimeoutOrNull(HoldToSpinMillis) {
+                while (true) {
+                    val ch = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id }
+                        ?: return@withTimeoutOrNull GateGesture.Tap
+                    if (!ch.pressed) return@withTimeoutOrNull GateGesture.Tap
+                    if ((ch.position - down.position).getDistance() > slop) return@withTimeoutOrNull GateGesture.PageScroll
+                }
+                @Suppress("UNREACHABLE_CODE") GateGesture.Tap
+            }
+            when (decided) {
+                GateGesture.PageScroll -> Unit
+                GateGesture.Tap -> onUnlock()
+                null -> {
+                    onUnlock()
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    while (true) {
+                        val ch = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
+                        if (!ch.pressed) break
+                        val dy = ch.positionChange().y
+                        if (dy != 0f) { listState.dispatchRawDelta(-dy); ch.consume() }
+                    }
+                    scope.launch { listState.animateScrollToItem(centered) }
+                }
+            }
+        }
+    }
+
+    // مستطیلِ روشن دورِ ردیفِ انتخاب‌شده‌ی **همین ستون** (خواسته‌ی کاربر، ۱۶ مهر: «روی روز، ماه و
+    // سال هرکدام یک مستطیل باشد») - قبلاً یک نوارِ کم‌رنگِ سراسری بود و انتخاب دیده نمی‌شد.
+    Box(modifier = modifier.then(gate), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp)
+            .height(itemHeight)
+            .background(AppPrimaryPill, RoundedCornerShape(10.dp))
+            .border(1.5.dp, AppPrimary.copy(alpha = 0.7f), RoundedCornerShape(10.dp)),
+    )
+    LazyColumn(
+        state = listState,
+        flingBehavior = fling,
+        userScrollEnabled = scrollEnabled,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(itemHeight * visibleRows)
+            .nestedScroll(blockOverscrollLeak),
+        contentPadding = PaddingValues(vertical = itemHeight * (visibleRows / 2)),
+    ) {
+        itemsIndexed(items, key = { i, _ -> i }) { i, label ->
+            val distance = abs(i - centered)
+            val itemAlpha = when (distance) {
+                0 -> 1f
+                1 -> 0.55f
+                2 -> 0.3f
+                else -> 0.15f
+            }
+            Box(
+                modifier = Modifier.fillMaxWidth().height(itemHeight),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = label,
+                    color = if (distance == 0) AppPrimary else AppText,
+                    fontSize = if (distance == 0) 17.sp else 13.sp,
+                    fontWeight = if (distance == 0) FontWeight.Bold else FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.alpha(itemAlpha),
+                )
+            }
+        }
+    }
+}
+}

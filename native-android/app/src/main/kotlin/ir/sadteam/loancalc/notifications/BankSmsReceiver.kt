@@ -1,0 +1,258 @@
+package ir.sadteam.loancalc.notifications
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.provider.Telephony
+import dagger.hilt.android.AndroidEntryPoint
+import ir.sadteam.loancalc.core.BankSmsParser
+import ir.sadteam.loancalc.core.smsDedupeFingerprint
+import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.MerchantCategoryGuesser
+import ir.sadteam.loancalc.core.TransactionType
+import ir.sadteam.loancalc.core.smsSenderMatches
+import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.InboxRepository
+import ir.sadteam.loancalc.data.db.InboxMessageEntity
+import ir.sadteam.loancalc.data.ParsingRuleRepository
+import ir.sadteam.loancalc.data.prefs.UiPrefs
+import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+
+/**
+ * خوندنِ خودکارِ پیامکِ بانکی و ثبتِ خودکارِ تراکنش - رجوع کن به CLAUDE.md، «خوندنِ خودکارِ پیامکِ
+ * بانکی». عمداً هیچ داده‌ای هیچ‌جا فرستاده نمی‌شه (نه سرور، نه سرویسِ ثالث) - فقط یه تراکنشِ محلی
+ * ساخته می‌شه که مثلِ هر تراکنشِ دیگه‌ای بعداً قابلِ‌حذف/ویرایشه (چون تشخیصِ خودکار همیشه ۱۰۰٪
+ * درست نیست - رجوع کن به کامنتِ BankSmsParser). فقط وقتی [UiPrefs.smsAutoImportEnabled] روشن
+ * باشه کاری می‌کنه (پیش‌فرض خاموش - کاربر باید صریح از تنظیمات فعالش کنه، چون RECEIVE_SMS/READ_SMS
+ * مجوزِ حساسیه).
+ */
+@AndroidEntryPoint
+class BankSmsReceiver : BroadcastReceiver() {
+    @Inject lateinit var accountRepository: AccountRepository
+
+    @Inject lateinit var inboxRepository: InboxRepository
+
+    @Inject
+    lateinit var parsingRuleRepository: ParsingRuleRepository
+
+    @Inject lateinit var uiPrefs: UiPrefs
+
+    @Inject lateinit var authPrefs: ir.sadteam.loancalc.data.prefs.AuthPrefs
+
+    @Inject lateinit var billDao: ir.sadteam.loancalc.data.db.BillDao
+
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
+        val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
+        if (messages.isNullOrEmpty()) return
+        val body = messages.joinToString("") { it.messageBody ?: "" }
+        if (body.isBlank()) return
+        val sender = messages.firstNotNullOfOrNull { it.originatingAddress }
+
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                if (!uiPrefs.smsAutoImportEnabled.first()) return@launch
+                // خوندنِ خودکار مالِ اشتراک است (۷ مهر)؛ بعدِ پایانش بی‌صدا متوقف می‌شود.
+                if (!authPrefs.subscribed.first()) return@launch
+                val accounts = accountRepository.observeAccounts().first()
+                // سرشماره‌ای که کاربر خودش به یک حساب وصل کرده = منبعِ مطمئن (مثلِ اپِ بانکِ انتخاب‌شده
+                // در مسیرِ اعلان)؛ پیامکِ کوتاهِ بی «مانده/کارت» هم پذیرفته می‌شود (۱۶ مهر).
+                val linkedSender = accounts.any { it.smsEnabled && !it.smsSender.isNullOrBlank() && smsSenderMatches(it.smsSender, sender) }
+                // 🔒 پیامکِ شخصی (شماره‌ی موبایل) هرگز خوانده نمی‌شود، مگر خودِ کاربر آن شماره را به حسابی وصل کرده باشد.
+                if (!linkedSender && ir.sadteam.loancalc.core.isPersonalSmsSender(sender)) return@launch
+                val parsed = BankSmsParser.parse(body, trustedSource = linkedSender) ?: run {
+                    noteUnparsedBankSms(accounts, sender, body)
+                    return@launch
+                }
+                // ترتیبِ تشخیصِ حساب، از مطمئن‌ترین به ضعیف‌ترین:
+                // ۱) شماره/سرشماره‌ی پیامکی که کاربر خودش موقعِ ساختِ حساب وصل کرده (خواسته‌ی صریحِ
+                //    کاربر - قابلِ‌اعتمادترین، چون هر بانک سرشماره‌ی خودش رو داره)
+                // ۲) ۴ رقمِ آخرِ کارت اگه تو متنِ پیامک اومده باشه
+                // ۳) اگه هیچ حسابی سرشماره ثبت نکرده، همون رفتارِ قبلی (حسابِ اول) - ولی اگه حداقل
+                //    یه حساب سرشماره داره، دیگه حدس نمی‌زنیم و پیامکِ ناشناس نادیده گرفته می‌شه،
+                //    وگرنه پیامکِ بانکِ B بی‌سروصدا رو حسابِ بانکِ A ثبت می‌شد.
+                // کلیدِ هر بانک: حسابی که کاربر خاموشش کرده اصلاً نامزدِ تطبیق نیست.
+                // 🚨 (۲ آبان) سرشماره‌ای که صریحاً نامِ بانکِ دیگری دارد («TejaratBank» برای حسابِ بلو) اصلاً
+                // نامزدِ آن حساب نیست - حتی اگر قبلاً اشتباهی یاد گرفته شده باشد.
+                val candidates = accounts.filter {
+                    it.smsEnabled && it.type == ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK &&
+                        !ir.sadteam.loancalc.core.smsSenderConflictsWithBank(sender, it.bankName)
+                }
+                // ⚠️ سرشماره اول **مجموعه‌ی نامزدها** را محدود می‌کند، بعد شماره‌ی کارت بینِ
+                // همان‌ها تصمیم می‌گیرد. قبلاً اولین تطبیقِ سرشماره فوراً برنده می‌شد، پس با دو
+                // حساب در یک بانک، پیامکی که صریحاً چهار رقمِ آخرِ کارتِ دوم را داشت روی حسابِ
+                // اول می‌نشست.
+                val sameSender = candidates.filter { acc -> smsSenderMatches(acc.smsSender, sender) }
+                val byCard = { acc: ir.sadteam.loancalc.data.db.AccountEntity ->
+                    parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
+                }
+                val account = sameSender.firstOrNull(byCard)
+                    ?: sameSender.firstOrNull()
+                    ?: candidates.firstOrNull(byCard)
+                    ?: candidates.takeIf { list -> list.none { !it.smsSender.isNullOrBlank() } }?.firstOrNull()
+                    // نامِ بانک در متنِ پیامک («بانک ملت») با نامِ بانکِ حساب - مثلِ تطبیقِ نامِ اپ در مسیرِ اعلان.
+                    ?: candidates.filter { acc ->
+                        val b = acc.bankName.replace("بانک", "").trim()
+                        b.length >= 2 && body.contains(b)
+                    }.singleOrNull()
+                    ?: run {
+                        // مثلِ مسیرِ اعلان: بی‌صدا دور نریز - یک بار در روز برای هر سرشماره بگو چه کند.
+                        val today = JalaliCalendar.today()
+                        if (!sender.isNullOrBlank() && candidates.isNotEmpty() &&
+                            uiPrefs.claimAutoImportKey("smsnoacc|$sender|${today.y}-${today.m}-${today.d}")
+                        ) {
+                            inboxRepository.post(
+                                kind = InboxMessageEntity.Kind.SYSTEM,
+                                title = "پیامکِ بانکی بی‌حساب ماند",
+                                body = "از «$sender» یک تراکنش آمد ولی به هیچ حسابی وصل نیست. حسابش را همین‌جا انتخاب کن تا از این به بعد خودکار ثبت شود.",
+                                // یافته‌ی ۸۱: دکمه‌ی یک‌لمسیِ «وصل به حساب» در پیام.
+                                refId = ir.sadteam.loancalc.data.LINK_SOURCE_PREFIX + sender,
+                                sourceLabel = "پیامک از $sender",
+                                sourceText = body,
+                            )
+                        }
+                        return@launch
+                    }
+
+                // هم‌الگو با BankNotificationListener: یک پیامک که دو بار تحویل شود (تکرارِ
+                // شبکه یا اجرای دوباره‌ی receiver) نباید دو تراکنش بسازد.
+                val importKey = "sms|$sender|${parsed.type}|${parsed.amountRial}|${parsed.cardSuffix.orEmpty()}|${smsDedupeFingerprint(body)}"
+                if (!uiPrefs.claimAutoImportKey(importKey)) return@launch
+
+                val today = JalaliCalendar.today()
+                val isWithdrawal = parsed.type == TransactionType.WITHDRAWAL
+                // ترتیبِ دسته‌بندی: ۱) قاعده‌ی دستیِ خودِ کاربر (مرتب، اولین تطبیق برنده) ۲)
+                // حدسِ کلیدواژه‌ای از رو متنِ پیامک (بندِ ۲.۲) ۳) دسته‌ی کورِ قبلی، وقتی هیچ‌کدوم
+                // مطمئن نبودن - و تو این حالتِ آخر پیامِ اعلان صریح می‌گه کاربر باید خودش انتخاب کنه.
+                val ruleCategory = parsingRuleRepository.firstMatch(body, isWithdrawal)?.category
+                val guessedCategory = ruleCategory ?: MerchantCategoryGuesser.guess(body, isWithdrawal)
+                val confident = guessedCategory != null
+                val category = guessedCategory ?: if (isWithdrawal) "سایر هزینه" else "سایر درآمد"
+                // ⚠️ **تاییدنشده** (تصمیمِ صریحِ کاربر) - تا تاییدِ خودش رو موجودی اثر نمی‌ذاره.
+                ir.sadteam.loancalc.data.UsageStats.action("sms_auto_tx")
+                if (accountRepository.hasRecentAutoTwin(account.id, parsed.type, parsed.amountRial, "پیامکِ $sender")) return@launch
+                val txId = accountRepository.addTransaction(
+                    accountId = account.id,
+                    type = parsed.type,
+                    amount = parsed.amountRial,
+                    // 🧠 (۱۴ مهر) اسمِ طرفِ حساب («به مبینا فتحی») - هم خواناتر، هم کلیدِ یادگیریِ دسته.
+                description = ir.sadteam.loancalc.core.Counterparty.extract(body, isWithdrawal)
+                    ?.let { (if (isWithdrawal) "به " else "از ") + it } ?: "خودکار از پیامکِ بانکی",
+                    year = today.y,
+                    month = today.m,
+                    day = today.d,
+                    category = category,
+                    confirmed = false,
+                    // `71a`: منبع روی خودِ تراکنش می‌نشیند، نه فقط در مرکزِ پیام‌ها.
+                    originLabel = "پیامکِ $sender",
+                )
+                // 🧾 پرداختِ قبض: اگر برداشت و متن «قبض» دارد، قبضِ منطبق را برای این دوره
+                // «پرداخت‌شده» می‌زنیم (تراکنش همین بالا ساخته شد؛ دوباره ثبت نمی‌شود).
+                if (isWithdrawal && "قبض" in body) runCatching {
+                    val text = ir.sadteam.loancalc.core.BillCodes.normalizeDigits(body)
+                    val key = "${today.y}-${today.m}"
+                    val bills = billDao.getAll().filter { it.lastPaidKey != key }
+                    val kind = ir.sadteam.loancalc.core.BillCodes.guessKind(text)
+                    val match = bills.firstOrNull { b -> !b.billId.isNullOrBlank() && b.billId!! in text }
+                        ?: bills.filter { it.kind == kind }.singleOrNull()
+                    if (match != null) billDao.upsert(match.copy(lastPaidKey = key, lastAmount = parsed.amountRial))
+                }
+                // برداشت از یک حسابِ خودت + واریزِ همان مبلغ به حسابِ دیگرت = جابه‌جایی، نه خرج و درآمد.
+                // اول: اگر مقصدِ برداشت شماره‌کارت/حساب/شبای یکی از حساب‌های خودت است، همین حالا جابه‌جایی.
+                runCatching {
+                    val dest = if (parsed.type == TransactionType.WITHDRAWAL) accountRepository.ownDestinationOf(body, account.id) else null
+                    if (dest != null) accountRepository.markOwnTransfer(txId, dest.id) else accountRepository.pairAutoTransfer(txId)
+                }
+                // ۱۱ آبان: جابه‌جایی؟ اعلان/پیام باید همین را بگویند. تکراریِ حذف‌شده (سمتِ دیگرش قبلاً از
+                // پیامکِ اول ساخته شده) نه پیام می‌خواهد نه اعلان.
+                val transfer = runCatching { accountRepository.transferInfo(txId) }.getOrNull()
+                val skipNotice = transfer?.removed == true
+                // پیامِ «برداشتِ تازه»ِ سمتِ اول دیگر معنا ندارد - همین جابه‌جایی جایش را می‌گیرد.
+                transfer?.otherLegId?.let { runCatching { inboxRepository.resolveByRefId(it.toString(), done = true) } }
+                // واحد **تومان** و رقمِ فارسی - قبلاً «ریال»ِ لاتین بود (بندِ ۹ی تحویلِ اعلان‌ها).
+                val amountToman = fmt(rialToToman(parsed.amountRial.toLong()).toDouble()).faDigits()
+                if (!skipNotice) inboxRepository.post(
+                    kind = InboxMessageEntity.Kind.DETECTED_TX,
+                    title = if (transfer != null) "جابه‌جایی بینِ حساب‌هایت" else if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه",
+                    body = if (transfer != null) {
+                    "$amountToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} از «${transfer.fromName}» به «${transfer.toName}» - خرج یا درآمد حساب نمی‌شود. درست است؟"
+                } else if (confident) {
+                        "$amountToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} از «${account.name}» - دسته: $category. تایید می‌کنی؟"
+                    } else {
+                        "$amountToman ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} از «${account.name}» - دسته‌بندیش نامشخصه، لمس کن و خودت انتخاب کن."
+                    },
+                    refId = txId.toString(),
+                    // منبع: کاربر باید بتواند بگوید این کارت از کدام پیامک ساخته شده. بی این،
+                    // تشخیصِ غلط قابلِ ردیابی نیست.
+                    sourceLabel = "پیامک از $sender",
+                    sourceText = body,
+                )
+                // 🚨 بندِ ۷ی تحویل: مسیرِ پیامک هم مثلِ مسیرِ اعلانِ بانکی باید اعلان بدهد،
+                // وگرنه تراکنشِ پیامکی بی‌خبر و تاییدنشده می‌ماند.
+                if (!skipNotice && uiPrefs.autoTxNotifyEnabled.first()) AutoTxNotifier.notify(
+                    context = context.applicationContext,
+                    txId = txId,
+                    amountRial = parsed.amountRial,
+                    accountName = account.name,
+                    category = category,
+                    isWithdrawal = isWithdrawal,
+                    confident = confident,
+                    privacyMode = uiPrefs.privacyModeEnabled.first(),
+                    sourceLabel = "پیامک از $sender",
+                    transfer = transfer,
+                )
+                uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
+                // زمانِ آخرین پیامکِ **همین حساب** - زیرنویسِ صفحه‌ی تنظیماتِ پیامک از این ساخته می‌شه.
+                val updated = account.copy(lastSmsAt = System.currentTimeMillis())
+                accountRepository.updateAccount(updated)
+                // حساب با سرشماره یا کارت پیدا شد، نه با حدس (حسابِ اول / نامِ بانک در متن).
+                val sureMatch = account in sameSender || byCard(account)
+                // 🧠 با کارت پیدا شد ولی سرشماره وصل نبود → از این به بعد وصل باشد. حدس هرگز یاد گرفته
+                // نمی‌شود (۲ آبان: حدسِ «حسابِ اول» سرشماره‌ی تجارت را برای همیشه به حسابِ بلو چسبانده بود).
+                if (account !in sameSender && byCard(account)) runCatching { accountRepository.learnSender(updated, sender.orEmpty()) }
+                // 🧠 مانده‌ی بانک در برابرِ موجودیِ ثبت‌شده - روزی یک بار برای هر حساب.
+                // فقط وقتی مطمئنیم پیامک مالِ همین حساب است؛ وگرنه «مانده»ی بانکِ دیگری مقایسه می‌شود.
+                if (sureMatch) parsed.balanceRial?.let { bankBal ->
+                    runCatching {
+                        ir.sadteam.loancalc.ui.inbox.reportBalanceGap(accountRepository, inboxRepository, uiPrefs, updated, bankBal, "پیامک از $sender", body)
+                    }
+                }
+            } finally {
+                pendingResult.finish()
+            }
+        }
+    }
+
+    /**
+     * پیامکی از سرشمارهِ یکی از حساب‌های خودِ کاربر که شبیهِ تراکنش است ولی خوانده نشد: به‌جای
+     * سکوت، یک پیامِ بی‌صدا در «پیام‌ها». متنِ پیامک و مبلغ در آن نمی‌آید؛ هر سرشماره روزی یک بار.
+     */
+    private suspend fun noteUnparsedBankSms(
+        accounts: List<ir.sadteam.loancalc.data.db.AccountEntity>,
+        sender: String?,
+        body: String,
+    ) {
+        if (sender.isNullOrBlank()) return
+        val ours = accounts.any { it.smsEnabled && !it.smsSender.isNullOrBlank() && smsSenderMatches(it.smsSender, sender) }
+        if (!ours) return
+        val looksMoney = body.count { it.isDigit() } >= 4 &&
+            listOf("ریال", "مبلغ", "مانده", "برداشت", "واریز", "خرید").any { body.contains(it) }
+        if (!looksMoney) return
+        val today = JalaliCalendar.today()
+        if (!uiPrefs.claimAutoImportKey("unparsed|$sender|${today.y}-${today.m}-${today.d}")) return
+        inboxRepository.post(
+            kind = InboxMessageEntity.Kind.SYSTEM,
+            title = "یک پیامکِ بانک را نفهمیدم",
+            body = "از سرشمارهِ «$sender» پیامکی آمد که نتوانستم بخوانم. اگر تراکنش بود، دستی ثبتش کن؛ " +
+                "یا در «تنظیمات ← پیامک‌های بانکی» برایش قاعده بساز.",
+        )
+    }
+}

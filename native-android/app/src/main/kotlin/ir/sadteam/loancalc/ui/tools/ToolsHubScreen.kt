@@ -1,0 +1,182 @@
+package ir.sadteam.loancalc.ui.tools
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPurple
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppWarning
+import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import ir.sadteam.loancalc.ui.text.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.core.RecurringDetector
+import ir.sadteam.loancalc.core.RecurringInput
+import ir.sadteam.loancalc.core.TransactionType
+import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.accounting.SubscriptionFinderScreen
+import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.theme.AppBg
+import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppText
+
+/** درِ واحدِ ابزارهای مالی: اشتراک‌یاب، دنگ و استعلام چک صیادی. */
+@Composable
+fun ToolsHubScreen(
+    onBack: () -> Unit,
+    onOpenArchive: () -> Unit,
+    onOpenDeng: () -> Unit,
+    onOpenSayad: () -> Unit,
+    onOpenNotes: () -> Unit,
+    accountViewModel: AccountViewModel = hiltViewModel(),
+) {
+    val transactions by accountViewModel.transactions.collectAsState()
+    val subscriptions = remember(transactions) {
+        RecurringDetector.detect(
+            transactions
+                .filter { it.type == TransactionType.WITHDRAWAL.name && ir.sadteam.loancalc.data.countsInReports(it) }
+                .map {
+                    RecurringInput(
+                        description = it.description,
+                        amountRial = it.amount,
+                        year = it.year,
+                        month = it.month,
+                        day = it.day,
+                        category = it.category,
+                    )
+                },
+        )
+    }
+    var openSubscriptions = remember { androidx.compose.runtime.mutableStateOf(false) }
+
+    if (openSubscriptions.value) {
+        SubscriptionFinderScreen(
+            subscriptions = subscriptions,
+            onBack = { openSubscriptions.value = false },
+            accountViewModel = accountViewModel,
+        )
+        return
+    }
+    BackHandler(onBack = onBack)
+
+    Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
+        LazyColumn(
+            contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 40.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            item {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
+                    }
+                    Text("ابزارها", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                }
+            }
+            item {
+                ToolCard(
+                    icon = Icons.Outlined.Description,
+                    title = "آرشیو سالانه",
+                    text = "خلاصهٔ درآمد، هزینه و خالص هر سال را از تراکنش‌ها ببین.",
+                    action = "باز کردن آرشیو",
+                    onClick = onOpenArchive,
+                )
+            }
+            item {
+                ToolCard(
+                    icon = Icons.Outlined.Autorenew,
+                    title = "اشتراک‌های فراموش‌شده",
+                    text = if (subscriptions.isEmpty()) "خرج‌های ماهانهٔ تکراری را از روی تراکنش‌ها پیدا می‌کند."
+                    else "${ir.sadteam.loancalc.core.toFa(subscriptions.size)} خرجِ تکراری پیدا شد - ببین کدام را لازم نداری.",
+                    tint = AppDanger,
+                    action = "دیدن اشتراک‌ها",
+                    onClick = { openSubscriptions.value = true },
+                )
+            }
+            // «دنگ» از این صفحه برداشته شد (۱۴ مهر) - فقط در دسترسیِ سریع، یک‌جا.
+            item {
+                // 🚨 **صفحه‌ی یادداشت از قبل ساخته شده بود ولی هیچ دری نداشت** - موقعِ
+                // بازطراحیِ تنظیمات ورودی‌اش رفت و جایگزین نشد، پس قابلیتی کامل روی
+                // دیسک می‌خوابید. این کارت همان در است.
+                ToolCard(
+                    icon = Icons.Outlined.EditNote,
+                    title = "یادداشت‌ها",
+                    tint = AppWarning,
+                    text = "یادداشتِ تاریخ‌دار با یادآور - مستقل از وام و چک.",
+                    action = "رفتن به یادداشت‌ها",
+                    onClick = onOpenNotes,
+                )
+            }
+            item {
+                ToolCard(
+                    icon = Icons.Outlined.Description,
+                    title = "استعلام صیادی",
+                    tint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk,
+                    text = "راهنمای استعلام اعتبار چک صیادی از سایت یا پیامک.",
+                    action = "استعلام چک",
+                    onClick = onOpenSayad,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ToolCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    text: String,
+    action: String,
+    tint: Color = AppPrimary,
+    onClick: () -> Unit,
+) {
+    // بازطراحیِ ۸ مهر: ردیفِ قابل‌لمس با کاشیِ رنگی و فلش، به‌جای دکمه‌ی سبزِ بزرگ در هر کارت
+    // (هم‌سبکِ منوی «محاسبه‌گر»). `action` برای خواننده‌ی صفحه می‌ماند.
+    AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick).semantics { contentDescription = action }) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(46.dp).clip(RoundedCornerShape(AppRadius.icon)).background(tint.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp)) }
+            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                Text(title, color = AppText, fontWeight = FontWeight.Black, fontSize = 15.sp)
+                Text(text, color = AppMuted, fontSize = 12.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 3.dp))
+            }
+            Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.padding(start = 6.dp).size(22.dp))
+        }
+    }
+}

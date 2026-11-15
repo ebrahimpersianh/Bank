@@ -1,0 +1,49 @@
+name: ساختِ کدِ هدیه‌ی اشتراک (۱ تا ۱۵ روز)
+
+# اجرای دستی. کد رو **سرور** می‌سازه و یک‌بارمصرفه؛ خروجی تو لاگِ همین ران دیده می‌شه.
+# پیش‌نیاز: یک‌بار اجرای `set-admin-token-env.yml`.
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "مدتِ هدیه به روز (۱ تا ۱۵)"
+        required: true
+        default: "7"
+      count:
+        description: "چند کد ساخته بشه"
+        required: true
+        default: "1"
+      note:
+        description: "یادداشت (مثلاً: گزارشِ باگِ فلان کاربر)"
+        required: false
+        default: ""
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ساختِ کد از طریقِ خودِ سرور
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: DAYS,COUNT,NOTE
+          script: |
+            set -e
+            cd ~/VameMan
+            TOKEN=$(grep '^ADMIN_TOKEN=' .env | cut -d= -f2-)
+            if [ -z "$TOKEN" ]; then
+              echo "::error::ADMIN_TOKEN تنظیم نشده. اول ورک‌فلوی set-admin-token-env رو اجرا کن."
+              exit 1
+            fi
+            # درخواست از رو خودِ سرور به localhost می‌ره، پس رمز از اینترنت رد نمی‌شه.
+            curl -sS -X POST "http://localhost:3000/api/gift/create" \
+              -H "Content-Type: application/json" \
+              -H "X-Admin-Token: $TOKEN" \
+              -d "{\"days\": $DAYS, \"count\": $COUNT, \"note\": \"$NOTE\"}"
+            echo ""
+        env:
+          DAYS: ${{ inputs.days }}
+          COUNT: ${{ inputs.count }}
+          NOTE: ${{ inputs.note }}

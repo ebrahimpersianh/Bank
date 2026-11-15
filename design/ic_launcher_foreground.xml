@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- جیبک — لایه‌ی طرحِ آیکون، طبقِ فریمِ ۳۸b. ۱۰۸×۱۰۸dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- سکه‌ی عقب -->
+    <path
+        android:fillColor="#D9A32C"
+        android:pathData="M39.86,40.38 m-16.03,0 a16.03,16.03 0 1,0 32.06,0 a16.03,16.03 0 1,0 -32.06,0 Z" />
+    <path
+        android:fillColor="#F0C356"
+        android:pathData="M39.86,40.38 m-10.33,0 a10.33,10.33 0 1,0 20.66,0 a10.33,10.33 0 1,0 -20.66,0 Z" />
+
+    <!-- سکه‌ی جلو -->
+    <path
+        android:fillColor="#E8B43C"
+        android:pathData="M68.34,36.80 m-17.93,0 a17.93,17.93 0 1,0 35.86,0 a17.93,17.93 0 1,0 -35.86,0 Z" />
+    <path
+        android:fillColor="#FFD979"
+        android:pathData="M68.34,36.80 m-11.60,0 a11.60,11.60 0 1,0 23.20,0 a11.60,11.60 0 1,0 -23.20,0 Z" />
+
+    <!-- درِ کیف — از لبه تا لبه، پایین بیرون می‌زند -->
+    <path
+        android:fillColor="#0EA968"
+        android:pathData="M0,108 L0,54.85 C0,47.86 5.67,42.19 12.66,42.19 L95.34,42.19 C102.33,42.19 108,47.86 108,54.85 L108,108 Z" />
+
+    <!-- بدنه‌ی کیف، زیرِ درز -->
+    <path
+        android:fillColor="#0B8C57"
+        android:pathData="M0,69.82 L108,69.82 L108,108 L0,108 Z" />
+
+    <!-- درزِ زیرِ در -->
+    <path
+        android:fillColor="#096F45"
+        android:pathData="M0,68.13 L108,68.13 L108,69.82 L0,69.82 Z" />
+
+    <!-- قفل -->
+    <path
+        android:fillColor="#E3B94F"
+        android:pathData="M50.42,63.28 L57.58,63.28 C59.56,63.28 61.17,64.89 61.17,66.87 L61.17,70.03 C61.17,72.01 59.56,73.62 57.58,73.62 L50.42,73.62 C48.44,73.62 46.83,72.01 46.83,70.03 L46.83,66.87 C46.83,64.89 48.44,63.28 50.42,63.28 Z" />
+</vector>

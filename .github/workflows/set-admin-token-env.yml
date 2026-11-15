@@ -1,0 +1,56 @@
+name: تنظیمِ رمزِ مدیریت رو VPS (برای ساختِ کدِ هدیه)
+
+# اجرای دستی. رمزِ مدیریت تنها کلیدِ ساختِ «کدِ هدیه»ست؛ بدونش مسیرِ
+# POST /api/gift/create روی سرور **بسته** می‌مونه (نه بی‌قفل).
+#
+# 🚨 رمز رو خودِ این ورک‌فلو می‌سازه و **هیچ‌وقت چاپش نمی‌کنه**؛ فقط تو `.env`ِ سرور
+# می‌شینه. برای دیدنش باید با SSH خودت `grep ADMIN_TOKEN ~/VameMan/.env` بزنی.
+# اگه سکرتِ ADMIN_TOKEN تو گیت‌هاب ست شده باشه، همون استفاده می‌شه.
+on:
+  workflow_dispatch:
+
+jobs:
+  set-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: چک کردنِ سکرت‌های اتصال به سرور
+        run: |
+          missing=""
+          [ -z "${{ secrets.VPS_HOST }}" ] && missing="$missing VPS_HOST"
+          [ -z "${{ secrets.VPS_USER }}" ] && missing="$missing VPS_USER"
+          [ -z "${{ secrets.VPS_SSH_KEY }}" ] && missing="$missing VPS_SSH_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::این سکرت‌ها ست نشدن:$missing"
+            exit 1
+          fi
+
+      - name: نوشتنِ ADMIN_TOKEN تو .env و ری‌استارتِ سرویس
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: ADMIN_TOKEN_INPUT
+          script: |
+            set -e
+            cd ~/VameMan
+            touch .env
+            # رمزِ از پیش‌موجود دست‌نخورده می‌مونه: اجرای دوباره‌ی این ورک‌فلو نباید
+            # کدسازِ فعلی رو بی‌اعتبار کنه.
+            if grep -q '^ADMIN_TOKEN=' .env; then
+              echo "ADMIN_TOKEN از قبل تنظیم شده - دست‌نخورده موند."
+            else
+              if [ -n "$ADMIN_TOKEN_INPUT" ]; then
+                TOKEN="$ADMIN_TOKEN_INPUT"
+              else
+                TOKEN=$(head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 40)
+              fi
+              printf '%s=%s\n' "ADMIN_TOKEN" "$TOKEN" >> .env
+              chmod 600 .env
+              echo "ADMIN_TOKEN ساخته و ذخیره شد (عمداً چاپ نمی‌شه)."
+            fi
+            pm2 restart loan-calc-api
+            sleep 3
+            pm2 describe loan-calc-api | grep -q "online" && echo "OK: سرویس بالاست" || (echo "سرویس بالا نیومد!"; exit 1)
+        env:
+          ADMIN_TOKEN_INPUT: ${{ secrets.ADMIN_TOKEN }}

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- همان قرصِ فلش‌دار: قرصِ نیمه‌شفاف، فلشِ بالا و پایین، خطِ سبزِ مقدارِ صدا -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#33FFFFFF"
+        android:pathData="M54,28 a12,12 0 0 1 12,12 v28 a12,12 0 0 1 -24,0 v-28 a12,12 0 0 1 12,-12 z" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="3.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M48,40 L54,34 L60,40" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="3.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M48,68 L54,74 L60,68" />
+    <path
+        android:strokeColor="#40FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M54,46 L54,62" />
+    <path
+        android:strokeColor="#FF3DDC96"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M54,52 L54,62" />
+</vector>

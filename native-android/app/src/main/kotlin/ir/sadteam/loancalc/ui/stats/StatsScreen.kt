@@ -1,0 +1,463 @@
+package ir.sadteam.loancalc.ui.stats
+
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.HourglassBottom
+import androidx.compose.material.icons.filled.EventAvailable
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.GridOn
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import ir.sadteam.loancalc.ui.text.Text
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.core.fmt
+// 🚨 این صفحه تنها جای برنامه بود که **ریال** چاپ می‌کرد؛ بقیه همه تومان‌اند
+// (قاعده‌ی ثبت‌شده: دیتابیس ریال، نمایش تومان). خواسته‌ی کاربر در دورِ ۹ هم همین بود:
+// «بخش‌های مختلفِ سیستم باید مچ باشند».
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.HeroMuted
+import ir.sadteam.loancalc.ui.components.HeroPillBg
+import ir.sadteam.loancalc.ui.components.HeroTone
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.InAppBannerHost
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.components.rememberInAppBanner
+import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppInfoPill
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import ir.sadteam.loancalc.ui.myloans.AddManualLoanScreen
+import ir.sadteam.loancalc.ui.components.EmptyState
+import androidx.compose.material.icons.outlined.BarChart
+
+/**
+ * پورت مفهومی «آمار و گزارشات» اپ رقیب (VAMMAN) - ۶ کارت آماری بزرگ + یه نمودار دونات ساده (رسم
+ * دستی با Canvas، بدون کتابخونه‌ی نمودارِ جدید) + دانلود PDF (با [StatsPdfExporter]، از
+ * `android.graphics.pdf.PdfDocument` خودِ Android، نه کتابخونه‌ی PDF شخص‌ثالث).
+ */
+@Composable
+fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel()) {
+    val loans by viewModel.loans.collectAsState()
+    // 🚨 `summarize` حالا **suspend** است (از روی ردیف‌های واقعیِ قسط می‌خوانَد)، پس مثلِ
+    // `paymentHistory` باید در `LaunchedEffect` باشد نه `remember{}` - قاعده‌ی ثبت‌شده‌ی
+    // پروژه: صداکردنِ suspend داخلِ `remember{}` کرشِ تردِ اصلی می‌دهد.
+    var summary by remember { mutableStateOf(StatsSummary(0, 0.0, 0.0, 0.0, 0, 0)) }
+    LaunchedEffect(loans) { summary = viewModel.summarize(loans) }
+    // paymentHistory دیگه نمی‌تونه محاسبه‌ی همزمان (remember{}) باشه چون از رو رَدیف‌های واقعیِ Room
+    // (loan_rows) می‌خونه، نه دیگه از رو JSONِ درون‌حافظه‌ای - رجوع کن به CLAUDE.md.
+    var paymentHistory by remember { mutableStateOf<List<PaymentHistoryPoint>>(emptyList()) }
+    LaunchedEffect(loans) {
+        paymentHistory = viewModel.paymentHistory(loans)
+    }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val banner = rememberInAppBanner()
+
+    val createDocumentLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/pdf"),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch(Dispatchers.IO) {
+                val ok = runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { out ->
+                        StatsPdfExporter.export(summary, loans, out)
+                    }
+                }.isSuccess
+                withContext(Dispatchers.Main) {
+                    val message = if (ok) "PDF ذخیره شد" else "ذخیره‌ی PDF ناموفق بود"
+                    banner.show(message, isSuccess = ok)
+                }
+            }
+        }
+    }
+
+    val createXlsxLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch(Dispatchers.IO) {
+                val ok = runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { out ->
+                        StatsXlsxExporter.export(summary, loans, out)
+                    }
+                }.isSuccess
+                withContext(Dispatchers.Main) {
+                    val message = if (ok) "اکسل ذخیره شد" else "ذخیره‌ی اکسل ناموفق بود"
+                    banner.show(message, isSuccess = ok)
+                }
+            }
+        }
+    }
+
+    // بخشِ ۳۳ فایلِ طراحی (جدولِ `33d`): «آمارِ وام» حالتِ خالیِ اختصاصی داره - بدونِ وام،
+    // قبلاً یه صفحه‌ی پر از صفر و دوناتِ خالی نشون داده می‌شد. دکمه‌ی طرح («ثبتِ وام») همین‌جا
+    // فرمِ افزودنِ دستیِ وام رو باز می‌کنه چون این صفحه از «ابزارها» باز می‌شه و مسیرِ دیگه‌ای
+    // به تبِ وام نداره.
+    var addingLoan by remember { mutableStateOf(false) }
+    if (addingLoan) {
+        AddManualLoanScreen(
+            onSaved = { addingLoan = false },
+            onCancel = { addingLoan = false },
+        )
+        return
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
+            }
+            Text("آمار و گزارشات", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 4.dp))
+        }
+
+        if (loans.isEmpty()) {
+            EmptyState(
+                icon = Icons.Outlined.BarChart,
+                title = "وامی ثبت نشده",
+                description = "با ثبتِ وام، جدولِ اقساط ساخته می‌شود و آمارش همین‌جا می‌آید.",
+                actionLabel = "ثبتِ وام",
+                onAction = { addingLoan = true },
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+            )
+            return@Column
+        }
+
+        // صفحه‌ی آمار - **بنفش** طبقِ توکنِ «بنفش = بودجه و آمار»ِ سیستمِ طراحی (هم‌رنگِ کارتِ
+        // قهرمانِ تبِ گزارش، چون هر دو یه خانواده‌ی معنایی‌ان).
+        AppHeroCard(
+            tone = HeroTone.PURPLE,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+        ) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                ProgressDonut(ratio = summary.progressRatio)
+                Column(modifier = Modifier.weight(1f).padding(start = 14.dp)) {
+                    // رو زمینه‌ی بنفشِ مات همه‌ی متن‌ها سفیدن - رنگ‌های تم‌آگاه (AppText/AppMuted/
+                    // AppPrimary) اینجا نامرئی می‌شدن.
+                    Text("پرداخت‌شده", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman(summary.paidAmount.toLong()).toDouble())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
+                        color = Color.White,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                    Text(
+                        "مانده",
+                        color = HeroMuted,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    Text(
+                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman(summary.remainingAmount.toLong()).toDouble())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
+                        color = Color.White,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+        }
+
+        val exportGuard = ir.sadteam.loancalc.ui.subscription.premiumGuard()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            StatsExportTile(
+                icon = Icons.Outlined.Description,
+                label = "دانلود PDF",
+                onClick = { exportGuard("export", "خروجیِ PDF و اکسل") { createDocumentLauncher.launch("gozaresh-vamha.pdf") } },
+                modifier = Modifier.weight(1f),
+            )
+            StatsExportTile(
+                icon = Icons.Outlined.GridOn,
+                label = "دانلود اکسل",
+                onClick = { exportGuard("export", "خروجیِ PDF و اکسل") { createXlsxLauncher.launch("gozaresh-vamha.xlsx") } },
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        val statItems = listOf(
+            StatItem("تعداد وام‌ها", toFa(summary.loanCount), null, Icons.Filled.Payments),
+            StatItem("مجموع مبلغ وام‌ها", ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, fmt(rialToToman(summary.totalAmount.toLong()).toDouble())), "${ir.sadteam.loancalc.ui.jibak.unitFa()}", Icons.Filled.AccountBalance),
+            StatItem("مجموع پرداخت‌شده", ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, fmt(rialToToman(summary.paidAmount.toLong()).toDouble())), "${ir.sadteam.loancalc.ui.jibak.unitFa()}", Icons.Filled.CheckCircle),
+            StatItem("مانده‌ی کل", ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, fmt(rialToToman(summary.remainingAmount.toLong()).toDouble())), "${ir.sadteam.loancalc.ui.jibak.unitFa()}", Icons.Filled.HourglassBottom),
+            StatItem("اقساط پرداخت‌شده", toFa(summary.paidInstallments), "از ${toFa(summary.totalInstallments)}", Icons.Filled.EventAvailable),
+            StatItem("درصد پیشرفت", toFa((summary.progressRatio * 100).toInt()), "٪", Icons.Filled.TrendingUp),
+        )
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            statItems.chunked(2).forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    rowItems.forEach { item -> StatTile(item = item, modifier = Modifier.weight(1f)) }
+                    if (rowItems.size == 1) {
+                        Box(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+
+        if (paymentHistory.isNotEmpty()) {
+            AppCard(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+            ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("تاریخچه پرداخت (تجمعی)", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman(paymentHistory.last().cumulativeAmount.toLong()).toDouble())} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"), color = AppInfo, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                PaymentHistoryLineChart(points = paymentHistory, modifier = Modifier.padding(top = 10.dp))
+            }
+        }
+    }
+
+        InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+}
+
+/** مدتِ انیمیشنِ ورودِ هر دو نمودار (میلی‌ثانیه). */
+private const val CHART_ANIM_MS = 900
+
+@Composable
+private fun ProgressDonut(ratio: Double) {
+    val targetSweep = (ratio.coerceIn(0.0, 1.0) * 360f).toFloat()
+    // قبلاً کمانِ پیشرفت یهو کاملاً رسم می‌شد. حالا هر بار مقدارِ واقعی عوض بشه (یا صفحه اولین بار
+    // باز بشه)، از صفر تا مقدارِ واقعی می‌چرخه - همون حسِ نموداری که تویِ اپ‌های مالیِ خوب هست.
+    val animatedSweep = remember { Animatable(0f) }
+    LaunchedEffect(targetSweep) {
+        animatedSweep.animateTo(targetSweep, tween(CHART_ANIM_MS, easing = FastOutSlowInEasing))
+    }
+    // ⚠️ این دونات فقط داخلِ کارتِ **قهرمانِ رنگی** رسم می‌شه، پس رنگ‌هاش سفیدن نه تم‌آگاه.
+    // (توکن‌های رنگ `@Composable`ان و داخلِ `Canvas` صدا زده نمی‌شن - برای همین اینجا تو `val`
+    // محلی خونده می‌شن؛ قاعده‌ی ماندگارِ پروژه.)
+    val trackColor = HeroPillBg
+    val progressColor = Color.White
+    Box(modifier = Modifier.size(112.dp), contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.size(112.dp)) {
+            val strokeWidth = 15.dp.toPx()
+            drawArc(
+                color = trackColor,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+            )
+            drawArc(
+                color = progressColor,
+                startAngle = -90f,
+                sweepAngle = animatedSweep.value,
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+            )
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                // درصدِ متنی هم هم‌قدمِ خودِ کمان بالا می‌ره - چیدنِ عدد و کمانِ درحالِ‌رشد
+                // یهویی/ناهماهنگ به‌نظر می‌رسید.
+                "${toFa((animatedSweep.value / 360f * 100).toInt())}٪",
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Text("پرداخت‌شده", color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun StatsExportTile(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(ir.sadteam.loancalc.ui.theme.AppPrimaryPill)
+            .pressScaleClickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, modifier = Modifier.size(17.dp))
+        Text(label, color = ir.sadteam.loancalc.ui.theme.AppPrimaryInk, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+private data class StatItem(
+    val title: String,
+    val value: String,
+    val unit: String?,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Filled.Payments,
+    val tint: Color? = null,
+)
+
+@Composable
+private fun StatTile(item: StatItem, modifier: Modifier = Modifier) {
+    // مقادیرِ کوتاه (تعدادها) ۲۰.sp، مبالغ (رشته‌ی طولانی‌تر) ۱۷.sp - همون معیارِ طولِ رشته که
+    // استایلِ قبلی هم ضمنی رعایت می‌کرد.
+    val big = item.value.length <= 3
+    AppCard(modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // ⚠️ دایره‌ی آیکون خالی بود (گزارشِ کاربر، ۸ مهر).
+            val tint = item.tint ?: AppPrimary
+            Box(
+                modifier = Modifier.size(34.dp).clip(RoundedCornerShape(AppRadius.icon)).background(tint.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp)) }
+            Text(item.title, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(start = 8.dp))
+        }
+        Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.Bottom) {
+            Text(item.value, color = AppText, fontSize = if (big) 20.sp else 17.sp, fontWeight = FontWeight.Black)
+            if (item.unit != null) {
+                Text(" ${item.unit}", color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 1.dp))
+            }
+        }
+    }
+}
+
+/** پورت نمودار خطی «تاریخچه پرداخت» اپ رقیب (VAMMAN) - رسم دستی با Canvas (بدون کتابخونه‌ی نمودارِ
+ * جدید)، عین دونات بالا؛ نقاط از [StatsViewModel.paymentHistory] (مجموع تجمعی اقساط پرداخت‌شده به
+ * تفکیک ماه شمسی) میان. */
+@Composable
+private fun PaymentHistoryLineChart(points: List<PaymentHistoryPoint>, modifier: Modifier = Modifier) {
+    val lineColor = AppInfo
+    val fillColors = listOf(AppInfo.copy(alpha = 0.34f), Color.Transparent)
+    val gridColor = AppLine
+    // قبلاً کلِ خط یهو رسم می‌شد. حالا از چپ به راست «کشیده» می‌شه - با کلیپ‌کردنِ بومِ رسم به یه
+    // عرضِ روبه‌رشد، نه با استخراجِ بخشی از مسیر (که برای این تعداد نقطه‌ی کم اضافه‌کاریه).
+    val reveal = remember { Animatable(0f) }
+    LaunchedEffect(points) {
+        reveal.snapTo(0f)
+        reveal.animateTo(1f, tween(CHART_ANIM_MS, easing = FastOutSlowInEasing))
+    }
+    Column(modifier = modifier.fillMaxWidth()) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(96.dp),
+        ) {
+            val maxAmount = points.maxOf { it.cumulativeAmount }.coerceAtLeast(1.0)
+            val stepX = if (points.size > 1) size.width / (points.size - 1) else 0f
+
+            drawLine(
+                color = gridColor,
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx(),
+            )
+
+            clipRect(right = size.width * reveal.value) {
+                if (points.size == 1) {
+                    val y = size.height - (points[0].cumulativeAmount / maxAmount * size.height).toFloat()
+                    drawCircle(color = lineColor, radius = 4.dp.toPx(), center = Offset(size.width / 2f, y))
+                    return@clipRect
+                }
+
+                val path = Path()
+                points.forEachIndexed { index, point ->
+                    val x = stepX * index
+                    val y = size.height - (point.cumulativeAmount / maxAmount * size.height).toFloat()
+                    if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                }
+
+                // پرشدنِ گرادیانیِ زیرِ خط - مسیرِ خط تا کفِ بوم بسته می‌شه (بدون تغییرِ خودِ path).
+                val fillPath = Path().apply {
+                    addPath(path)
+                    lineTo(stepX * (points.size - 1), size.height)
+                    lineTo(0f, size.height)
+                    close()
+                }
+                drawPath(path = fillPath, brush = Brush.verticalGradient(fillColors))
+                drawPath(path = path, color = lineColor, style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round))
+
+                points.forEachIndexed { index, point ->
+                    val x = stepX * index
+                    val y = size.height - (point.cumulativeAmount / maxAmount * size.height).toFloat()
+                    drawCircle(color = lineColor, radius = 3.dp.toPx(), center = Offset(x, y))
+                }
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(points.first().label, color = AppMuted, fontSize = 11.sp)
+            if (points.size > 1) {
+                Text(points.last().label, color = AppMuted, fontSize = 11.sp)
+            }
+        }
+    }
+}

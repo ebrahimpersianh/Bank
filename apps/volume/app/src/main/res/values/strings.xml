@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_label">باریکه‌ی صدا (وسطِ تماس هم)</string>
+    <string name="a11y_desc">باریکه‌ی صدا را طوری روی صفحه می‌گذارد که وسطِ تماس و روی صفحه‌ی قفل هم دیده شود. هیچ چیزی از صفحه خوانده نمی‌شود.</string>
+</resources>

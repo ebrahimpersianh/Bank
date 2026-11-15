@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  سطحِ ویجت - فریمِ `57c` بندِ ۶.
+
+  گوشه‌ی گردِ `cornerRadius` فقط روی اندروید ۱۲+ کار می‌کنه؛ این drawable همه‌جا یکیه.
+  رنگ از تمِ سیستم می‌آد، پس نسخه‌ی `-night` لازم نداره.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="20dp" />
+    <solid android:color="?android:attr/colorBackground" />
+</shape>

@@ -1,0 +1,45 @@
+name: دیدنِ گزارش‌های مشکلِ کاربران
+
+# اجرای دستی. ده گزارشِ آخر رو با شناسه‌ی حساب چاپ می‌کنه تا بشه برای همون حساب
+# کدِ هدیه ساخت (ورک‌فلوی «ساختِ کدِ هدیه»).
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "چند گزارشِ آخر"
+        required: true
+        default: "10"
+
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    steps:
+      - name: خواندنِ جدولِ گزارش‌ها از VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: LIMIT
+          script: |
+            set -e
+            cd ~/VameMan
+            # ⚠️ sqlite3 روی این سرور نصب نیست (درسِ ثبت‌شده)، پس از خودِ سرویس
+            # نمی‌گذریم: با python3 که هست می‌خوانیم.
+            python3 - "$LIMIT" <<'PY'
+            import sqlite3, sys
+            limit = int(sys.argv[1])
+            conn = sqlite3.connect("data.sqlite")
+            rows = conn.execute(
+                "SELECT ticket, user_id, phone, app_version, device, created_at, substr(message,1,300) "
+                "FROM bug_reports ORDER BY id DESC LIMIT ?", (limit,)
+            ).fetchall()
+            if not rows:
+                print("هنوز گزارشی ثبت نشده.")
+            for t, uid, phone, ver, dev, at, msg in rows:
+                masked = (phone or "")[:4] + "***" + (phone or "")[-2:]
+                print(f"── {t} · حساب #{uid} · {masked} · {ver or '؟'} · {dev or '؟'} · {at}")
+                print(f"   {msg}")
+            PY
+        env:
+          LIMIT: ${{ inputs.limit }}

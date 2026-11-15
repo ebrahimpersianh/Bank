@@ -1,0 +1,138 @@
+package ir.sadteam.loancalc.ui.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
+import ir.sadteam.loancalc.ui.text.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.dp
+import ir.sadteam.loancalc.ui.sound.rememberDeleteSound
+import ir.sadteam.loancalc.ui.theme.AppDanger
+
+/**
+ * پورت ژستِ «کشیدن برای حذف» (swipe-to-delete) - قبلاً تو هیچ‌جای اپ (چک‌ها، تاریخچه، تراکنش‌های
+ * حساب) این حرکت نبود، فقط دکمه‌ی سطلِ زباله. این کامپوننت هر ردیفِ لیستی رو با یه پس‌زمینه‌ی
+ * قرمزِ حاویِ آیکونِ سطل می‌پیچه که با کشیدن (از هر دو سمت - چون اپ RTLه و کاربر ممکنه عادتِ
+ * چپ‌به‌راستِ اپ‌های دیگه رو داشته باشه) نمایان می‌شه.
+ *
+ * [onDelete] دقیقاً موقعِ *تصمیمِ* حذف (وسطِ ژست، نه بعدِ اتمامِ انیمیشن) صدا زده می‌شه - چون
+ * `SwipeToDismissBox` خودش جمع‌شدنِ ردیف رو انیمیشن می‌کنه و بلافاصله بعدش خودِ آیتم از لیستِ
+ * واقعی (Room) حذف می‌شه، پس نیازی به ریست‌کردنِ دستیِ state نیست؛ کامپوزیبل خودش از کامپوزیشن
+ * بیرون می‌ره.
+ *
+ * [confirmDismiss]=false (مثلاً برای چک‌ها، رجوع کن به مورد ۹ تو CLAUDE.md) یعنی [onDelete] فقط
+ * *قصدِ* حذف رو اعلام می‌کنه (مثلاً بازکردنِ یه دیالوگِ تایید) نه خودِ حذفِ واقعی - ردیف خودکار به
+ * جای اولش برمی‌گرده (چون `confirmValueChange` false برمی‌گردونه) و حذفِ واقعی/خروجِ ردیف از
+ * لیست فقط بعد از تاییدِ کاربر، از رو حذف‌شدنِ آیتم از دیتای واقعی اتفاق می‌افته.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeToDeleteRow(
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+    // شکلِ پس‌زمینه‌ی قرمز باید هم‌شکلِ خودِ کارتی باشه که این ردیف رو می‌پیچه، وگرنه گوشه‌های
+    // تیزِ قرمز از زیرِ کارتِ گردگوشه بیرون می‌زنن.
+    shape: Shape = RoundedCornerShape(14.dp),
+    confirmDismiss: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    val playDeleteSound = rememberDeleteSound()
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.StartToEnd || value == SwipeToDismissBoxValue.EndToStart) {
+                // فقط وقتی این ژست خودش تصمیمِ نهاییِ حذفه (نه صرفاً بازکردنِ یه دیالوگِ تاییدِ
+                // دیگه که خودش صدای مستقل داره - رجوع کن به ConfirmDeleteDialog) صدا پخش می‌شه.
+                if (confirmDismiss) playDeleteSound()
+                onDelete()
+            }
+            confirmDismiss
+        },
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        modifier = modifier,
+        backgroundContent = {
+            // 🚨 لایه‌ی قرمز فقط هنگامِ کشیدن. قبلاً همیشه زیرِ کارت بود و گوشه‌هایش از زیرِ کارت
+            // بیرون می‌زد - کاربر فکر کرد همه‌ی تراکنش‌ها «قرمز»ند (۷ مهر).
+            if (dismissState.dismissDirection != SwipeToDismissBoxValue.Settled) Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppDanger, shape)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = when (dismissState.dismissDirection) {
+                    SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                    else -> Alignment.CenterEnd
+                },
+            ) {
+                Icon(Icons.Filled.Delete, contentDescription = "حذف", tint = Color.White)
+            }
+        },
+    ) {
+        // ۱۳ آبان (خواسته‌ی کاربر: «یکی پرسید چطور حذف کنم - باید بکشیم از یک سمت»): کشیدن پیدا
+        // نمی‌شد. حالا **نگه‌داشتنِ انگشت** روی ردیف یک منوی «حذف» باز می‌کند - همان کاری که کاربر
+        // در هر برنامه‌ی دیگری اول امتحان می‌کند. لمسِ کوتاه دست نمی‌خورد (کارِ خودِ ردیف).
+        var menuOpen by remember { mutableStateOf(false) }
+        val haptic = LocalHapticFeedback.current
+        Box(
+            modifier = Modifier.pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    val slop = viewConfiguration.touchSlop
+                    val released = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                        while (true) {
+                            val ch = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id }
+                                ?: return@withTimeoutOrNull true
+                            if (!ch.pressed) return@withTimeoutOrNull true
+                            if ((ch.position - down.position).getDistance() > slop) return@withTimeoutOrNull true
+                        }
+                        @Suppress("UNREACHABLE_CODE") true
+                    }
+                    if (released == null) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        menuOpen = true
+                        // رها کردنِ انگشت بعد از نگه‌داشتن «لمس» حساب نشود (ردیف باز نشود).
+                        while (true) {
+                            val ev = awaitPointerEvent(PointerEventPass.Initial)
+                            ev.changes.forEach { it.consume() }
+                            if (ev.changes.none { it.pressed }) break
+                        }
+                    }
+                }
+            },
+        ) {
+            content()
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, containerColor = ir.sadteam.loancalc.ui.theme.AppSurface) {
+                DropdownMenuItem(
+                    text = { Text("حذف", color = AppDanger) },
+                    leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, tint = AppDanger) },
+                    onClick = { menuOpen = false; onDelete() },
+                )
+            }
+        }
+    }
+}

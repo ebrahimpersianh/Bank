@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- نشان جیبک: سکه در دهانهٔ کیف می‌نشیند؛ لبهٔ جلویی، نیمهٔ پایینی‌اش را می‌پوشاند. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- بدنهٔ پشتی کیف -->
+    <path android:fillColor="#13A96F"
+        android:pathData="M30,49 L78,49 A8,8 0,0 1,86,57 L86,78 A8,8 0,0 1,78,86 L30,86 A8,8 0,0 1,22,78 L22,57 A8,8 0,0 1,30,49 Z"/>
+    <!-- سکه کامل، بالای لبه: هیچ بخشی پشت کیف یا ماسک لانچر نمی‌رود. -->
+    <path android:fillColor="#D99717"
+        android:pathData="M40,38 A14,14 0,1 0,68,38 A14,14 0,1 0,40,38 Z"/>
+    <path android:fillColor="#F7C743"
+        android:pathData="M42,38 A12,12 0,1 0,66,38 A12,12 0,1 0,42,38 Z"/>
+    <path android:fillColor="#FFE8A3"
+        android:pathData="M47,34 A7,7 0,1 0,61,34 A7,7 0,1 0,47,34 Z"/>
+    <path android:fillColor="#D99717"
+        android:pathData="M48,38 A6,6 0,1 0,60,38 A6,6 0,1 0,48,38 Z"/>
+    <!-- دهانه و جیب جلویی: پایینِ سکه واقعاً پشت این لبه قرار می‌گیرد -->
+    <path android:fillColor="#075D43"
+        android:pathData="M27,60 L81,60 A5,5 0,0 1,86,65 L86,70 L22,70 L22,65 A5,5 0,0 1,27,60 Z"/>
+    <path android:fillColor="#20C48A"
+        android:pathData="M22,67 L86,67 L86,78 A8,8 0,0 1,78,86 L30,86 A8,8 0,0 1,22,78 Z"/>
+    <path android:fillColor="#087754"
+        android:pathData="M22,68 L86,68 L86,73 L22,73 Z"/>
+    <path android:fillColor="#075D43"
+        android:pathData="M64,68 L86,68 L86,78 A8,8 0,0 1,78,86 L64,86 Z"/>
+    <path android:fillColor="#67E8B5"
+        android:pathData="M69,76 A5,5 0,1 0,79,76 A5,5 0,1 0,69,76 Z"/>
+</vector>

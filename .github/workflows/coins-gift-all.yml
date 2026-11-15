@@ -1,0 +1,31 @@
+name: هدیه‌ی ۱۰۰۰ سکه به همه‌ی کاربرانِ فعلی (یک‌بار)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "فقط شمارش (true) یا ارسالِ واقعی (false)"
+        default: "true"
+
+jobs:
+  gift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        env:
+          DRY: ${{ inputs.dry_run }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: DRY
+          script: |
+            DB=~/VameMan/data.sqlite
+            T='🎁 ۱۰۰۰ سکه هدیه'
+            B='به پاسِ همراهی‌ات با جیبک، ۱۰۰۰ سکه هدیه گرفتی - از فروشگاه تم، نماد و قاب بخر و برنامه را مالِ خودت کن.'
+            echo "users: $(sqlite3 $DB 'SELECT COUNT(*) FROM users;')"
+            echo "already got this gift: $(sqlite3 $DB "SELECT COUNT(*) FROM announcements WHERE kind='gift' AND title='$T';")"
+            if [ "$DRY" = "false" ]; then
+              cp $DB ~/VameMan/data.sqlite.before-coins-gift
+              sqlite3 $DB "INSERT INTO announcements (title, body, kind, target_user_id, coins) SELECT '$T', '$B', 'gift', u.id, 1000 FROM users u WHERE NOT EXISTS (SELECT 1 FROM announcements a WHERE a.target_user_id=u.id AND a.kind='gift' AND a.title='$T'); SELECT 'sent: ' || changes();"
+            fi

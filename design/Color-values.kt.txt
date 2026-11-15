@@ -1,0 +1,139 @@
+/*
+ * مقدارهای رنگِ جیبک — برای ادغام در ui/theme/Color.kt
+ * نسخه‌ی نهایی. همه‌ی هفت موردِ باز بسته شد.
+ *
+ * این فایل جایگزینِ Color.kt نیست؛ فقط بلوکِ مقدارهاست با همان اسم‌هایی که داری.
+ * ساختارِ @Composable get() و منبعِ AppIsDark دست‌نخورده بماند.
+ *
+ * یادآوری: توکن‌ها @Composable get()اند، پس داخلِ Canvas/DrawScope مستقیم صدا
+ * زده نمی‌شوند — اول در یک val محلی بخوانشان.
+ *
+ * منبع: سیستمِ طراحی جیبک.dc.html · Duolingo Redesign.dc.html
+ */
+
+// ───────────────────────────────────────────────────────────── سطح‌ها
+
+private val LightBg             = Color(0xFFF5FBFF)
+private val LightSurface        = Color(0xFFFFFFFF)
+private val LightSurface2       = Color(0xFFF7FAF8)
+private val LightLine           = Color(0xFFE3ECE7)   // حاشیه‌ی کارت، ۲dp
+private val LightLineRow        = Color(0xFFEEF3F0)   // حاشیه‌ی ردیف، ۱٫۵dp
+private val LightChipBg         = Color(0xFFF1F5F2)
+private val LightShadowNeutral  = Color(0xFFE8EFEB)
+private val LightDashedBorder   = Color(0xFFC9D6CF)
+
+private val DarkBg              = Color(0xFF10181F)
+private val DarkSurface         = Color(0xFF1B2530)
+private val DarkSurface2        = Color(0xFF202B36)
+private val DarkLine            = Color(0xFF2A3640)
+private val DarkLineRow         = Color(0xFF2A3640)   // در تیره با Line یکی است — درست
+private val DarkChipBg          = Color(0xFF232E38)
+private val DarkShadowNeutral   = Color(0xFF141C24)
+private val DarkDashedBorder    = Color(0xFF3A464F)
+
+// ────────────────────────────────────────────────────────────── متن
+
+private val LightText           = Color(0xFF16221C)   // مشکیِ خالص نیست
+private val LightMuted          = Color(0xFF5B6A63)
+private val LightLabel          = Color(0xFF8B9A93)
+private val LightDisabledText   = Color(0xFF94A5A0)
+private val LightDisabledFill   = Color(0xFFDDE7E2)
+
+private val DarkText            = Color(0xFFF3F7F5)
+private val DarkMuted           = Color(0xFF8B9A94)
+private val DarkLabel           = Color(0xFF7A8A84)
+private val DarkDisabledText    = Color(0xFF7A8A84)
+private val DarkDisabledFill    = Color(0xFF232E38)
+
+// ───────────────────────────────────────────────────────────── سبز
+
+private val Primary             = Color(0xFF0EA968)   // بینِ دو تم عوض نمی‌شود
+
+private val LightPrimaryDim     = Color(0xFF0B8C57)   // فقط سایه‌ی سخت
+private val LightPrimaryInk     = Color(0xFF0B8C57)   // متن و آیکون
+private val LightPrimaryPill    = Color(0xFFE9F7EF)
+private val LightPrimaryBorder  = Color(0xFF9FE0BC)
+
+private val DarkPrimaryDim      = Color(0xFF07724A)
+private val DarkPrimaryInk      = Color(0xFF3DDC96)
+private val DarkPrimaryPill     = Color(0x243DDC96)   // rgba(61,220,150,.14)
+private val DarkPrimaryBorder   = Color(0x593DDC96)   // rgba(61,220,150,.35)
+
+// ──────────────────────────────────────────────────────────── قرمز
+
+private val LightDanger         = Color(0xFFFF4B4B)
+private val LightDangerInk      = Color(0xFFD93838)
+private val LightDangerPill     = Color(0xFFFFF5F5)
+
+private val DarkDanger          = Color(0xFFFF6B6B)
+private val DarkDangerInk       = Color(0xFFFF6B6B)
+private val DarkDangerPill      = Color(0x1FFF6B6B)   // rgba(255,107,107,.12)
+
+// ───────────────────────────────────────────────────────── لهجه‌ها
+
+private val LightInfo           = Color(0xFF1CB0F6)
+private val LightInfoPill       = Color(0xFFEAF1FE)
+private val LightPurple         = Color(0xFFA56EFF)
+private val LightPurplePill     = Color(0xFFF3EAFE)
+private val LightWarning        = Color(0xFFFF9600)
+private val LightWarningPill    = Color(0xFFFFF1DC)
+private val LightWarningInk     = Color(0xFFB45F00)
+
+private val DarkInfo            = Color(0xFF55C8FF)
+private val DarkInfoPill        = Color(0xFF1D2C3A)
+private val DarkPurple          = Color(0xFFBE97FF)
+private val DarkPurplePill      = Color(0xFF252436)
+private val DarkWarning         = Color(0xFFFFB44D)
+private val DarkWarningPill     = Color(0xFF2A2317)
+private val DarkWarningInk      = Color(0xFFF0D9A8)
+
+// ────────────────────────────────────────── طلایی · پول و دستاورد
+
+private val LightGoldFrom       = Color(0xFFFFFCF4)   // گرادیانِ ۱۶۵ درجه
+private val LightGoldTo         = Color(0xFFF3E7CE)
+private val LightGoldBorder     = Color(0xFFEBD9B4)   // ۱٫۵dp نه ۲
+private val LightGoldInk        = Color(0xFF5A3E12)
+
+private val DarkGoldFrom        = Color(0xFF2A2317)
+private val DarkGoldTo          = Color(0xFF2A2317)   // در تیره گرادیان ندارد
+private val DarkGoldBorder      = Color(0xFF4A3D22)
+private val DarkGoldInk         = Color(0xFFF0D9A8)
+
+/*
+ * زیرنویسِ طلایی (#8B6F3D روشن / #C9AE74 تیره) توکنِ تازه نگرفت:
+ * AppGoldInk.copy(alpha = .65f) روی گرادیانِ طلایی همان را می‌دهد.
+ * فقط اگر جایی اختلافش دیده شد، توکنِ AppGoldInkDim اضافه می‌کنیم.
+ */
+
+// ─────────────────────────────── مقدارهای محلیِ کامپوننت (توکن نیستند)
+
+/*
+ * این‌ها فقط یک کامپوننت مصرف‌کننده دارند، پس عمداً توکن نشدند.
+ * جایشان داخلِ همان کامپوننت است، به‌شکلِ private val.
+ */
+
+// AppHeroCard — نسخه‌ی سبز
+private val HeroGreenEnd        = Color(0xFF0B8C57)   // گرادیانِ عمودی از Primary
+private val HeroGreenShadowL    = Color(0xFF096F45)   // افستِ ۵dp
+private val HeroGreenShadowD    = Color(0xFF07724A)
+
+// AppHeroCard — نسخه‌ی بنفشِ گزارش (فریمِ ۲۶a)
+private val HeroPurpleStart     = Color(0xFFA56EFF)   // = AppPurple
+private val HeroPurpleEnd       = Color(0xFF7440C9)   // گرادیانِ ۱۶۰ درجه
+private val HeroPurpleShadow    = Color(0xFF5C2FA8)   // افستِ ۵dp
+
+// کارتِ فوری
+private val UrgentBorderLight   = Color(0xFFFFC9C9)
+private val UrgentShadowLight   = Color(0xFFFFECEC)
+
+// ProgressRing — مسیرِ خالیِ حلقه‌ی قرمز
+private val RingTrackDanger     = Color(0xFFFFE3E3)
+
+// AppProgressBar — انتهای گرادیانِ نوارِ سبز
+private val BarGradientEnd      = Color(0xFF3DDC96)
+
+// قرصِ نارنجی — حاشیه
+private val WarningBorderLight  = Color(0xFFF0CE9B)
+
+// نمودارِ ستونی — ستونِ غیرفعال
+private val ChartBarMuted       = Color(0xFFA8E0C4)

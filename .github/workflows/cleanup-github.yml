@@ -1,0 +1,41 @@
+name: پاک‌سازیِ گیت‌هاب (نسخه‌های قدیمیِ APK و سابقه‌ی اجراها)
+
+# اجرای دستی. همه‌ی Releaseها (APK) جز ۵ تای آخر، و اجراهای Actions قدیمی‌تر از ۳۰ روز را
+# پاک می‌کند. برنچ‌ها و کد دست نمی‌خورند. برگشت ندارد.
+on:
+  workflow_dispatch:
+    inputs:
+      keep_releases:
+        description: "چند نسخه‌ی آخر بماند"
+        default: "5"
+      runs_older_than_days:
+        description: "اجراهای قدیمی‌تر از چند روز پاک شوند"
+        default: "30"
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: پاک‌کردنِ نسخه‌های قدیمیِ APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEEP: ${{ inputs.keep_releases }}
+        run: |
+          gh release list -R "$GITHUB_REPOSITORY" --limit 1000 --json tagName,createdAt \
+            --jq 'sort_by(.createdAt) | reverse | .[].tagName' | tail -n +$((KEEP + 1)) | while read -r tag; do
+            gh release delete "$tag" -R "$GITHUB_REPOSITORY" --yes --cleanup-tag && echo "deleted release $tag"
+          done
+      - name: پاک‌کردنِ اجراهای قدیمی
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DAYS: ${{ inputs.runs_older_than_days }}
+        run: |
+          cutoff=$(date -u -d "$DAYS days ago" +%Y-%m-%dT%H:%M:%SZ)
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs?per_page=100" \
+            --jq ".workflow_runs[] | select(.created_at < \"$cutoff\") | .id" | while read -r id; do
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/actions/runs/$id" && echo "deleted run $id"
+          done

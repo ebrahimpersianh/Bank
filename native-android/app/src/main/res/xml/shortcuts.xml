@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  میان‌برهای فشارِ طولانی رو آیکونِ اپ - خواسته‌ی صریحِ کاربر («مثلِ دولینگو»).
+  سه کارِ پرتکرار، به همون ترتیبی که کاربر لازمشون داره.
+  ⚠️ حداکثر چهار میان‌بر تو بیشترِ لانچرها دیده می‌شه؛ سه‌تا نگه‌شون داشتم.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="add_transaction"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutShortLabel="@string/shortcut_add_short"
+        android:shortcutLongLabel="@string/shortcut_add_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="ir.sadteam.loancalc"
+            android:targetClass="ir.sadteam.loancalc.MainActivity">
+            <extra android:name="jibak_shortcut" android:value="add_transaction" />
+        </intent>
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="due"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_due"
+        android:shortcutShortLabel="@string/shortcut_due_short"
+        android:shortcutLongLabel="@string/shortcut_due_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="ir.sadteam.loancalc"
+            android:targetClass="ir.sadteam.loancalc.MainActivity">
+            <extra android:name="jibak_shortcut" android:value="due" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="report"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_report"
+        android:shortcutShortLabel="@string/shortcut_report_short"
+        android:shortcutLongLabel="@string/shortcut_report_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="ir.sadteam.loancalc"
+            android:targetClass="ir.sadteam.loancalc.MainActivity">
+            <extra android:name="jibak_shortcut" android:value="report" />
+        </intent>
+    </shortcut>
+</shortcuts>

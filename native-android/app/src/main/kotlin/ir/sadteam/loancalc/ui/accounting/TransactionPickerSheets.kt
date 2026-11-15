@@ -1,0 +1,159 @@
+package ir.sadteam.loancalc.ui.accounting
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.material.icons.filled.ChevronLeft
+import ir.sadteam.loancalc.ui.theme.AppDanger
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
+import androidx.compose.material3.Icon
+import ir.sadteam.loancalc.ui.text.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.data.CategoryEntry
+import ir.sadteam.loancalc.data.db.AccountEntity
+import ir.sadteam.loancalc.ui.components.AccountBadge
+import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.theme.AppText
+
+/**
+ * انتخابگرِ حساب‌کتاب برای شیتِ تراکنش - جایگزینِ [ir.sadteam.loancalc.ui.components.AccountPickerDialog]
+ * تو این مسیر؛ اون یکی یه لیستِ متنیِ ساده‌ست، این یکی آیکون/لوگو و موجودی رو هم نشون می‌ده (طبقِ
+ * اپِ مرجع). اون یکی عمداً دست‌نخورده مونده چون مسیرِ «پرداختِ قسط/چک» هنوز ازش استفاده می‌کنه.
+ */
+@Composable
+fun AccountPickerSheet(
+    accounts: List<AccountEntity>,
+    onPick: (AccountEntity) -> Unit,
+    onDismiss: () -> Unit,
+    accountViewModel: ir.sadteam.loancalc.ui.account.AccountViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
+) {
+    // ⚠️ «۰ تومان» نشان می‌داد: موجودیِ **روزِ شروع** بود، نه موجودیِ فعلی.
+    val allTx by accountViewModel.transactions.collectAsState()
+    val privacy = ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current
+    ir.sadteam.loancalc.ui.components.JibakListSheet(
+        onDismissRequest = onDismiss,
+        title = "کدام حساب؟",
+    ) {
+            if (accounts.isEmpty()) {
+                EmptyState(
+                    icon = Icons.Filled.Add,
+                    title = "هنوز حسابی نساختی",
+                    description = "اول یک حساب (کارت بانکی یا نقدی) بساز تا بتوانی تراکنش ثبت کنی.",
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 480.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    items(accounts, key = { it.id }) { account ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(AppSurface2, RoundedCornerShape(16.dp))
+                                .pressScaleClickable(onClick = { onPick(account) })
+                                .padding(horizontal = 12.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            AccountBadge(account = account, size = 40.dp)
+                            val bal = remember(account, allTx) { accountViewModel.balanceOf(account, allTx) }
+                            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                                Text(account.name, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(privacy, fmt(bal / ir.sadteam.loancalc.ui.jibak.unitDiv)) + " ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
+                                    color = if (bal < 0) AppDanger else AppMuted,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                            }
+                            Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            }
+    }
+}
+
+/** انتخابگرِ دسته‌بندی - لیستِ کاملِ دسته‌های همون نوع (خرج یا دخل)، با آیکون و رنگِ خودشون. */
+@Composable
+fun CategoryPickerSheet(
+    categories: List<CategoryEntry>,
+    isIncome: Boolean,
+    onPick: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    JibakAlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                if (isIncome) "دسته‌بندیِ درآمد" else "دسته‌بندیِ خرج",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        },
+        text = {
+            // بازطراحیِ ۸ مهر: کاشی‌های سه‌ستونه با آیکونِ رنگیِ درشت، به‌جای فهرستِ بلند.
+            Column(
+                modifier = Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                categories.chunked(3).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { entry ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .background(AppSurface2, RoundedCornerShape(16.dp))
+                                    .pressScaleClickable(onClick = { onPick(entry.name) })
+                                    .padding(vertical = 12.dp, horizontal = 4.dp),
+                            ) {
+                                Box(
+                                    Modifier.size(42.dp).background(entry.color.copy(alpha = 0.16f), RoundedCornerShape(14.dp)),
+                                    contentAlignment = Alignment.Center,
+                                ) { Icon(entry.icon, contentDescription = null, tint = entry.color, modifier = Modifier.size(22.dp)) }
+                                Text(
+                                    entry.name,
+                                    color = AppText,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    modifier = Modifier.padding(top = 6.dp),
+                                )
+                            }
+                        }
+                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("انصراف") } },
+    )
+}

@@ -1,0 +1,40 @@
+name: آپدیتِ اجباری - حداقل نسخه (minVersion)
+
+# همان «ادمین ← تنظیماتِ از راهِ دور ← آپدیتِ اجباری»، از بیرونِ اپ. نسخه‌ی کمتر از این عدد پنجره‌ی
+# بسته‌نشدنیِ «نسخه‌ی تازه لازم است» می‌بیند. فقط عددی که در **هر دو** استور منتشر شده.
+# ۰ = خاموش. بقیه‌ی کلیدهای app_config.app دست نمی‌خورند (json_set).
+on:
+  workflow_dispatch:
+    inputs:
+      min_version:
+        description: "حداقل versionCode (مثلاً 848)؛ 0 = خاموش"
+        required: true
+        type: number
+
+jobs:
+  set:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: MIN_VERSION
+          script: |
+            set -e
+            DB=~/VameMan/data.sqlite
+            echo "=== قبل ==="
+            sqlite3 $DB "SELECT json FROM app_config WHERE key = 'app';"
+            sqlite3 $DB "SELECT latest_version_code FROM app_version WHERE id = 1;"
+            sqlite3 $DB "SELECT json FROM app_config WHERE key = 'app';" > ~/VameMan/app_config_app.before-minversion.json || true
+            sqlite3 $DB "INSERT OR IGNORE INTO app_config (key, json, updated_at) VALUES ('app', '{}', datetime('now'));"
+            if [ "$MIN_VERSION" -gt 0 ]; then
+              sqlite3 $DB "UPDATE app_config SET json = json_set(json, '\$.minVersion', $MIN_VERSION), updated_at = datetime('now') WHERE key = 'app';"
+            else
+              sqlite3 $DB "UPDATE app_config SET json = json_remove(json, '\$.minVersion'), updated_at = datetime('now') WHERE key = 'app';"
+            fi
+            echo "=== بعد ==="
+            sqlite3 $DB "SELECT json FROM app_config WHERE key = 'app';"
+        env:
+          MIN_VERSION: ${{ github.event.inputs.min_version }}

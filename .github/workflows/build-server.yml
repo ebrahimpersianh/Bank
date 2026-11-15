@@ -1,0 +1,97 @@
+name: Build Kotlin Backend (server/)
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "server/**"
+      - ".github/workflows/build-server.yml"
+  pull_request:
+    paths:
+      - "server/**"
+      - ".github/workflows/build-server.yml"
+  workflow_dispatch:
+
+jobs:
+  # build و deploy یه job شدن (به‌جای build → upload-artifact → deploy → download-artifact):
+  # قبلاً چندبار پشتِ‌سرهم دیپلوی فقط چون سهمیه‌ی فضای Artifactِ گیت‌هاب پر بود شکست می‌خورد،
+  # با اینکه jar به‌درستی ساخته شده بود - این سهمیه ربطی به بیلد نداشت، فقط برای رد-و-بدل‌کردنِ
+  # jar بینِ دو jobِ همون یه ران بود. حالا jar مستقیم از همین job (بدونِ Artifact) به VPS می‌ره.
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: دریافت کد پروژه
+        uses: actions/checkout@v4
+
+      - name: آماده‌سازی Java (لازم برای Gradle/Ktor)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: کش Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: تست‌های سرور (OTP/JWT/loans با ktor-server-test-host)
+        run: ./gradlew test --console=plain
+
+      - name: ساخت jar اجراپذیر (fat jar)
+        run: ./gradlew fatJar --console=plain
+
+      - name: چک کردنِ وجودِ سکرت‌های VPS
+        id: check
+        run: |
+          if [ -n "${{ secrets.VPS_HOST }}" ] && [ -n "${{ secrets.VPS_USER }}" ] && [ -n "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::سکرت‌های VPS_HOST/VPS_USER/VPS_SSH_KEY ست نشدن - دیپلویِ خودکار رد می‌شه (رجوع کن به server/README.md)."
+          fi
+
+      # فقط رو پوشِ main اجرا می‌شه (نه هر PR/بیلدِ تستی)، و فقط اگه سکرت‌ها ست شده باشن.
+      - name: آماده‌سازیِ jar تو ریشه‌ی مخزن (برای مسیرِ ساده‌ی scp)
+        if: steps.check.outputs.ready == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        run: cp build/libs/loan-calculator-server-1.0.0-all.jar ../loan-calculator-server-1.0.0-all.jar
+
+      - name: کپیِ مستقیمِ jar به VPS (با اسمِ موقت)
+        if: steps.check.outputs.ready == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "loan-calculator-server-1.0.0-all.jar"
+          target: "~/VameMan/incoming/"
+          strip_components: 0
+
+      # به‌جای جایگزینیِ مستقیمِ jarِ زنده، اول با یه اسمِ موقت کپی می‌شه؛ این مرحله فقط اگه فایل
+      # واقعاً یه zip/jarِ سالمه (نه خالی/ناقص) جایگزینش می‌کنه.
+      - name: تاییدِ سلامتِ jar + جایگزینی + ری‌استارت + تاییدِ بالا اومدن
+        if: steps.check.outputs.ready == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/VameMan
+            NEW=incoming/loan-calculator-server-1.0.0-all.jar
+            if [ ! -s "$NEW" ]; then
+              echo "jarِ جدید خالیه یا وجود نداره - دیپلوی متوقف شد، jarِ قبلی دست‌نخورده موند."
+              exit 1
+            fi
+            if ! unzip -tq "$NEW" > /dev/null; then
+              echo "jarِ جدید یه zip/jarِ سالم نیست - دیپلوی متوقف شد، jarِ قبلی دست‌نخورده موند."
+              exit 1
+            fi
+            cp loan-calculator-server-1.0.0-all.jar loan-calculator-server-1.0.0-all.jar.bak || true
+            mv "$NEW" loan-calculator-server-1.0.0-all.jar
+            sha256sum loan-calculator-server-1.0.0-all.jar
+            pm2 restart loan-calc-api
+            sleep 3
+            pm2 logs loan-calc-api --lines 20 --nostream
+            pm2 describe loan-calc-api | grep -q "online" && echo "OK: سرویس بالاست" || (echo "سرویس بالا نیومد - برگردوندنِ jarِ قبلی"; mv loan-calculator-server-1.0.0-all.jar.bak loan-calculator-server-1.0.0-all.jar; pm2 restart loan-calc-api; exit 1)

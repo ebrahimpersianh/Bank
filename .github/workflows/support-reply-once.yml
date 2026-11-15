@@ -1,0 +1,21 @@
+name: جوابِ پشتیبانی (یک‌بار، ۴ آبان)
+
+# همان کارِ دکمه‌ی «جواب» در پنلِ ادمین: پیامِ اختصاصی در «پیام‌های جیبک»ِ همان کاربر + بستنِ پیام.
+# متن را صاحبِ برنامه در چت تأیید کرد.
+on:
+  workflow_dispatch:
+
+jobs:
+  reply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            DB=~/VameMan/data.sqlite
+            T='JB-BVSG2T'
+            B="$(printf '%s\n' 'سلام، ممنون که خبر دادی 🙏 پاک کردنش راحته:' '۱. پایینِ صفحه تبِ «دارایی» رو بزن.' '۲. حسابی که خرج روش ثبت شده رو باز کن.' '۳. توی فهرستِ تراکنش‌ها، خرجِ تکراری رو با انگشت به چپ یا راست بکش.' '۴. «حذف» رو تأیید کن.' 'برای هر نسخه‌ی تکراری همین کار رو بکن تا فقط یکی بمونه؛ موجودی خودش درست می‌شه.' 'اگه خرج‌ها خودکار از پیامکِ بانک ثبت شده بودن، لطفاً بگو تا بررسی کنیم چرا تکراری ثبت شدن.')"
+            sqlite3 $DB "INSERT INTO announcements (title, body, kind, target_user_id) SELECT '💬 جوابِ پشتیبانی ($T)', '$B', 'info', user_id FROM bug_reports WHERE ticket = '$T'; SELECT 'sent: ' || changes(); UPDATE bug_reports SET status = 'answered' WHERE ticket = '$T'; SELECT 'closed: ' || changes();"

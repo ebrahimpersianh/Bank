@@ -1,0 +1,619 @@
+package ir.sadteam.loancalc.notifications
+
+import android.Manifest
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.hilt.work.HiltWorker
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
+import ir.sadteam.loancalc.MainActivity
+import ir.sadteam.loancalc.R
+import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.core.parseReminderOffsets
+import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.ChequeRepository
+import ir.sadteam.loancalc.data.InboxRepository
+import ir.sadteam.loancalc.data.db.InboxMessageEntity
+import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.db.ChequeEntity
+import ir.sadteam.loancalc.data.db.LoanEntity
+import ir.sadteam.loancalc.data.db.RecurringPaymentEntity
+import ir.sadteam.loancalc.data.prefs.UiPrefs
+import kotlinx.coroutines.flow.first
+
+/**
+ * یه‌بار در روز همه‌ی وام‌ها/چک‌ها رو چک می‌کنه؛ برای هر قسط/چکِ پرداخت‌نشده‌ای که فاصله‌ش تا سررسید
+ * (طبق dueDate واقعیِ محاسبه‌شده تو LoanRepository.getRows) با یکی از زمان‌بندی‌های یادآوریِ اون مورد
+ * (اختصاصیِ خودش، یا اگه نداشت پیش‌فرضِ سراسری تو UiPrefs) یکی باشه، یه نوتیف جدا می‌ده. شناسه‌ی
+ * نوتیف از رو (loanId, m) ساخته می‌شه تا اجراهای بعدی worker به‌جای تکرار، همون نوتیف رو جایگزین کنن.
+ */
+@HiltWorker
+class DueDateReminderWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val loanRepository: LoanRepository,
+    private val chequeRepository: ChequeRepository,
+    private val accountRepository: AccountRepository,
+    private val uiPrefs: UiPrefs,
+    private val reminderScheduler: ReminderScheduler,
+    /**
+     * `71e`: هر اعلانی که فرستاده می‌شود یک ردیف هم می‌نویسد، وگرنه «تاریخچه‌ی اعلان‌ها»
+     * ناقص می‌مانَد - یادآورِ سررسید هیچ‌وقت واردِ مرکزِ پیام‌ها نمی‌شد.
+     *
+     * ⚠️ گونه‌شان **خبر** است نه اقدام‌دار: اقدام‌دار شمارنده‌ی زنگ را بالا می‌برد و تا
+     * تصمیمِ کاربر باز می‌مانَد، ولی یادآور کارِ باز نمی‌سازد - کارش در صفحه‌ی خودِ قسط است.
+     */
+    private val inboxRepository: InboxRepository,
+    private val billDao: ir.sadteam.loancalc.data.db.BillDao,
+    private val dangRepository: ir.sadteam.loancalc.data.DangRepository,
+    private val debtRepository: ir.sadteam.loancalc.data.DebtRepository,
+) : CoroutineWorker(context, params) {
+
+    override suspend fun doWork(): Result {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ActivityCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return Result.success()
+        }
+
+        // 🚨 این‌جا قبلاً کلِ اجرا را برمی‌گرداند: اگر امروز اعلانِ «برگشت» زده شده بود، کاربر
+        // **هیچ‌کدام** از یادآورهای قسط و چک و پرداختِ تکراریِ آن روز را نمی‌گرفت - یعنی یک
+        // اعلانِ انگیزشیِ کم‌اهمیت، اعلان‌های پول را خاموش می‌کرد، آن هم دقیقاً برای کاربرِ
+        // غایب که محتمل‌ترین کسی است که سررسیدش را فراموش کرده. استدلالِ «یک روز دو اعلان
+        // آزاردهنده است» درست بود ولی جای اعمالش غلط: حالا فقط جلوی **یادآورِ روزانه** را
+        // می‌گیرد، پایین‌تر، کنارِ خودش.
+        val today0 = JalaliCalendar.today()
+        val comeBackSentToday =
+            uiPrefs.lastComeBackNotifiedAt.first() == "${today0.y}-${today0.m}-${today0.d}"
+
+        // 🚨 **اجرای دیررسیده ساکت می‌ماند** - گزارشِ واقعیِ کاربر: «به‌محضِ باز کردنِ برنامه
+        // همه با هم می‌آیند». روی گوشی‌هایی که پس‌زمینه را می‌کشند، اجرای موعدرسیده تا لحظه‌ی
+        // بالا آمدنِ پروسه عقب می‌افتد - یعنی وسطِ کار کردنِ کاربر، نه سرِ ساعتِ یادآور. اگر
+        // بیش از [STALE_RUN_HOURS] از ساعتِ مقرر گذشته باشد چیزی فرستاده نمی‌شود و کار به
+        // اجرای فردا موکول می‌شود؛ سررسیدها روزهای بعد هم هنوز سررسیدند، پس چیزی گم نمی‌شود.
+        val staleRun = isStaleCatchUpRun(uiPrefs.reminderHour.first())
+        // 🌙 قبل از ساعتِ یادآور (مثلاً ۲:۲۸ بامداد) یا بعد از ۱۱ شب هیچ اعلانی - نه سررسید، نه دنگ،
+        // نه خلاصه‌ی هفته (گزارشِ کاربر، ۱۶ مهر). فقط زمان‌بندی دوباره لنگر می‌خورد.
+        val hourGate = QuietHours.nowHour()
+        if (hourGate < uiPrefs.reminderHour.first() || hourGate >= 23) {
+            reminderScheduler.schedule()
+            return Result.success()
+        }
+        // 🚨 اجرای دیررسیده لنگر را هم می‌لغزاند: دوره‌ی بعدی ۲۴ ساعت بعد از **همین** اجراست،
+        // نه بعد از ساعتِ مقرر. بی این خط، یک دیرکردِ هفت‌ساعته هر روز تکرار می‌شد و یادآورها
+        // برای همیشه ساکت می‌ماندند. `ExistingPeriodicWorkPolicy.UPDATE` اجازه‌ی بازچینش را
+        // می‌دهد، پس هر اجرا پنجره را به ساعتِ مقرر برمی‌گرداند.
+        if (staleRun) reminderScheduler.schedule()
+
+        // آلارمِ رأسِ ساعت و کارِ دوره‌ایِ پشتیبان هر دو همین worker را اجرا می‌کنند؛ دومی
+        // در همان روز نباید یادآورها را دوباره بفرستد.
+        val runPrefs = applicationContext.getSharedPreferences("due_reminder_run", Context.MODE_PRIVATE)
+        val runKey = "${today0.y}-${today0.m}-${today0.d}"
+        if (runPrefs.getString("last_full_run", null) == runKey) return Result.success()
+        if (!staleRun) runPrefs.edit().putString("last_full_run", runKey).apply()
+
+        val defaultOffsets = parseReminderOffsets(uiPrefs.reminderDayOffsets.first())
+        // موردهایی که کاربر دیروز «فردا یادم بیاور» زده بود دوباره می‌آیند؛ آن‌هایی که
+        // **امروز** تعویق خورده‌اند رد می‌شوند.
+        val todayKey = "${today0.y}-${today0.m}-${today0.d}"
+        val snoozedToday = uiPrefs.snoozedReminders.first()
+            .filter { it.substringAfter('@', "") == todayKey }
+            .map { it.substringBefore('@') }
+            .toSet()
+        // سه کانالِ ثابت جای کانالِ پویا - رجوع کن به کامنتِ ReminderChannels. صدا و ویبره
+        // دیگر از این‌جا نمی‌آیند؛ کانال خودش داردشان.
+        ReminderChannels.ensureAll(applicationContext)
+
+        // حالتِ خصوصی **یک‌بار** خوانده می‌شود و به همه‌ی اعلان‌ها می‌رود. قبلاً فقط
+        // notifyRecurringPayment می‌گرفتش، پس شماره‌ی چک و نامِ وام روی صفحه‌ی قفل می‌آمدند -
+        // دقیقاً همان چیزی که این کلید جلوش را می‌گیرد.
+        val privacyMode = uiPrefs.privacyModeEnabled.first()
+
+        // برای گروه‌بندی: هر اعلان جدا می‌ماند ولی زیرِ یک سرِ مشترک جمع می‌شود، پس باید
+        // بدانیم چند تا شد.
+        var dueCount = 0
+
+        val today = JalaliCalendar.today()
+        // 🚨 این worker حالا برای یادآورِ دنگ هم زنده می‌ماند؛ پس خودِ یادآورهای سررسید باید با
+        // کلیدِ خودشان گیت شوند، وگرنه کسی که «یادآوریِ سررسید» را خاموش کرده بود دوباره می‌گرفت.
+        val dueRemindersOn = uiPrefs.notificationsEnabled.first()
+        val dailyOn = uiPrefs.dailyExpenseReminderEnabled.first()
+        (if (dueRemindersOn) loanRepository.getLoans() else emptyList()).forEach { loan ->
+            val offsets = loan.reminderDayOffsets?.let { parseReminderOffsets(it) } ?: defaultOffsets
+            if (offsets.isEmpty()) return@forEach
+            loanRepository.getRows(loan).forEach { row ->
+                if (row["paid"] == true) return@forEach
+                val due = row["dueDate"] as? Map<*, *> ?: return@forEach
+                val y = (due["y"] as? Number)?.toInt() ?: return@forEach
+                val mo = (due["m"] as? Number)?.toInt() ?: return@forEach
+                val d = (due["d"] as? Number)?.toInt() ?: return@forEach
+                val daysLeft = JalaliCalendar.daysBetween(today, PersianDate(y, mo, d))
+                // در اجرای دیررسیده فقط سررسیدِ **همین امروز** می‌آید: تنها فرصتش همین امروز
+                // است، در حالی که ۱ و ۳ و ۷ روز مانده فردا هم فرصت دارند.
+                if (daysLeft !in offsets || (staleRun && daysLeft != 0)) return@forEach
+                val m = (row["m"] as? Number)?.toInt() ?: return@forEach
+                // کلید دقیقاً همانی است که دکمه‌ی «فردا یادم بیاور» می‌فرستد.
+                if ("loan_${loan.id}_$m" in snoozedToday) return@forEach
+                notifyLoan(loan, m, daysLeft, privacyMode)
+                dueCount++
+            }
+        }
+
+        // پورت «یادآوری هوشمند سررسید چک» رقیب - همون منطق، فقط رو چک‌های وضع‌نشده (بایگانی‌نشده)
+        // به‌جای قسط وام.
+        (if (dueRemindersOn) chequeRepository.getAllCheques() else emptyList())
+            .filter { it.status == "PENDING" && !it.archived }
+            .forEach { cheque ->
+                val offsets = cheque.reminderDayOffsets?.let { parseReminderOffsets(it) } ?: defaultOffsets
+                if (offsets.isEmpty()) return@forEach
+                val daysLeft = JalaliCalendar.daysBetween(today, PersianDate(cheque.dueYear, cheque.dueMonth, cheque.dueDay))
+                if (daysLeft in offsets && (!staleRun || daysLeft == 0) &&
+                    "cheque_${cheque.id}" !in snoozedToday
+                ) {
+                    notifyCheque(cheque, daysLeft, privacyMode)
+                    dueCount++
+                }
+            }
+
+        // یادآوریِ پرداخت‌های تکراریِ ماژولِ حسابداری (مثلِ اجاره) - رجوع کن به CLAUDE.md، بخشِ
+        // «تغییرِ نامِ اپ + افزودنِ ماژولِ حسابداریِ شخصی». برخلافِ وام/چک که یه dueDateِ ثابت دارن،
+        // این‌ها هر ماه تکرار می‌شن - نزدیک‌ترین وقوعِ بعدی (امروز یا آینده) حساب می‌شه.
+        // پرداختِ تکراری‌ای که این ماه «ثبتِ پرداختِ این ماه» خورده، یادآور نمی‌خواهد.
+        val paidRecurring = accountRepository.observeTransactions().first()
+            .filter { it.sourceType == "recurring" }.mapNotNull { it.sourceId }.toSet()
+        (if (dueRemindersOn) accountRepository.getRecurringPayments() else emptyList()).forEach { payment ->
+            if ("${payment.id}:${today.y}-${today.m}" in paidRecurring) return@forEach
+            val offsets = payment.reminderDayOffsets?.let { parseReminderOffsets(it) } ?: defaultOffsets
+            if (offsets.isEmpty()) return@forEach
+            val due = nextOccurrence(today, payment.dayOfMonth)
+            val daysLeft = JalaliCalendar.daysBetween(today, due)
+            if (daysLeft in offsets && (!staleRun || daysLeft == 0) &&
+                "recurring_${payment.id}" !in snoozedToday
+            ) {
+                notifyRecurringPayment(payment, daysLeft, privacyMode)
+                dueCount++
+            }
+        }
+
+        // قبض‌ها (۶ مهر): سه روز مانده، یک روز مانده و روزِ موعد - تا وقتی «پرداخت شد» نخورده.
+        (if (dueRemindersOn) runCatching { billDao.getAll() }.getOrDefault(emptyList()) else emptyList()).forEach { bill ->
+            val left = bill.dueDay - today.d
+            val periodOk = bill.periodMonths <= 1 || (today.m - 1) % bill.periodMonths == 0
+            if (periodOk && bill.lastPaidKey != "${today.y}-${today.m}" && left in setOf(3, 1, 0) &&
+                (!staleRun || left == 0) && "bill_${bill.id}" !in snoozedToday
+            ) {
+                notifyBill(bill, left)
+                dueCount++
+            }
+        }
+
+        // یادآوریِ روزانه‌ی «دخل‌وخرج امروز یادت نره» (رجوع کن به CLAUDE.md، الهام از اپِ رفرنسِ
+        // Poolaki) - این workerِ هر۲۴ساعته بدونِ زمانِ ثابتِ روزانه اجرا می‌شه (رجوع کن به
+        // ReminderScheduler)، پس این یادآوری هم best-effort یه‌بار در روزه، نه دقیقاً عصر/شب. اگه
+        // امروز هیچ تراکنشی (چه دخل چه خرج) تو هیچ حسابی ثبت نشده باشه، یه نوتیفِ ساده یادآوری می‌ده.
+        // ⚠️ شرطِ «تا حالا چیزی ثبت نشده» صبح تقریباً همیشه درست است، پس این یادآور روی
+        // ساعتِ یادآورِ سررسید (پیش‌فرض ۹ صبح) هر روز و بی‌معنا می‌آمد. حالا فقط از
+        // [DAILY_NUDGE_FROM_HOUR] به بعد فرستاده می‌شود - «تا شب چیزی ثبت نکردی» یعنی شب.
+        // و اگر امروز اعلانِ «برگشت» رفته، این یکی ساکت می‌ماند (نه برعکس).
+        // 🧠 خلاصه‌ی هفتگی (۷ مهر): جمعه‌ها، یک بار در هفته، فقط اگر این هفته خرجی ثبت شده.
+        runCatching {
+            val cal = java.util.Calendar.getInstance()
+            val prefs = applicationContext.getSharedPreferences("weekly_summary", android.content.Context.MODE_PRIVATE)
+            val weekKey = cal.get(java.util.Calendar.YEAR) * 100 + cal.get(java.util.Calendar.WEEK_OF_YEAR)
+            if ((dueRemindersOn || dailyOn) && cal.get(java.util.Calendar.DAY_OF_WEEK) == java.util.Calendar.FRIDAY && prefs.getInt("sent", 0) != weekKey) {
+                val txs = accountRepository.observeTransactions().first()
+                    .filter { ir.sadteam.loancalc.data.countsInReports(it) && it.confirmed }
+                    .map {
+                        ir.sadteam.loancalc.core.SmartInsights.Tx(
+                            it.type == ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL.name, it.amount,
+                            it.year, it.month, it.day, it.category, it.description,
+                        )
+                    }
+                val w = ir.sadteam.loancalc.core.SmartInsights.week(txs, today)
+                if (w.spend > 0) {
+                    prefs.edit().putInt("sent", weekKey).apply()
+                    notifyWeeklySummary(w, privacyMode)
+                }
+            }
+        }
+
+        // 👥 یادآورِ دنگ (متنِ تأییدشده‌ی کاربر): دنگی که ≥۳ روز از آن گذشته و سهمِ کسی هنوز
+        // نیامده؛ برای هر دنگ حداکثر هر ۳ روز یک بار. مبلغ در اعلان نیست.
+        runCatching {
+            if (!uiPrefs.dangReminderEnabled.first()) return@runCatching
+            val prefs = applicationContext.getSharedPreferences("dang_reminder", android.content.Context.MODE_PRIVATE)
+            val names = debtRepository.observeCounterparties().first().associate { it.id to it.name }
+            val events = dangRepository.getAllEvents().filter { !it.settled }
+            for (event in events) {
+                val age = JalaliCalendar.daysBetween(PersianDate(event.year, event.month, event.day), today)
+                if (age < 3) continue
+                val lastKey = "last_${event.id}"
+                val last = prefs.getInt(lastKey, -1000)
+                val nowEpochDay = (System.currentTimeMillis() / 86_400_000L).toInt()
+                if (nowEpochDay - last < 3) continue
+                val waiting = dangRepository.observeParticipants(event.id).first()
+                    .filter { !it.settled && it.counterpartyId != null }
+                if (waiting.isEmpty()) continue
+                prefs.edit().putInt(lastKey, nowEpochDay).apply()
+                val first = names[waiting.first().counterpartyId] ?: "یکی از دوست‌ها"
+                val who = if (waiting.size == 1) first else "$first و ${toFa(waiting.size - 1)} نفرِ دیگر"
+                notifyDangWaiting(event.id, "سهمِ $who از دنگِ «${event.title}» هنوز نیامده.")
+                break
+            }
+        }
+
+        val hourNow = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        if (uiPrefs.dailyExpenseReminderEnabled.first() &&
+            !comeBackSentToday &&
+            hourNow >= DAILY_NUDGE_FROM_HOUR
+        ) {
+            val todayHasTransaction = accountRepository.observeTransactions().first()
+                .any { it.year == today.y && it.month == today.m && it.day == today.d }
+            if (!todayHasTransaction) {
+                notifyDailyExpenseReminder()
+            }
+        }
+
+        // سرِ گروه فقط از دو مورد به بالا. با یک اعلان، سرِ گروه روی اندروید ۷ یک ردیفِ
+        // تکراریِ اضافه می‌سازد و چیزی هم جمع نمی‌کند.
+        if (dueCount >= 2) notifyGroupSummary(dueCount)
+        return Result.success()
+    }
+
+    /**
+     * سرِ مشترکِ گروه. سه قسطِ یک روز حالا زیرِ یک ردیفِ جمع‌شونده می‌نشینند، ولی هر کدام
+     * اعلانِ خودش را دارد - پس کنشِ «پرداخت شد» برای هر مورد جدا می‌ماند.
+     *
+     * `setGroupSummary(true)` و `setGroup`ِ یکسان با بچه‌ها اجباری‌اند؛ بی سرِ گروه،
+     * اندروید ۷+ خودش بعدِ چهار اعلان یک سرِ بی‌متن می‌سازد.
+     */
+    private fun notifyGroupSummary(count: Int) {
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("${toFa(count.toString())} سررسیدِ نزدیک")
+            .setContentText("برای دیدنِ همه باز کن")
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
+            .setGroup(GROUP_DUE_DATES)
+            .setGroupSummary(true)
+            .setContentIntent(openAppIntent(GROUP_SUMMARY_NOTIFICATION_ID))
+            .setAutoCancel(true)
+            .build()
+        NotificationManagerCompat.from(applicationContext).notify(GROUP_SUMMARY_NOTIFICATION_ID, notification)
+    }
+
+    /** بازکردنِ خودِ برنامه، بی مقصدِ خاص. */
+    private fun openAppIntent(requestCode: Int): PendingIntent {
+        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        return PendingIntent.getActivity(
+            applicationContext,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
+
+    /** دکمه‌ی «فردا یادم بیاور» - روی هر یادآورِ سررسید. */
+    private fun snoozeAction(notificationId: Int, snoozeKey: String): NotificationCompat.Action {
+        val intent = Intent(applicationContext, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_SNOOZE
+            putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(NotificationActionReceiver.EXTRA_SNOOZE_KEY, snoozeKey)
+        }
+        // requestCode یکتا اجباریه: با کدِ تکراری، extras یه PendingIntentِ قدیمی‌تر رو
+        // بازنویسی نمی‌کنن و دکمه روی موردِ اشتباه عمل می‌کنه.
+        val pending = PendingIntent.getBroadcast(
+            applicationContext,
+            "snooze_$snoozeKey".hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        return NotificationCompat.Action.Builder(0, "فردا یادم بیاور", pending).build()
+    }
+
+    /** دکمه‌ی «پرداخت شد» - قسطِ وام یا چک. */
+    private fun markPaidAction(
+        notificationId: Int,
+        loanId: Long? = null,
+        installmentNumber: Int? = null,
+        chequeId: Long? = null,
+    ): NotificationCompat.Action {
+        val intent = Intent(applicationContext, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_MARK_PAID
+            putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+            loanId?.let { putExtra(NotificationActionReceiver.EXTRA_LOAN_ID, it) }
+            installmentNumber?.let { putExtra(NotificationActionReceiver.EXTRA_INSTALLMENT, it) }
+            chequeId?.let { putExtra(NotificationActionReceiver.EXTRA_CHEQUE_ID, it) }
+        }
+        val pending = PendingIntent.getBroadcast(
+            applicationContext,
+            "paid_$notificationId".hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        return NotificationCompat.Action.Builder(0, if (chequeId != null) "پاس شد" else "پرداخت شد", pending).build()
+    }
+
+    /** نزدیک‌ترین تاریخی که [dayOfMonth] رخ می‌ده (امروز یا بعدش) - اگه امسال/همین‌ماه گذشته باشه
+     * می‌ره ماهِ بعد. روزِ بزرگ‌تر از تعدادِ روزهای واقعیِ ماه (مثلاً ۳۱ تو ماهی که فقط ۳۰ روزه) به
+     * آخرِ همون ماه clamp می‌شه - هم‌الگو با PersianCalendar.addMonths. */
+    private fun nextOccurrence(today: PersianDate, dayOfMonth: Int): PersianDate {
+        val clampedThisMonth = dayOfMonth.coerceAtMost(JalaliCalendar.daysInMonth(today.y, today.m))
+        if (clampedThisMonth >= today.d) return PersianDate(today.y, today.m, clampedThisMonth)
+        val nextM = if (today.m == 12) 1 else today.m + 1
+        val nextY = if (today.m == 12) today.y + 1 else today.y
+        val clampedNextMonth = dayOfMonth.coerceAtMost(JalaliCalendar.daysInMonth(nextY, nextM))
+        return PersianDate(nextY, nextM, clampedNextMonth)
+    }
+
+    private fun dayLabel(daysLeft: Int): String = when (daysLeft) {
+        0 -> "امروز"
+        1 -> "فردا"
+        else -> "${toFa(daysLeft.toString())} روز دیگر"
+    }
+
+    private suspend fun notifyLoan(loan: LoanEntity, m: Int, daysLeft: Int, privacyMode: Boolean) {
+        val whenLabel = dayLabel(daysLeft)
+        val notificationId = "${loan.id}_$m".hashCode()
+        // زدنِ نوتیفیکیشن باید مستقیم همون وام رو باز کنه (مورد ۵ تو CLAUDE.md) - رجوع کن به
+        // DeepLinkTarget/MainActivity.handleDeepLinkIntent. requestCode باید یکتا باشه وگرنه
+        // extras یه PendingIntentِ قدیمی‌تر رو بازنویسی نمی‌کنن.
+        val contentIntent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_OPEN_LOAN_ID, loan.id)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            notificationId,
+            contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext, R.drawable.notif_loan))
+            // در حالتِ خصوصی نامِ وام هم نمی‌آید؛ «وامِ مسکنِ ۱۲ میلیونی» روی صفحه‌ی قفل
+            // همان‌قدر افشاست که مبلغ.
+            .setContentTitle(if (privacyMode) "یادآوریِ قسط" else "یادآوری قسط ${loan.name}")
+            .setContentText(
+                if (privacyMode) {
+                    "قسط شماره ${toFa(m)} $whenLabel سررسید می‌شود"
+                } else {
+                    "قسط شماره ${toFa(m)} وام «${loan.name}» $whenLabel سررسید می‌شود"
+                },
+            )
+            .setContentIntent(pendingIntent)
+            .addAction(markPaidAction(notificationId, loanId = loan.id, installmentNumber = m))
+            .addAction(snoozeAction(notificationId, "loan_${loan.id}_$m"))
+            .setGroup(GROUP_DUE_DATES)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_loan")
+        NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
+        inboxRepository.post(
+            kind = InboxMessageEntity.Kind.SYSTEM,
+            title = "یادآوریِ قسط",
+            body = "قسط شماره ${toFa(m)} وام «${loan.name}» $whenLabel سررسید می‌شود",
+        )
+    }
+
+    private suspend fun notifyCheque(cheque: ChequeEntity, daysLeft: Int, privacyMode: Boolean) {
+        val whenLabel = dayLabel(daysLeft)
+        val notificationId = "cheque_${cheque.id}".hashCode()
+        // 🚨 این اعلان `setContentIntent` **نداشت**، پس تپ روش هیچ کاری نمی‌کرد - نه برنامه
+        // را باز می‌کرد و نه بسته می‌شد (`setAutoCancel` بی contentIntent بی‌اثر است).
+        // دیپ‌لینک فقط برای وام نوشته شده بود.
+        val contentIntent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_OPEN_CHEQUE_ID, cheque.id)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            notificationId,
+            contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext, R.drawable.notif_cheque))
+            .setContentTitle("یادآوری سررسید چک")
+            // شماره‌ی چک و نامِ بانک در حالتِ خصوصی نمی‌آیند. شماره‌ی چک استثنای ارقام است
+            // (لاتین می‌ماند) ولی این‌جا اصلاً نشان داده نمی‌شود.
+            .setContentText(
+                if (privacyMode) {
+                    "یک چک $whenLabel سررسید می‌شود"
+                } else {
+                    "چک شماره ${cheque.chequeNumber} (${cheque.bankName}) $whenLabel سررسید می‌شود"
+                },
+            )
+            .setContentIntent(pendingIntent)
+            .addAction(markPaidAction(notificationId, chequeId = cheque.id))
+            .addAction(snoozeAction(notificationId, "cheque_${cheque.id}"))
+            .setGroup(GROUP_DUE_DATES)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_cheque")
+        NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
+        inboxRepository.post(
+            kind = InboxMessageEntity.Kind.SYSTEM,
+            title = "یادآوریِ چک",
+            body = "چک شماره ${cheque.chequeNumber} (${cheque.bankName}) $whenLabel سررسید می‌شود",
+        )
+    }
+
+    /**
+     * ⚠️ **حالتِ خصوصی رو اعلان‌ها هم اثر می‌ذاره** (تصمیمِ تاییدشده‌ی طراح): اعلانِ
+     * «۳۲۰٬۰۰۰ ریال» رو صفحه‌ی قفلِ گوشی دقیقاً همون چیزیه که این کلید می‌خواد جلوشو بگیره.
+     * پس وقتی روشنه مبلغ از متنِ اعلان حذف می‌شه - نه یه کلیدِ دومِ جدا.
+     */
+    private suspend fun notifyRecurringPayment(
+        payment: RecurringPaymentEntity,
+        daysLeft: Int,
+        privacyMode: Boolean,
+    ) {
+        val whenLabel = dayLabel(daysLeft)
+        val notificationId = "recurring_${payment.id}".hashCode()
+        // این هم `setContentIntent` نداشت - همان باگِ اعلانِ چک.
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext, R.drawable.notif_bill))
+            .setContentTitle("یادآوریِ پرداختِ تکراری")
+            .setContentText(
+                if (privacyMode) {
+                    "«${payment.name}» $whenLabel سررسید می‌شود"
+                } else {
+                    // واحد **تومان** و رقمِ فارسی (بندِ ۲ی README + لایه‌ی ارقام). ستون ریال
+                    // است پس تبدیل همین لبه.
+                    "«${payment.name}» (${fmt(rialToToman(payment.amount.toLong()).toDouble()).faDigits()} ${ir.sadteam.loancalc.core.CoreMoneyUnit.label}) " +
+                        "$whenLabel سررسید می‌شود"
+                },
+            )
+            .setContentIntent(openAppIntent(notificationId))
+            .addAction(snoozeAction(notificationId, "recurring_${payment.id}"))
+            .setGroup(GROUP_DUE_DATES)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_recurring")
+        NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
+        inboxRepository.post(
+            kind = InboxMessageEntity.Kind.SYSTEM,
+            title = "یادآوریِ پرداختِ تکراری",
+            body = "«${payment.name}» $whenLabel سررسید می‌شود",
+        )
+    }
+
+    private suspend fun notifyBill(bill: ir.sadteam.loancalc.data.db.BillEntity, daysLeft: Int) {
+        val whenLabel = dayLabel(daysLeft)
+        val notificationId = "bill_${bill.id}".hashCode()
+        val kind = ir.sadteam.loancalc.ui.extras.billKindLabel(bill.kind)
+        val text = "قبضِ $kind «${bill.name}» $whenLabel موعدِ پرداخته"
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext, R.drawable.notif_bill))
+            .setContentTitle("یادآوریِ قبض")
+            .setContentText(text)
+            .setContentIntent(openAppIntent(notificationId))
+            .addAction(snoozeAction(notificationId, "bill_${bill.id}"))
+            .setGroup(GROUP_DUE_DATES)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_bill")
+        NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
+        inboxRepository.post(kind = InboxMessageEntity.Kind.SYSTEM, title = "یادآوریِ قبض", body = text)
+    }
+
+    private suspend fun notifyDailyExpenseReminder() {
+        val pendingIntent = openAppIntent(DAILY_EXPENSE_REMINDER_REQUEST_CODE)
+        // کانالِ انگیزشیِ کم‌اهمیت، نه کانالِ سررسید - این یکی نباید صدا کند و کاربر باید
+        // بتواند جدا خاموشش کند بی این‌که یادآورِ قسط را از دست بدهد.
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_NUDGES)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext, R.drawable.notif_no_spend))
+            .setContentTitle("درآمد‌وخرج امروز یادت نرود")
+            .setContentText("امروز هنوز هیچ تراکنشی ثبت نکردی - یک سر بزن به «جیبک»")
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_daily")
+        NotificationManagerCompat.from(applicationContext).notify(DAILY_EXPENSE_REMINDER_NOTIFICATION_ID, notification)
+        inboxRepository.post(
+            kind = InboxMessageEntity.Kind.STREAK_REMINDER,
+            title = "درآمد‌وخرج امروز یادت نرود",
+            body = "امروز هنوز هیچ تراکنشی ثبت نکردی - یک سر بزن به «جیبک»",
+        )
+    }
+
+    private suspend fun notifyDangWaiting(eventId: Long, body: String) {
+        val title = "دنگِ باز"
+        val id = 990100 + (eventId % 500).toInt()
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_NUDGES)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(openAppIntent(id))
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+        runCatching { NotificationManagerCompat.from(applicationContext).notify(id, notification) }
+        inboxRepository.post(kind = InboxMessageEntity.Kind.STREAK_REMINDER, title = title, body = body)
+    }
+
+    private suspend fun notifyWeeklySummary(w: ir.sadteam.loancalc.core.SmartInsights.Week, privacyMode: Boolean) {
+        fun t(rial: Double) = ir.sadteam.loancalc.core.toFa(ir.sadteam.loancalc.core.fmt(Math.round(rial / ir.sadteam.loancalc.core.CoreMoneyUnit.div).toDouble()))
+        val title = "خلاصه‌ی هفته‌ی تو"
+        val body = if (privacyMode) {
+            "خلاصه‌ی خرج‌های این هفته آماده است - یک سر بزن."
+        } else buildString {
+            append("این هفته ${t(w.spend)} ${ir.sadteam.loancalc.core.CoreMoneyUnit.label} خرج کردی")
+            if (w.prevSpend > 0) {
+                val diff = ((w.spend / w.prevSpend - 1) * 100).toInt()
+                append(if (diff >= 0) " (${ir.sadteam.loancalc.core.toFa(diff)}٪ بیشتر از هفته‌ی قبل)" else " (${ir.sadteam.loancalc.core.toFa(-diff)}٪ کمتر از هفته‌ی قبل)")
+            }
+            w.topCategory?.let { append(". بیشترینش: «$it»") }
+            append(".")
+        }
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_NUDGES)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(openAppIntent(WEEKLY_SUMMARY_ID))
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_weekly")
+        runCatching { NotificationManagerCompat.from(applicationContext).notify(WEEKLY_SUMMARY_ID, notification) }
+        inboxRepository.post(kind = InboxMessageEntity.Kind.STREAK_REMINDER, title = title, body = body)
+    }
+
+    private companion object {
+        const val WEEKLY_SUMMARY_ID = 990013
+
+        /** یادآورِ روزانه از این ساعت به بعد - «تا شب چیزی ثبت نکردی» یعنی شب، نه صبح. */
+        const val DAILY_NUDGE_FROM_HOUR = 20
+
+        const val DAILY_EXPENSE_REMINDER_REQUEST_CODE = 990011
+        const val DAILY_EXPENSE_REMINDER_NOTIFICATION_ID = 990011
+
+        /** کلیدِ گروهِ سررسیدها. همه‌ی بچه‌ها و سرِ گروه باید همین را داشته باشند. */
+        const val GROUP_DUE_DATES = "ir.sadteam.loancalc.group.DUE_DATES"
+        const val GROUP_SUMMARY_NOTIFICATION_ID = 990012
+
+        /** پنجره‌ی تحملِ دیرکردِ اجرا - رجوع کن به isStaleCatchUpRun. */
+        const val STALE_RUN_HOURS = 6
+    }
+
+    /**
+     * آیا این اجرا خیلی دیرتر از ساعتِ مقررِ یادآور است؟
+     *
+     * پنجره‌ی [STALE_RUN_HOURS]ساعته عمدی است: اجرایی که چند دقیقه/یکی‌دو ساعت دیر شده هنوز
+     * «صبح» است و باید بفرستد؛ اجرایی که شش ساعت دیر شده یعنی گوشی جلویش را گرفته بود و
+     * حالا دارد سرِ فرصت خالی می‌شود.
+     */
+    private fun isStaleCatchUpRun(reminderHour: Int): Boolean {
+        val now = java.util.Calendar.getInstance()
+        val hoursSinceTarget = now.get(java.util.Calendar.HOUR_OF_DAY) - reminderHour
+        // اجرای قبل از ساعتِ مقرر (مثلاً ۱ بامداد) هم نابه‌جاست - همان باگِ «پیام ساعتِ ۱ صبح».
+        return hoursSinceTarget < 0 || hoursSinceTarget > STALE_RUN_HOURS
+    }
+}

@@ -1,0 +1,20 @@
+# graphify: code-only graph (app + server). Docs, design hand-offs and assets are left out.
+design/
+store/
+*.md
+*.html
+*.txt
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.ttf
+*.zip
+*.whl
+*.jar
+*.keystore
+build/
+.gradle/
+node_modules/
+__pycache__/
+graphify-out/

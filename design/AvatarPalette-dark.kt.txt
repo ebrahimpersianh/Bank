@@ -1,0 +1,80 @@
+/*
+ * پالتِ آدمکِ جیبک — نسخه‌ی تمِ تیره، برای ui/components/Avatar.kt
+ *
+ * این پالت عمداً از توکن‌های Color.kt جداست: رنگِ شخصیِ کاربر است، نه رنگِ سیستم.
+ * پس این مقدارها هم همان‌جا، به‌شکلِ هگزِ مستقیم، کنارِ پالتِ روشن بنشینند —
+ * به AppPrimaryPill و امثالش ارجاع نده، حتی جایی که عدد نزدیک است.
+ *
+ * همه‌ی شش پس‌زمینه مات‌اند، نه آلفادار. دلیلش پایین.
+ */
+
+// نام      خط         پس‌زمینه
+// GREEN    #3DDC96    #16302A
+// PURPLE   #BE97FF    #252436
+// BLUE     #55C8FF    #1D2C3A
+// ORANGE   #FFB44D    #2A2317
+// RED      #FF6B6B    #2A1E23
+// NEUTRAL  #8B9A94    #232E38
+
+private val AvatarGreenInkDark      = Color(0xFF3DDC96)
+private val AvatarGreenBgDark       = Color(0xFF16302A)
+
+private val AvatarPurpleInkDark     = Color(0xFFBE97FF)
+private val AvatarPurpleBgDark      = Color(0xFF252436)
+
+private val AvatarBlueInkDark       = Color(0xFF55C8FF)
+private val AvatarBlueBgDark        = Color(0xFF1D2C3A)
+
+private val AvatarOrangeInkDark     = Color(0xFFFFB44D)
+private val AvatarOrangeBgDark      = Color(0xFF2A2317)
+
+private val AvatarRedInkDark        = Color(0xFFFF6B6B)
+private val AvatarRedBgDark         = Color(0xFF2A1E23)
+
+private val AvatarNeutralInkDark    = Color(0xFF8B9A94)
+private val AvatarNeutralBgDark     = Color(0xFF232E38)
+
+/*
+ * ── چرا مات و نه آلفا ──
+ *
+ * آدمک روی دو سطح می‌نشیند: AppBg (#10181F) در نوارِ بالا، و AppSurface
+ * (#1B2530) داخلِ کارتِ تنظیمات. با پس‌زمینه‌ی آلفادار رنگِ آدمک بینِ این دو
+ * جا عوض می‌شود — و این رنگِ هویتیِ کاربر است، باید همان‌جا که انتخابش کرده
+ * همان‌طور در هدر هم دیده شود. پس مات.
+ *
+ * مبنا AppBg است، نه AppSurface. سه مقدارِ PURPLE و BLUE و ORANGE عیناً همان
+ * AppPurplePill / AppInfoPill / AppWarningPillی تیره‌ی خودت‌اند، و آن‌ها روی
+ * #10181F ساخته شده‌اند؛ GREEN و RED را در همان کلید ساختم تا شش‌تا یک خانواده
+ * بمانند.
+ *
+ * روی #1B2530 هر شش‌تا یک پله ملایم‌تر می‌نشینند، چون اختلافِ دو سطح ۱۱ واحد
+ * روشنایی است. لایه‌ی جبرانی لازم نیست: در کارتِ تنظیمات آدمک ۵۶ تا ۶۶ پیکسل
+ * است و خودِ خطوطِ ink کارِ خوانایی را می‌کنند، نه پس‌زمینه. اگر در بیلد
+ * برعکسش دیده شد، بگو تا شش مقدارِ دومِ مبنی بر AppSurface را بدهم — ولی
+ * پیش‌بینی‌ام این است که لازم نشود.
+ */
+
+/*
+ * ── حلقه‌ی «انتخاب‌شده» ──
+ *
+ * گفتی حلقه ضخامتِ ۳ با avatar.color.ink است. پنج رنگ در تمِ تیره روشن‌اند و
+ * حلقه‌شان قوی و درست درمی‌آید.
+ *
+ * استثنا NEUTRAL است: ink آن #8B9A94 است که فقط ۱۲ واحد از AppLineی تیره
+ * (#2A3640) فاصله ندارد — روی #1B2530 حلقه‌ی خاکستریِ کم‌جان می‌شود و حالتِ
+ * انتخاب‌شده دیده نمی‌شود. دو راه:
+ *
+ *   الف) فقط برای حلقه، وقتی رنگ NEUTRAL است، از AppText (#F3F7F5) استفاده کن.
+ *   ب) ink خودِ NEUTRAL را در تمِ تیره به #A9B8B2 ببر.
+ *
+ * «الف» را ترجیح می‌دهم — خطوطِ آدمکِ خاکستری باید آرام بمانند؛ فقط حلقه
+ * است که باید فریاد بزند. تصمیمش با تو.
+ */
+
+/*
+ * ── دو اختلافِ ریز در پالتِ روشنِ فعلیت ──
+ * هر دو عمدی‌اند و تأیید کردی؛ فقط برای ثبت:
+ * NEUTRAL پس‌زمینه #F1F5F3 (و AppChipBg روشن #F1F5F2) — یک رقم، بی‌اهمیت.
+ * RED پس‌زمینه #FFECEC که AppDangerPill (#FFF5F5) نیست — اشباع‌ترست و برای
+ * آدمک بهتر کار می‌کند.
+ */
