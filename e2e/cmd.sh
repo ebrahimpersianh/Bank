@@ -1,6 +1,6 @@
-tap "جیبک"
-sleep 8
-shot jibak-open
+tap "بعداً"
+sleep 5
+shot after-permissions
 ui
 
 
