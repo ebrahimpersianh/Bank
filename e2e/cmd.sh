@@ -1,13 +1,9 @@
-tap "Wait"
-sleep 5
-back
-sleep 2
+tap "Close app"
+sleep 10
 swipe_up
 sleep 2
-shot drawer
+shot drawer2
 ui
-
-
 
 
 
