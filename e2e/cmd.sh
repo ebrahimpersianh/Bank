@@ -1,10 +1,6 @@
-tap "Close app"
-sleep 10
-swipe_up
-sleep 2
-shot drawer2
+tap "جیبک"
+sleep 8
+shot jibak-open
 ui
-
-
 
 
