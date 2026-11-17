@@ -51,6 +51,21 @@ class RatePromptViewModel @Inject constructor(
         _shouldShow.value = false
     }
 
+    /**
+     * درخواستِ امتیاز بعد از یک «لحظه‌ی موفقیت» (در حالِ حاضر: تسویه‌ی دنگ،
+     * `DebtScreen.onSettleAll`) - با همان دیالوگِ سفارشیِ [RatePromptDialog]، ولی با
+     * سقفِ جدا: حداکثر ۳ بار در هر نسخه، و هیچ‌وقت بعد از «دیگر نپرس».
+     *
+     * نمایشِ واقعی دستِ `MainActivity` است (`StartupPopups.canShowRate`): اگر تور،
+     * آپدیتِ اجباری، یادآورِ انقضا یا چک‌اینِ روزانه باز باشد، دیالوگ روی آن‌ها نمی‌آید -
+     * پس جریانِ پرداخت/اشتراک را سد نمی‌کند.
+     */
+    fun maybeShowAfterSuccess(version: String) {
+        viewModelScope.launch {
+            if (uiPrefs.claimRatePromptAfterSuccess(version)) _shouldShow.value = true
+        }
+    }
+
     fun onLater() {
         _shouldShow.value = false
     }

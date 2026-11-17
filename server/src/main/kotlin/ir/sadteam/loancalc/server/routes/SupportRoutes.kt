@@ -19,11 +19,14 @@ import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.Log
 import ir.sadteam.loancalc.server.Mail
 import ir.sadteam.loancalc.server.execute
+import ir.sadteam.loancalc.server.executeCounting
+import ir.sadteam.loancalc.server.giftBaseMs
 import ir.sadteam.loancalc.server.maskPhone
 import ir.sadteam.loancalc.server.queryOne
 import ir.sadteam.loancalc.server.rateLimitOk
 import ir.sadteam.loancalc.server.requireAuth
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 import java.security.SecureRandom
 
 /*
@@ -110,6 +113,26 @@ private suspend fun ApplicationCall.requireSupportAdmin(): Boolean {
 @Serializable
 private data class ReportResponse(val ok: Boolean = true, val ticket: String)
 
+/**
+ * یک تیکتِ پشتیبانیِ خودِ کاربر (قراردادِ GET /api/support/tickets — فقط برای خودش).
+ * `reply` متنِ آخرین جوابِ ادمین است که به‌صورتِ اطلاعیه‌ی اختصاصیِ «💬 جوابِ پشتیبانی (تیکت)»
+ * فرستاده شده؛ هدیه‌ی «🎁 هدیه‌ی اشتراک (تیکت)» جواب نیست و این‌جا نمی‌آید.
+ */
+@Serializable
+data class UserTicketDto(
+    val ticket: String,
+    val message: String,
+    /** open | answered | closed — همان status جدولِ bug_reports که ادمین ست می‌کند. */
+    val status: String,
+    val category: String,
+    @SerialName("created_at") val createdAt: String,
+    val reply: String? = null,
+    @SerialName("replied_at") val repliedAt: String? = null,
+)
+
+@Serializable
+private data class UserTicketsResponse(val items: List<UserTicketDto>)
+
 /** کدِ پیگیری: کوتاه و خوانا، چون کاربر آن را در ایمیل و پشتیبانی تکرار می‌کند. */
 private const val ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
@@ -120,6 +143,43 @@ private fun newTicket(): String {
 
 fun Route.supportRoutes() {
     route("/api/support") {
+        // تیکت‌های خودِ کاربر + وضعیت و آخرین جوابِ ادمین — فقط برای خودش (نه ادمین).
+        // جوابِ ادمین همان اطلاعیه‌ی اختصاصیِ «💬 جوابِ پشتیبانی (تیکت)» است (رجوع کن به POST /reply).
+        get("/tickets") {
+            val authed = call.requireAuth() ?: return@get
+            val items = Db.withConnection { conn ->
+                val rows = conn.prepareStatement(
+                    "SELECT ticket, message, status, category, created_at FROM bug_reports WHERE user_id = ? ORDER BY id DESC LIMIT 100",
+                ).use { ps ->
+                    ps.setLong(1, authed.uid)
+                    ps.executeQuery().use { rs ->
+                        buildList {
+                            while (rs.next()) {
+                                add(
+                                    listOf(
+                                        rs.getString(1), rs.getString(2), rs.getString(3),
+                                        rs.getString(4) ?: "bug", rs.getString(5),
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                }
+                rows.map { r ->
+                    val ticket = r[0]
+                    val reply = conn.queryOne(
+                        "SELECT body, created_at FROM announcements WHERE target_user_id = ? AND title = ? ORDER BY id DESC LIMIT 1",
+                        authed.uid, "💬 جوابِ پشتیبانی ($ticket)",
+                    ) { it.getString(1) to it.getString(2) }
+                    UserTicketDto(
+                        ticket = ticket, message = r[1], status = r[2], category = r[3], createdAt = r[4],
+                        reply = reply?.first, repliedAt = reply?.second,
+                    )
+                }
+            }
+            call.respond(UserTicketsResponse(items))
+        }
+
         post("/report") {
             // ۱۰ گزارش در ساعت از هر IP: کاربرِ واقعی یکی می‌فرستد.
             if (!call.rateLimitOk("support_report", 10, 60 * 60 * 1000L)) return@post
@@ -324,21 +384,42 @@ fun Route.supportRoutes() {
                 return@post
             }
             val result = Db.withConnection { conn ->
-                val row = conn.queryOne("SELECT user_id, ticket, rewarded_days FROM bug_reports WHERE id = ?", body.id) {
-                    Triple(it.getLong(1), it.getString(2), it.getInt(3))
-                } ?: return@withConnection "not_found"
-                if (row.third > 0) return@withConnection "already_rewarded"
-                val currentUntil = conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", row.first) { it.getString(1) }
-                val now = System.currentTimeMillis()
-                val current = currentUntil?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
-                val expiry = java.time.Instant.ofEpochMilli(maxOf(current, now) + body.days * 24L * 60 * 60 * 1000).toString()
-                conn.execute("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, row.first)
-                conn.execute("UPDATE bug_reports SET rewarded_days = ?, status = 'answered' WHERE id = ?", body.days, body.id)
-                conn.insertReturningId(
-                    "INSERT INTO announcements (title, body, kind, target_user_id) VALUES (?, ?, ?, ?)",
-                    "🎁 هدیه‌ی اشتراک (${row.second})", text, "info", row.first,
-                )
-                "ok"
+                // همه‌چیز در **یک تراکنش**: ادعای هدیه، تمدید و درجِ پیام. چکِ `already_rewarded`
+                // اتمیک است (UPDATE با شرطِ `rewarded_days = 0`) تا دو درخواستِ هم‌زمان دو بار هدیه ندهند.
+                conn.autoCommit = false
+                try {
+                    val row = conn.queryOne("SELECT user_id, ticket, rewarded_days FROM bug_reports WHERE id = ?", body.id) {
+                        Triple(it.getLong(1), it.getString(2), it.getInt(3))
+                    } ?: run { conn.rollback(); return@withConnection "not_found" }
+                    if (row.third > 0) {
+                        conn.rollback()
+                        return@withConnection "already_rewarded"
+                    }
+                    val claimed = conn.executeCounting(
+                        "UPDATE bug_reports SET rewarded_days = ?, status = 'answered' WHERE id = ? AND rewarded_days = 0",
+                        body.days, body.id,
+                    )
+                    if (claimed == 0) {
+                        conn.rollback()
+                        return@withConnection "already_rewarded"
+                    }
+                    // پایه max(الان، انقضا، پایانِ دوره‌ی آزمایشی) تا روزهای هدیه با ماهِ مجانی هم‌پوشانی نکنند.
+                    val expiry = java.time.Instant.ofEpochMilli(
+                        giftBaseMs(conn, row.first) + body.days * 24L * 60 * 60 * 1000,
+                    ).toString()
+                    conn.execute("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, row.first)
+                    conn.insertReturningId(
+                        "INSERT INTO announcements (title, body, kind, target_user_id) VALUES (?, ?, ?, ?)",
+                        "🎁 هدیه‌ی اشتراک (${row.second})", text, "info", row.first,
+                    )
+                    conn.commit()
+                    "ok"
+                } catch (e: Exception) {
+                    runCatching { conn.rollback() }
+                    throw e
+                } finally {
+                    runCatching { conn.autoCommit = true }
+                }
             }
             when (result) {
                 "ok" -> call.respond(mapOf("ok" to true))

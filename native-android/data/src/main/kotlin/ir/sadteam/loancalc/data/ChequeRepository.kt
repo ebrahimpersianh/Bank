@@ -38,9 +38,9 @@ class ChequeRepository(
 ) {
     /** بدنه را داخلِ یک تراکنشِ دیتابیس اجرا می‌کند - یا اگر دیتابیسی نداریم، همان‌طور.
      * تودرتو امن است: Room تراکنشِ داخلی را به همان تراکنشِ بیرونی می‌چسبانَد. */
-    private suspend fun <T> inTransaction(block: suspend () -> T): T {
-        val db = database ?: return block()
-        return db.withTransaction { block() }
+    private suspend fun <T> inTransaction(block: suspend () -> T): T = runDbWrite {
+        val db = database ?: return@runDbWrite block()
+        db.withTransaction { block() }
     }
 
     fun observeCheques(): Flow<List<ChequeEntity>> = chequeDao.observeAll()
@@ -64,7 +64,7 @@ class ChequeRepository(
         previousBalance: Double? = null,
         depositAmount: Double? = null,
         counterpartyId: Long? = null,
-    ) {
+    ) = runDbWrite {
         chequeDao.upsert(
             ChequeEntity(
                 id = System.currentTimeMillis(),
@@ -99,19 +99,19 @@ class ChequeRepository(
      * حدسِ خودکار رو دیتای قدیمی (سوالِ ۶). */
     suspend fun chequesWithoutCounterparty(): List<ChequeEntity> = chequeDao.getAll().filter { it.counterpartyId == null }
 
-    suspend fun updateCheque(cheque: ChequeEntity) {
+    suspend fun updateCheque(cheque: ChequeEntity) = runDbWrite {
         chequeDao.upsert(cheque)
     }
 
-    suspend fun setStatus(cheque: ChequeEntity, status: ChequeStatus) {
+    suspend fun setStatus(cheque: ChequeEntity, status: ChequeStatus) = runDbWrite {
         chequeDao.upsert(cheque.copy(status = status.name))
     }
 
-    suspend fun setArchived(cheque: ChequeEntity, archived: Boolean) {
+    suspend fun setArchived(cheque: ChequeEntity, archived: Boolean) = runDbWrite {
         chequeDao.upsert(cheque.copy(archived = archived))
     }
 
-    suspend fun deleteCheque(id: Long) {
+    suspend fun deleteCheque(id: Long) = runDbWrite {
         chequeDao.deleteById(id)
     }
 
@@ -139,7 +139,7 @@ class ChequeRepository(
         endSerial: Long,
         sayadId: String? = null,
         last4: String? = null,
-    ) {
+    ) = runDbWrite {
         chequeBookDao.upsert(
             ChequeBookEntity(
                 id = System.currentTimeMillis(),
@@ -155,20 +155,20 @@ class ChequeRepository(
         )
     }
 
-    suspend fun deleteChequeBook(book: ChequeBookEntity) {
+    suspend fun deleteChequeBook(book: ChequeBookEntity) = runDbWrite {
         chequeBookDao.delete(book)
     }
 
     /** بستنِ یه دسته‌چکِ تمام‌شده - `29k` («بسته‌شده در فلان‌ماه»). دوباره صداکردنش رو یه دسته‌چکِ
      * بسته بی‌اثره (closedAt عوض نمی‌شه، همون تاریخِ اولِ بسته‌شدن می‌مونه). */
-    suspend fun closeChequeBook(book: ChequeBookEntity) {
+    suspend fun closeChequeBook(book: ChequeBookEntity) = runDbWrite {
         if (book.closedAt != null) return
         chequeBookDao.upsert(book.copy(closedAt = isoNow()))
     }
 
     /** بعد از ثبت یه چک با شماره‌ی عددی از یه دسته‌چک، اگه شماره برابر nextSerial فعلی بود، یکی
      * جلو می‌ره - پیشنهاد ساده‌ی «شماره‌ی بعدی» برای دفعه‌ی بعد، نه شماره‌گذاری اجباری. */
-    private suspend fun bumpNextSerial(chequeBookId: Long, chequeNumber: String) {
+    private suspend fun bumpNextSerial(chequeBookId: Long, chequeNumber: String) = runDbWrite {
         val serial = chequeNumber.toLongOrNull() ?: return
         val book = chequeBookDao.getAll().firstOrNull { it.id == chequeBookId } ?: return
         if (serial == book.nextSerial && book.nextSerial < book.endSerial) {

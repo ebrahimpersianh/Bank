@@ -305,11 +305,16 @@ fun LoanDetailScreen(
     // وقتی حداقل یه حساب از قبل ساخته شده (وگرنه این مرحله معنی نداره، مستقیم ثبت می‌شه).
     var pendingPayment by remember { mutableStateOf<PendingLoanPayment?>(null) }
     fun commitPayment(payment: PendingLoanPayment, account: AccountEntity?) {
+        // پر بودنِ حافظه موقعِ ثبتِ پرداخت: به‌جای کرش، همان پیامِ پایینِ صفحه نشان داده می‌شود.
+        val onPayFailure: (Throwable) -> Unit = {
+            calendarMessage = ir.sadteam.loancalc.data.userMessageForDbError(it)
+                ?: "ثبت پرداخت ناموفق بود؛ دوباره تلاش کن."
+        }
         if (payment.ms.size == 1) {
             val m = payment.ms.first()
-            if (payment.paidDate != null) viewModel.setRowPaidLate(loan, m, payment.paidDate) else viewModel.setRowPaidOnTime(loan, m)
+            if (payment.paidDate != null) viewModel.setRowPaidLate(loan, m, payment.paidDate, onPayFailure) else viewModel.setRowPaidOnTime(loan, m, onPayFailure)
         } else {
-            if (payment.paidDate != null) viewModel.setRowsPaidLate(loan, payment.ms, payment.paidDate) else viewModel.setRowsPaidOnTime(loan, payment.ms)
+            if (payment.paidDate != null) viewModel.setRowsPaidLate(loan, payment.ms, payment.paidDate, onPayFailure) else viewModel.setRowsPaidOnTime(loan, payment.ms, onPayFailure)
         }
         if (account != null) {
             val amount = payment.ms.sumOf { m ->

@@ -176,66 +176,22 @@ enum class ShopCategory(val label: String, val tab: String) {
     REWARD("جایزه", "جایزه"),
 }
 
-/** یک ردیفِ دفتر. `amount` مثبت = کسب، منفی = خرج. */
-data class CoinEvent(
-    val id: Long = 0,
-    val amount: Int,
-    val label: String,
-    /** `reason:NAME` یا `spend:NAME` یا `badge:NAME` - برای شمارشِ سقف. */
-    val key: String,
-    val atEpochMs: Long,
-)
-
 /**
- * سقفِ باقی‌ماندهِ‌ی امروز - عددی که نوارِ `45a` نشان می‌دهد.
- *
- * ⚠️ این نوار مهم‌ترین چیزِ صفحه‌ی سکه است و ظاهراً کوچک به‌نظر می‌رسد: **بی آن، کاربر
- * نمی‌فهمد چرا ثبتِ چهارمش سکه نداد و باگ گزارش می‌کند.** سقفِ پیدا نشده، سقفِ باگ است.
+ * ⚠️ مسیرِ جایزه‌دهیِ این فایل (`awardFor` + `CoinAward` + `remainingDailyCap`) مرده بود -
+ * هیچ فراخوانی نداشت و حذف شد. سیستمِ واقعیِ سکه `GamificationRepository` است.
+ * از این فایل فقط جدولِ قیمت/دسته (`CoinSpend`) و ثابتِ نمایشیِ [CoinReason.DAILY_COIN_CAP]
+ * (در `CoinHubScreen` برای «امروز X از ۵۰ سکه») می‌مانَد.
  */
-fun remainingDailyCap(todayEvents: List<CoinEvent>): Int =
-    (CoinReason.DAILY_COIN_CAP - todayEvents.filter { it.amount > 0 }.sumOf { it.amount })
-        .coerceAtLeast(0)
-
-sealed interface CoinAward {
-    data class Granted(val amount: Int) : CoinAward
-    /** سقفِ خودِ کار پر شده. */
-    data object ReasonCapped : CoinAward
-    /** سقفِ کلِ روز پر شده. */
-    data object DailyCapped : CoinAward
-}
-
-/**
- * محاسبه‌ی جایزه. **هیچ ردیفی نمی‌نویسد** - تصمیم را برمی‌گرداند تا لایه‌ی دیتا در
- * تراکنشِ خودش ثبتش کند.
- *
- * [periodEvents] ردیف‌های همین کار در بازه‌ی [CoinReason.period]، و [todayEvents]
- * ردیف‌های کلِ امروز.
- */
-fun awardFor(
-    reason: CoinReason,
-    periodEvents: List<CoinEvent>,
-    todayEvents: List<CoinEvent>,
-    badgeAmount: Int? = null,
-): CoinAward {
-    val alreadyThisPeriod = periodEvents.count { it.key == "reason:${reason.name}" }
-    if (alreadyThisPeriod >= reason.dailyCap) return CoinAward.ReasonCapped
-
-    val amount = badgeAmount ?: reason.amount
-    val remaining = remainingDailyCap(todayEvents)
-    // سقفِ روز **نمی‌بُرد**، رد می‌کند: نیم‌جایزه به کاربر می‌گوید محاسبه خراب است.
-    // نشانِ دستاورد استثناست - یک‌بار در عمر است و از دست دادنش بابتِ سقفِ روز ظالمانه.
-    if (reason != CoinReason.BADGE_UNLOCKED && amount > remaining) return CoinAward.DailyCapped
-
-    return CoinAward.Granted(amount)
-}
 
 sealed interface BuyResult {
     data object Ok : BuyResult
     data object AlreadyOwned : BuyResult
     /** حالتِ «بی‌سکه»ی فریمِ `18c` - پیام «۷۰ سکه کم داری». */
     data class NotEnough(val missing: Int) : BuyResult
-    /** `AGED_GOLD`: قیمتش ۰ است ولی نشان می‌خواهد. سکه همه‌چیز را نمی‌خرد. */
+    /** قیمتش ۰ است ولی نشان می‌خواهد. سکه همه‌چیز را نمی‌خرد. */
     data class BadgeLocked(val badgeLabel: String) : BuyResult
     /** بازه‌ی قلمِ کمیاب تمام شده. */
     data object WindowClosed : BuyResult
+    /** خرج ثبت نشد (مثلاً حافظه‌ی گوشی پر است) - سکه‌ای کم نشده و مالکیتی هم ثبت نشده. */
+    data class Failed(val message: String) : BuyResult
 }

@@ -70,8 +70,12 @@ private suspend fun getAccessToken(): String {
 
 /* محصول رو به‌عنوان «غیرقابل‌مصرف» (نه اشتراک تمدیدشونده) تایید می‌کنه — چون کلاینت هم از
    purchaseProduct (نه subscribeProduct) استفاده می‌کنه. purchaseState=0 یعنی خریداری‌شده
-   و برگشت‌نخورده (0 = purchased, 1 = refunded, طبق مستندات کافه‌بازار). */
-suspend fun validateInAppPurchase(productId: String, purchaseToken: String): Boolean {
+   و برگشت‌نخورده (0 = purchased, 1 = refunded, طبق مستندات کافه‌بازار).
+   ⚠️ پاسخِ اعتبارسنجی هیچ فیلدی برای «خریدِ تستی» ندارد (فیلدها فقط kind/purchaseTime/
+   purchaseState/consumptionState/developerPayload اند) و کافه‌بازار وب‌هوکِ ریفاند هم
+   نمی‌دهد؛ خریدِ تستی/برگشت‌خورده فقط با بازبینیِ دوره‌ای ([PurchaseRevalidation]) یا
+   علامتِ دستیِ ادمین (POST /api/admin/purchases/flag) گرفته می‌شود. */
+suspend fun validateInAppPurchase(productId: String, purchaseToken: String): PurchaseValidation {
     val accessToken = getAccessToken()
     val url = PURCHASE_URL_TMPL
         .replace(":package_name", CAFEBAZAAR_PACKAGE_NAME.encodeURLParameter())
@@ -81,7 +85,11 @@ suspend fun validateInAppPurchase(productId: String, purchaseToken: String): Boo
     val response = cafebazaarHttpClient.get(url) {
         parameter("access_token", accessToken)
     }
-    if (!response.status.isSuccess()) return false
-    val json = runCatching { response.body<JsonObject>() }.getOrNull() ?: return false
-    return json["purchaseState"]?.jsonPrimitive?.intOrNull == 0
+    if (!response.status.isSuccess()) return PurchaseValidation(valid = false)
+    val json = runCatching { response.body<JsonObject>() }.getOrNull() ?: return PurchaseValidation(valid = false)
+    return when (json["purchaseState"]?.jsonPrimitive?.intOrNull) {
+        0 -> PurchaseValidation(valid = true)
+        1 -> PurchaseValidation(valid = false, refunded = true)
+        else -> PurchaseValidation(valid = false)
+    }
 }

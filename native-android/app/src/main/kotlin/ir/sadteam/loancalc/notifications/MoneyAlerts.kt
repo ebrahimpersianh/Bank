@@ -88,6 +88,20 @@ object BudgetAlerts {
 
     @Volatile private var retryScheduled = false
 
+    /**
+     * شناسه‌ی اعلان برای هر (بودجه، سطح) — **یکتا و پایدار**.
+     *
+     * قبلاً `918_500 + (b.id % 400)` بود (+۴۰۰ برای سطحِ ۱۰۰٪): دو بودجه‌ی متفاوت که
+     * شناسه‌شان هم‌مانده‌ی ۴۰۰ بود (یا سطحِ ۱۰۰٪ یکی با سطحِ ۸۰٪ دیگری) **همان شناسه**
+     * را می‌گرفتند و اعلانِ دومی، اعلانِ اولی را در نوار بازنویسی می‌کرد — کاربر فقط
+     * یکی را می‌دید. حالا از خودِ شناسه‌ی بودجه + سطح هش گرفته می‌شود (هم‌الگو با
+     * `AutoTxNotifier` و `DueDateReminderWorker` که `"autotx_$txId".hashCode()` می‌سازند):
+     * هر بودجه/سطح شناسه‌ی خودش را دارد، پس اعلانِ یک بودجه هرگز اعلانِ دیگری را پاک
+     * نمی‌کند و تپ روی آن هم (requestCode همین شناسه است) به همان بودجه می‌رسد.
+     */
+    private fun budgetNotificationId(budgetId: Long, level: Int): Int =
+        "budget_alert_${budgetId}_$level".hashCode()
+
     /** اعلانِ دیگری تازه آمده؛ یک ساعت بعد دوباره نگاه کن (فقط یک نوبتِ منتظر). */
     private fun retryLater(context: Context, repo: AccountRepository) {
         if (retryScheduled) return
@@ -130,7 +144,7 @@ object BudgetAlerts {
                     // بی مبلغ: اعلان روی صفحه‌ی قفل دیده می‌شود و حالتِ خصوصی را هم رعایت نمی‌کرد.
                     "تا آخرِ ماه حواست به خرجِ این دسته باشد."
             }
-            notify(context, 918_500 + (b.id % 400).toInt() + if (level == 100) 400 else 0, title, text, "budget")
+            notify(context, budgetNotificationId(b.id, level), title, text, "budget")
         }
     }
 }

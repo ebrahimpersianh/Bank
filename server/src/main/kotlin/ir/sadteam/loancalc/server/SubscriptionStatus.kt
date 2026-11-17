@@ -1,8 +1,9 @@
 package ir.sadteam.loancalc.server
 
+import java.sql.Connection
 import java.time.Instant
 
-/* دوره‌ی آزمایشی رایگان: ۷ روز از لحظه‌ی اولین ورودِ موفق با شماره موبایل (created_at رو جدول
+/* دوره‌ی آزمایشی رایگان: ۳۰ روز از لحظه‌ی اولین ورودِ موفق با شماره موبایل (created_at رو جدول
    users، که فقط همون یه‌بار موقع ساختِ ردیف ست می‌شه و هیچ‌جای دیگه‌ای دست‌کاری نمی‌شه) - یعنی
    کاملاً سمت سرور و کلید‌خورده به شماره تلفنه، نه به گوشی/نصب. خروج از حساب، پاک‌کردن داده‌ی اپ،
    حذف و نصب دوباره، یا حتی نصب رو گوشی دیگه هیچ‌کدوم دوره‌ی آزمایشی رو ریست نمی‌کنن، چون فقط با
@@ -40,7 +41,7 @@ fun trialDaysLeft(createdAt: String?, days: Int? = null): Int? {
 /* یه کاربر مشترکه (یا هنوز تو دوره‌ی آزمایشی رایگانه) اگه:
    - دستی (subscribed=1، برای پشتیبانی/تست) فعال شده باشه، یا
    - یکی از پلن‌های زمان‌دار (subscribed_until) هنوز منقضی نشده باشه، یا
-   - هنوز تو ۷ روز اولِ بعد از اولین ثبت‌نامش باشه. */
+   - هنوز تو ۳۰ روز اولِ بعد از اولین ثبت‌نامش باشه. */
 fun isSubscribed(user: UserRow?): Boolean {
     if (user == null) return false
     if (user.subscribed) return true
@@ -57,7 +58,7 @@ fun isSubscribed(user: UserRow?): Boolean {
 
 /** باگِ رفع‌شده: [trialDaysLeft] قبلاً بی‌قید و شرط فقط از رو created_at حساب می‌شد و به کلاینت
  * می‌رفت - یعنی حتی یه حسابِ **دائمیِ** دستی (subscribed=1، مثلِ حسابِ تست/شخصیِ توسعه‌دهنده) که
- * تصادفاً تو ۷ روزِ اولِ ثبت‌نامش بود، همچنان بجِ گمراه‌کننده‌ی «دوره‌ی آزمایشی: X روز مانده» می‌گرفت
+ * تصادفاً تو ۳۰ روزِ اولِ ثبت‌نامش بود، همچنان بجِ گمراه‌کننده‌ی «دوره‌ی آزمایشی: X روز مانده» می‌گرفت
  * (گزارشِ کاربر: «حساب دائمی درست نیست، بازم اشتباه می‌زنه»). این تابع فقط وقتی trialDaysLeft
  * واقعاً *دلیلِ* مشترک‌بودنه (نه یه اشتراکِ دستی یا خریدِ واقعیِ زمان‌دار) عددی برمی‌گردونه؛ کلاینت
  * (SettingsScreen) از رو null-بودنش بجِ آزمایشی رو نشون نمی‌ده. */
@@ -69,4 +70,24 @@ fun trialDaysLeftIfApplicable(user: UserRow): Int? {
         if (untilMs != null && untilMs > System.currentTimeMillis()) return null
     }
     return trialDaysLeft(user.createdAt, user.trialDays)
+}
+
+/**
+ * پایه‌ی تمدیدِ هر هدیه‌ی اشتراک: `max(الان، انقضای فعلی، پایانِ دوره‌ی آزمایشی)`.
+ *
+ * قاعده‌ی ۲۰ مهر (خواسته‌ی کاربر) که اول فقط در `broadcast()` بود: کسی که هنوز در ماهِ
+ * رایگان است، هدیه را **بعد از پایانِ** آن می‌گیرد، نه از امروز — وگرنه روزهای هدیه با
+ * روزهای رایگانِ باقی‌مانده روی هم می‌افتادند و عملاً می‌سوختند. همه‌ی مسیرهای هدیه
+ * (گروهی، مستقیم، پشتیبانی، کدِ هدیه، هدیه‌ی انتشار) باید همین یک تابع را استفاده کنند.
+ */
+fun giftBaseMs(conn: Connection, uid: Long, now: Long = System.currentTimeMillis()): Long {
+    val base = conn.queryOne(
+        "SELECT subscribed_until, created_at, trial_days, trial_blocked FROM users WHERE id = ?", uid,
+    ) { rs ->
+        val current = rs.getString(1)?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
+        val trialEnd = if (rs.getInt(4) != 0) 0L
+        else trialEndsAtMs(rs.getString(2), rs.getInt(3).takeIf { !rs.wasNull() }) ?: 0L
+        maxOf(now, current, trialEnd)
+    }
+    return base ?: now
 }

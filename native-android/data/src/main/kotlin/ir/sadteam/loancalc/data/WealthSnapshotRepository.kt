@@ -24,7 +24,7 @@ class WealthSnapshotRepository(private val dao: WealthSnapshotDao) {
      * ⚠️ با داراییِ صفر هم نوشته می‌شود: «آن روز چیزی نداشتم» خودش یک نقطه‌ی معتبرِ
      * نمودار است، و نبودِ ردیف با صفربودن فرق دارد.
      */
-    suspend fun record(today: PersianDate, cashRial: Double, assetsRial: Double) {
+    suspend fun record(today: PersianDate, cashRial: Double, assetsRial: Double) = runDbWrite {
         dao.upsert(
             WealthSnapshotEntity(
                 dateKey = keyOf(today),
@@ -37,7 +37,7 @@ class WealthSnapshotRepository(private val dao: WealthSnapshotDao) {
         dao.purgeBefore(keyOf(PersianDate(today.y - 1, today.m, today.d)))
     }
 
-    suspend fun clearLocal() = dao.clear()
+    suspend fun clearLocal() = runDbWrite { dao.clear() }
 
     companion object {
         /** رقمِ لاتین و دو رقمی، تا مرتب‌سازیِ رشته‌ای با ترتیبِ تاریخ یکی باشد. */

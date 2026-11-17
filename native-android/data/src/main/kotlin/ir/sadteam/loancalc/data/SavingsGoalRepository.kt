@@ -23,7 +23,7 @@ class SavingsGoalRepository(private val dao: SavingsGoalDao) {
         deadlineYear: Int? = null,
         deadlineMonth: Int? = null,
         deadlineDay: Int? = null,
-    ) {
+    ) = runDbWrite {
         dao.upsert(
             SavingsGoalEntity(
                 id = System.currentTimeMillis(),
@@ -39,7 +39,7 @@ class SavingsGoalRepository(private val dao: SavingsGoalDao) {
     }
 
     /** ویرایشِ مشخصات. `savedRial` عمداً این‌جا دست‌نخورده می‌مانَد - راهش [contribute] است. */
-    suspend fun updateGoal(goal: SavingsGoalEntity) {
+    suspend fun updateGoal(goal: SavingsGoalEntity) = runDbWrite {
         dao.upsert(goal.copy(achievedAt = achievedStamp(goal)))
     }
 
@@ -51,7 +51,7 @@ class SavingsGoalRepository(private val dao: SavingsGoalDao) {
      *
      * @return هدفِ به‌روزشده، یا `null` اگر پیدا نشد.
      */
-    suspend fun contribute(goalId: Long, deltaRial: Double): SavingsGoalEntity? {
+    suspend fun contribute(goalId: Long, deltaRial: Double): SavingsGoalEntity? = runDbWrite {
         val goal = dao.byId(goalId) ?: return null
         val updated = goal.copy(savedRial = (goal.savedRial + deltaRial).coerceAtLeast(0.0))
         // مُهرِ رسیدن **یک‌بار** زده می‌شود و با برداشتِ بعدی پس گرفته نمی‌شود: به هدف
@@ -61,7 +61,7 @@ class SavingsGoalRepository(private val dao: SavingsGoalDao) {
         return stamped
     }
 
-    suspend fun deleteGoal(goal: SavingsGoalEntity) {
+    suspend fun deleteGoal(goal: SavingsGoalEntity) = runDbWrite {
         dao.delete(goal)
     }
 

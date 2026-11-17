@@ -162,6 +162,7 @@ fun ShopScreen(
                 is BuyResult.NotEnough -> "${toFa(outcome.missing)} سکه کم داری."
                 is BuyResult.BadgeLocked -> "اول باید نشانِ «${outcome.badgeLabel}» را بگیری."
                 is BuyResult.WindowClosed -> "بازه‌ی این قلم تمام شده."
+                is BuyResult.Failed -> outcome.message
             },
             isSuccess = outcome is BuyResult.Ok,
         )

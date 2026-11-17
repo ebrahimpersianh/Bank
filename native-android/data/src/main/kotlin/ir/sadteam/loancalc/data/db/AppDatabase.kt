@@ -689,10 +689,17 @@ abstract class AppDatabase : RoomDatabase() {
                 instance ?: run {
                     // وام/چک/حساب اطلاعات مالی/شخصی‌ان؛ SQLCipher فایل دیتابیس رو با AES-256
                     // رمزنگاری می‌کنه (پسورد از Android Keystore - رجوع کن به DbPassphrase.kt) تا
-                    // گوشیِ روت‌شده نتونه مستقیم فایلِ خام رو بخونه. چون این پروژه هنوز پیش از
-                    // انتشار عمومیه (فاز ۰/۱، هیچ داده‌ی واقعی کاربری نیست)، این تغییر بدون هیچ
-                    // migration ای اعمال می‌شه - نصب‌های قبلیِ رمزنگاری‌نشده با تغییرِ version دوباره
-                    // ساخته می‌شن (fallbackToDestructiveMigration، هم‌مثل تغییرات schema قبلی).
+                    // گوشیِ روت‌شده نتونه مستقیم فایلِ خام رو بخونه.
+                    //
+                    // ⚠️ کامنتِ قدیمیِ «هنوز داده‌ی واقعی کاربری نیست» دیگر درست نیست — اپ
+                    // حالا داده‌ی واقعیِ کاربر (وام/چک/حساب) دارد و پاک‌شدنِ بی‌صدای دیتابیس
+                    // غیرقابلِ جبران است. برای همین fallback مخرب فقط برای نسخه‌های ۱ تا ۸
+                    // (پیش از اولین migration ثبت‌شده، یعنی نصب‌های خیلی قدیمیِ پیش از
+                    // رمزنگاری) مجاز است — رجوع کن به fallbackToDestructiveMigrationFrom
+                    // پایین. هر نسخه‌ی ۹ تا ۳۶ مسیرِ migration دارد و هر نسخه‌ی آینده هم
+                    // **باید** migration بگیرد؛ اگر فراموش شود، باز شدنِ دیتابیس با خطا
+                    // می‌ایستد (داده سالم می‌ماند و باگ در تست دیده می‌شود) به‌جای آن‌که
+                    // بی‌صدا همه‌چیز پاک شود.
                     SQLiteDatabase.loadLibs(context)
                     val factory = SupportFactory(dbPassphrase(context.applicationContext))
                     Room.databaseBuilder(
@@ -704,8 +711,14 @@ abstract class AppDatabase : RoomDatabase() {
                         // برخلاف ارتقاهای قبلیِ schema (که همه destructive بودن، چون هنوز داده‌ی
                         // واقعی کاربری نبود)، این‌بار کاربر داره فعالانه رو وام‌های واقعی‌اش تست
                         // می‌کنه - یه migration واقعی نوشتیم که ستون جدید رو اضافه کنه بدون پاک‌کردنِ
-                        // جدول‌ها. fallbackToDestructiveMigration فقط برای نسخه‌های خیلی قدیمی‌تر
-                        // (قبل از این migration) که پوشش داده نشدن نگه داشته شده.
+                        // جدول‌ها.
+                        //
+                        // 🚨 **دیگر fallbackToDestructiveMigration()ی سراسری نیست**: فقط
+                        // نسخه‌های ۱ تا ۸ (که هیچ migrationای برایشان ثبت نشده و به دورانِ
+                        // پیش از رمزنگاری برمی‌گردند) می‌توانند مخرب بازسازی شوند. اگر
+                        // نسخه‌ای بدونِ migrationِ ثبت‌شده برسد (مثلاً نسخه‌ی ۳۷ بدونِ
+                        // migration)، Room خطا می‌دهد و دیتابیس **پاک نمی‌شود** — نسخه‌ی
+                        // تازه حتماً باید migration بگیرد.
                         .addMigrations(
                             MIGRATION_9_10,
                             MIGRATION_10_11,
@@ -735,7 +748,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_34_35,
                             MIGRATION_35_36,
                         )
-                        .fallbackToDestructiveMigration()
+                        .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6, 7, 8)
                         .build()
                         .also { instance = it }
                 }

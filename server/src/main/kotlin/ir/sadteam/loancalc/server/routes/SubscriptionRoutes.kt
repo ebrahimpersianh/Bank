@@ -59,6 +59,9 @@ private data class PurchaseDto(
     val durationDays: Int,
     val subscribedUntil: String,
     val createdAt: String,
+    /** خریدِ تستی (دستی علامت خورده — استور نشانه‌ای نمی‌دهد) یا برگشت‌خورده؛ در آمارِ فروش شمرده نمی‌شود. */
+    val isTest: Boolean = false,
+    val refunded: Boolean = false,
 )
 
 @Serializable
@@ -104,7 +107,7 @@ fun Route.subscriptionRoutes() {
                 return@post
             }
 
-            val valid = try {
+            val validation = try {
                 if (store == "myket") validateMyketPurchase(productId, purchaseToken)
                 else validateInAppPurchase(productId, purchaseToken)
             } catch (e: CafebazaarException) {
@@ -114,7 +117,7 @@ fun Route.subscriptionRoutes() {
                 call.respond(HttpStatusCode.BadGateway, mapOf("error" to "myket_validation_failed"))
                 return@post
             }
-            if (!valid) {
+            if (!validation.valid) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to "purchase_not_valid"))
                 return@post
             }
@@ -144,8 +147,8 @@ fun Route.subscriptionRoutes() {
                     val claimed = conn.executeCounting(
                         """
                         INSERT INTO subscription_purchases
-                            (user_id, product_id, tier, store, purchase_token, duration_days, subscribed_until, price_toman)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                            (user_id, product_id, tier, store, purchase_token, duration_days, subscribed_until, price_toman, is_test)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
                         ON CONFLICT(purchase_token) DO NOTHING
                         """.trimIndent(),
                         authed.uid, productId, tierCode, store, purchaseToken, durationDays, "", PLAN_PRICE_TOMAN[productId] ?: 0L,
@@ -194,7 +197,7 @@ fun Route.subscriptionRoutes() {
             val items = Db.withConnection { conn ->
                 conn.prepareStatement(
                     """
-                    SELECT product_id, tier, store, duration_days, subscribed_until, created_at
+                    SELECT product_id, tier, store, duration_days, subscribed_until, created_at, is_test, refunded
                     FROM subscription_purchases WHERE user_id = ? ORDER BY id DESC
                     """.trimIndent(),
                 ).use { ps ->
@@ -210,6 +213,8 @@ fun Route.subscriptionRoutes() {
                                     durationDays = rs.getInt("duration_days"),
                                     subscribedUntil = rs.getString("subscribed_until"),
                                     createdAt = rs.getString("created_at"),
+                                    isTest = rs.getInt("is_test") != 0,
+                                    refunded = rs.getInt("refunded") != 0,
                                 ),
                             )
                         }

@@ -13,12 +13,12 @@ class ParsingRuleRepository(private val dao: ParsingRuleDao) {
 
     suspend fun getRules(): List<ParsingRuleEntity> = dao.getAll()
 
-    suspend fun save(rule: ParsingRuleEntity) = dao.upsert(rule)
+    suspend fun save(rule: ParsingRuleEntity) = runDbWrite { dao.upsert(rule) }
 
-    suspend fun delete(rule: ParsingRuleEntity) = dao.delete(rule)
+    suspend fun delete(rule: ParsingRuleEntity) = runDbWrite { dao.delete(rule) }
 
     /** ترتیبِ تازه رو ذخیره می‌کنه - `sortOrder` از جای هر قاعده تو لیست ساخته می‌شه. */
-    suspend fun reorder(rules: List<ParsingRuleEntity>) {
+    suspend fun reorder(rules: List<ParsingRuleEntity>) = runDbWrite {
         dao.upsertAll(rules.mapIndexed { index, rule -> rule.copy(sortOrder = index) })
     }
 

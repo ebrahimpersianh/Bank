@@ -100,6 +100,11 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
     val banner = rememberInAppBanner()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val gateState by authViewModel.gateState.collectAsState()
+    /** تیکت‌های خودِ کاربر برای بخشِ «پیگیری تیکت» پایینِ همین صفحه. */
+    val myTickets by authViewModel.myTickets.collectAsState()
+    androidx.compose.runtime.LaunchedEffect(gateState) {
+        if (gateState == GateState.LOGGED_IN) authViewModel.loadMyTickets()
+    }
     var message by rememberSaveable { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     // مرحله‌ی فرستادن برای نوارِ پیشرفت: آماده‌سازی → آپلود (۰..۱) → فرستادنِ پیام.
@@ -351,6 +356,7 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                                 sending = false
                                 sendStage = ""
                                 ticket = code
+                                if (code != null) authViewModel.loadMyTickets()
                                 when {
                                     code == null -> banner.show("فرستاده نشد؛ اینترنت را چک کن و دوباره بزن")
                                     uploadFailed > 0 -> banner.show("پیام رفت ولی ${toFa(uploadFailed)} فایل آپلود نشد؛ دوباره امتحان کن")
@@ -417,6 +423,87 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                 }
             }
 
+            // ── پیگیریِ تیکت‌ها (`GET /api/support/tickets`) ──────────────────────
+            // جوابِ پشتیبانی در «پیام‌های جیبک» هم می‌آید، ولی وضعیتِ تیکت (باز / جواب‌داده /
+            // بسته) فقط این‌جاست. خالی‌بودن یعنی یا هنوز تیکتی نیست یا سرور در دسترس نیست.
+            if (gateState == GateState.LOGGED_IN) {
+                item {
+                    AppCard {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("پیگیری تیکت‌ها", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                            Text(
+                                "تازه‌سازی",
+                                color = AppPrimary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable { authViewModel.loadMyTickets() }
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                            )
+                        }
+                        when {
+                            myTickets == null -> Text(
+                                "در حالِ گرفتنِ تیکت‌ها…",
+                                color = AppMuted, fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                            myTickets!!.isEmpty() -> Text(
+                                "هنوز تیکتی نفرستادی.",
+                                color = AppMuted, fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                            else -> Column(
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                                modifier = Modifier.padding(top = 10.dp),
+                            ) {
+                                myTickets!!.forEach { t ->
+                                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Ltr {
+                                                Text(
+                                                    t.ticket,
+                                                    color = AppPrimaryInk, fontSize = 13.sp,
+                                                    fontWeight = FontWeight.Black,
+                                                )
+                                            }
+                                            Text(
+                                                ticketStatusLabel(t.status),
+                                                color = when (t.status) {
+                                                    "answered" -> AppPrimary
+                                                    "closed" -> AppMuted
+                                                    else -> AppPrimaryInk
+                                                },
+                                                fontSize = 11.5.sp, fontWeight = FontWeight.Bold,
+                                            )
+                                        }
+                                        Text(
+                                            t.message, color = AppText, fontSize = 12.5.sp,
+                                            maxLines = 2,
+                                        )
+                                        t.reply?.takeIf { it.isNotBlank() }?.let { reply ->
+                                            Text(
+                                                "جوابِ پشتیبانی: $reply",
+                                                color = AppMuted, fontSize = 12.sp,
+                                                maxLines = 3,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if (gateState != GateState.LOGGED_IN) {
                 item {
                     Text(
@@ -430,4 +517,12 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
         }
         InAppBannerHost(state = banner, modifier = Modifier.align(Alignment.BottomCenter))
     }
+}
+
+/** برچسبِ فارسیِ وضعیتِ تیکت (`open`/`answered`/`closed` از `GET /api/support/tickets`). */
+private fun ticketStatusLabel(status: String): String = when (status) {
+    "answered" -> "جواب داده شده"
+    "closed" -> "بسته شده"
+    "open" -> "باز · در انتظارِ جواب"
+    else -> status
 }

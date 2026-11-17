@@ -37,6 +37,10 @@ interface InboxMessageDao {
     @Query("UPDATE inbox_messages SET readAt = :now WHERE readAt IS NULL AND kind NOT IN ('DETECTED_TX','LOAN_DUE')")
     suspend fun markAllNewsRead(now: Long)
 
+    /** شناسه‌های محلیِ (منفیِ) اطلاعیه‌های خوانده‌نشده - برای گزارشِ «خواندنِ همه» به سرور. */
+    @Query("SELECT id FROM inbox_messages WHERE id < 0 AND readAt IS NULL")
+    suspend fun unreadAnnouncementIds(): List<Long>
+
     @Query("UPDATE inbox_messages SET readAt = :now WHERE id = :id AND readAt IS NULL")
     suspend fun markRead(id: Long, now: Long)
 

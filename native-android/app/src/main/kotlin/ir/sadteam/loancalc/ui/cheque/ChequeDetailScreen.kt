@@ -214,17 +214,24 @@ fun ChequeDetailScreen(
                             }
                         }
                         val risk = riskScore
-                        if (risk != null && risk.hasHistory) {
+                        if (risk != null) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 Text("امتیازِ ریسکِ برگشت", color = AppMuted, fontSize = 12.sp)
-                                Text(
-                                    "${toFa(risk.score)} از ۱۰۰ (${toFa(risk.passedCount)} پاس، ${toFa(risk.bouncedCount)} برگشتی)",
-                                    color = if (risk.score >= 70) AppPrimary else AppDanger,
-                                    fontSize = 12.sp,
-                                )
+                                // بی‌سابقه = «بدون سابقه»، نه «۱۰۰ از ۱۰۰» - امتیازِ null یعنی
+                                // هنوز چکی از این طرفِ‌حساب پاس یا برگشت نخورده است.
+                                val score = risk.score
+                                if (score != null) {
+                                    Text(
+                                        "${toFa(score)} از ۱۰۰ (${toFa(risk.passedCount)} پاس، ${toFa(risk.bouncedCount)} برگشتی)",
+                                        color = if (score >= 70) AppPrimary else AppDanger,
+                                        fontSize = 12.sp,
+                                    )
+                                } else {
+                                    Text("بدون سابقه", color = AppMuted, fontSize = 12.sp)
+                                }
                             }
                         }
                     }

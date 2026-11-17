@@ -40,10 +40,13 @@ fun myketConfigured(): Boolean = MYKET_ACCESS_TOKEN.isNotEmpty()
 @Serializable
 private data class VerifyBody(val tokenId: String)
 
-/* فرمتِ دقیقِ ریسپانسِ موفق تو مستنداتِ پنلِ مایکت مشخص نشده (فقط فرمتِ درخواست مستند شده)، برای
-   همین به‌جای حدس‌زدنِ اسمِ یه فیلد، فقط بر اساسِ کدِ HTTP قضاوت می‌کنیم: 2xx یعنی توکنِ خرید معتبر
-   تایید شده، هر چیزِ دیگه (404/400/401/...) یعنی نامعتبر یا خطا. */
-suspend fun validateMyketPurchase(productId: String, purchaseToken: String): Boolean {
+/* فرمتِ پاسخ حالا در مستنداتِ رسمیِ مایکت مشخص است (myket.ir/docs/en/technical/iab/web-application
+   — بخشِ «Verify the purchase»): فیلدها `purchaseState` (۰ = موفق، ۱ = ناموفق)، `purchaseTime`،
+   `kind`، `developerPayload`، `consumptionState` اند و مستندات صریحاً می‌گوید فقط وقتی
+   `purchaseState` برابرِ ۰ باشد خرید معتبر است. پس برخلافِ قبل، نبودِ فیلد دیگر به‌معنای
+   «معتبر» نیست (fail-closed)؛ و مثلِ کافه‌بازار، هیچ نشانه‌ای از «خریدِ تستی» و هیچ
+   وب‌هوکِ ریفاندی هم نیست — رجوع کن به [PurchaseValidation] و [PurchaseRevalidation]. */
+suspend fun validateMyketPurchase(productId: String, purchaseToken: String): PurchaseValidation {
     if (!myketConfigured()) throw MyketException("myket_not_configured")
     val url = VERIFY_URL_TMPL
         .replace(":package_name", MYKET_PACKAGE_NAME.encodeURLParameter())
@@ -54,13 +57,16 @@ suspend fun validateMyketPurchase(productId: String, purchaseToken: String): Boo
         contentType(ContentType.Application.Json)
         setBody(Json.encodeToString(VerifyBody.serializer(), VerifyBody(tokenId = purchaseToken)))
     }
-    if (!response.status.isSuccess()) return false
-    // مستنداتِ مایکت فرمتِ پاسخ را نگفته؛ اگر `purchaseState` آمد، مثلِ کافه‌بازار ۰ یعنی
-    // خریداری‌شده و هر چیزِ دیگر (۱ = برگشت‌خورده) رد می‌شود. نیامد = همان قضاوتِ کدِ HTTP.
+    if (!response.status.isSuccess()) return PurchaseValidation(valid = false)
     val text = runCatching { response.bodyAsText() }.getOrDefault("")
     Log.info("myket_verify", "پاسخِ تأییدِ مایکت", "product" to productId, "body" to text.take(300))
     val state = runCatching {
         Json.parseToJsonElement(text).jsonObject["purchaseState"]?.jsonPrimitive?.intOrNull
     }.getOrNull()
-    return state == null || state == 0
+    return when (state) {
+        0 -> PurchaseValidation(valid = true)
+        1 -> PurchaseValidation(valid = false, refunded = true)
+        // نبودِ فیلد یا مقدارِ ناشناخته = نامعتبر (قبلاً HTTP 2xx به‌تنهایی کافی بود).
+        else -> PurchaseValidation(valid = false)
+    }
 }

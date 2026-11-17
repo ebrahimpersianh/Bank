@@ -461,6 +461,10 @@ fun AddEditChequeScreen(
                                     depositAmount = cleanNumDecimal(depositAmountText).toDoubleOrNull(),
                                     counterpartyId = counterpartyId,
                                     onSaved = { savedOk = true },
+                                    onFailure = {
+                                        error = ir.sadteam.loancalc.data.userMessageForDbError(it)
+                                            ?: "ثبت چک ناموفق بود؛ دوباره تلاش کن."
+                                    },
                                 )
                             } else {
                                 viewModel.updateCheque(
@@ -484,6 +488,10 @@ fun AddEditChequeScreen(
                                         counterpartyId = counterpartyId,
                                     ),
                                     onSaved = { savedOk = true },
+                                    onFailure = {
+                                        error = ir.sadteam.loancalc.data.userMessageForDbError(it)
+                                            ?: "ثبت چک ناموفق بود؛ دوباره تلاش کن."
+                                    },
                                 )
                             }
                         }

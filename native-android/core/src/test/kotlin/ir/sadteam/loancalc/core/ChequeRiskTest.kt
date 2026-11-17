@@ -8,9 +8,9 @@ import kotlin.test.assertTrue
 class ChequeRiskTest {
 
     @Test
-    fun `بدون سابقه امتیاز صد و hasHistory نادرست است`() {
+    fun `بدون سابقه امتیاز ندارد و hasHistory نادرست است`() {
         val r = computeChequeRiskScore(0, 0)
-        assertEquals(100, r.score)
+        assertEquals(null, r.score)
         assertFalse(r.hasHistory)
     }
 

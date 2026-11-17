@@ -54,6 +54,15 @@ class GamificationRepository(
         /** خریدِ تمِ رنگی - `refId` شناسه‌ی همون تمه. */
         const val SPEND_THEME = "spend_theme"
 
+        /** خرجِ هر دسته‌ی فروشگاه جدا ثبت می‌شود (نه همه `SPEND_THEME`) تا گزارشِ سکه
+         * و بازحسابِ روزانه‌ی آینده قلم‌ها را قاطی نکند. */
+        const val SPEND_ICON = "spend_icon"
+        const val SPEND_SYMBOL = "spend_symbol"
+        const val SPEND_FRAME = "spend_frame"
+        const val SPEND_BACKDROP = "spend_backdrop"
+        const val SPEND_FONT = "spend_font"
+        const val SPEND_CHART = "spend_chart"
+
         /** ترمیمِ استریک - ماهی یک‌بار، `refId` کلیدِ ماهِ شمسیه. */
         const val STREAK_REPAIR = "streak_repair"
 
@@ -71,7 +80,9 @@ class GamificationRepository(
         const val BADGE_RETRO = "badge_retro"
         const val SPEND_SUBSCRIPTION = "spend_subscription"
 
-        /** شارژِ آزمایشی - جدا نگه داشته می‌شود تا با دستاوردِ واقعیِ کاربر قاطی نشود. */
+        /** شارژِ آزمایشی - جدا نگه داشته می‌شود تا با دستاوردِ واقعیِ کاربر قاطی نشود.
+         * تابعِ شارژ (grantTestCoins) حذف شد؛ این ثابت فقط برای ردیف‌های قدیمیِ دفتر
+         * می‌ماند تا نوعشان بی‌نام نماند. */
         const val TEST_GRANT = "test_grant"
 
         /** سکه‌ی «سر زدنِ روزانه» (۸ مهر) - فقط باز کردنِ برنامه، جدا از `DAILY_LOG`. */
@@ -180,7 +191,23 @@ class GamificationRepository(
      * ⚠️ نوع رو **جدا** نگه دار (خریدِ تم، ترمیمِ استریک، تخفیفِ اشتراک): اگه روزی لازم شد
      * سکه‌ی روزانه بازحساب بشه، دستاوردِ کاربر نباید با اون قاطی شه.
      */
-    suspend fun spend(amount: Int, refId: String, type: String = Type.SPEND_SUBSCRIPTION) {
+    /** نتیجه‌ی خرجِ اتمیک - رجوع کن به [CoinDao.trySpend]. */
+    enum class SpendOutcome { Ok, NotEnough, AlreadyRecorded }
+
+    /**
+     * خرجِ اتمیکِ سکه: موجودی **داخلِ تراکنش** دوباره خوانده می‌شود، پس «بررسی بعد خرج»
+     * مسابقه ندارد. [AlreadyRecorded] یعنی همین خرج از قبل ثبت شده بود (خرج انجام شده
+     * ولی مالکیت بعدش نرسیده) - صدازننده باید مالکیت را بدهد و دوباره خرج نکند.
+     */
+    suspend fun trySpend(amount: Int, refId: String, type: String): SpendOutcome = runDbWrite {
+        when (coinDao.trySpend(amount, refId, type, System.currentTimeMillis())) {
+            1 -> SpendOutcome.Ok
+            -1 -> SpendOutcome.AlreadyRecorded
+            else -> SpendOutcome.NotEnough
+        }
+    }
+
+    suspend fun spend(amount: Int, refId: String, type: String = Type.SPEND_SUBSCRIPTION) = runDbWrite {
         coinDao.award(
             CoinEventEntity(
                 type = type,
@@ -196,26 +223,12 @@ class GamificationRepository(
      * بازکردنِ نشان. [silent] یعنی **بازشدنِ گذشته** - نوعش `badge_retro` ثبت می‌شه تا
      * از بازشدنِ زنده جدا بمونه و اپ بتونه جشن رو فقط برای زنده‌ها بذاره.
      */
-    suspend fun unlock(code: String, coins: Int, silent: Boolean = false) {
+    suspend fun unlock(code: String, coins: Int, silent: Boolean = false) = runDbWrite {
         val inserted = achievementDao.unlock(AchievementEntity(code, System.currentTimeMillis()))
         if (inserted != -1L) award(if (silent) Type.BADGE_RETRO else Type.BADGE, coins, code)
     }
 
-    /**
-     * **شارژِ آزمایشیِ سکه** - خواسته‌ی صریحِ کاربر (۲۶ شهریور): «سکه‌ی من را یک میلیون کن
-     * تا همه را تست کنم».
-     *
-     * یک ردیفِ عادیِ دفتر است، پس موجودی همچنان **مشتق** می‌مانَد و هیچ شمارنده‌ای جایی
-     * ذخیره نمی‌شود. `dateKey` ثابت است، یعنی هرچند بار هم زده شود **یک‌بار** می‌نشیند و
-     * موجودی تصادفی بالا نمی‌رود؛ خودِ تابع هم فقط کمبود تا [target] را می‌ریزد.
-     */
-    suspend fun grantTestCoins(target: Int = 1_000_000): Int {
-        val missing = target - balanceNow()
-        if (missing > 0) award(Type.TEST_GRANT, missing, "test-grant")
-        return balanceNow()
-    }
-
-    private suspend fun award(type: String, amount: Int, dateKey: String): Boolean =
+    private suspend fun award(type: String, amount: Int, dateKey: String): Boolean = runDbWrite {
         coinDao.award(
             CoinEventEntity(
                 type = type,
@@ -224,6 +237,7 @@ class GamificationRepository(
                 createdAt = System.currentTimeMillis(),
             ),
         ) != -1L
+    }
 
     companion object {
         /** هر دو تابع به `:core` منتقل شدن تا `:core:test` رو JVM بتونه تستشون کنه. */

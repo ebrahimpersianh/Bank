@@ -32,8 +32,12 @@ import kotlinx.coroutines.launch
  * و مالکیت فهرستی از کلیدهای گونه (`theme:lapis`) در `UiPrefs` - همان قاعده‌ی
  * `CoinEconomy`. پس یک خریدِ ثبت‌شده هیچ‌وقت با موجودی ناهماهنگ نمی‌شود.
  *
- * ⚠️ خرید **دو نوشتن** دارد (کسرِ سکه در دفتر، و کلیدِ مالکیت در `UiPrefs`). کلیدِ
- * ضدِتکرارِ دفتر (`refId`) همان شناسه‌ی قلم است، پس دوبار زدن دوبار خرج نمی‌کند.
+ * ⚠️ خرید **دو نوشتن** دارد (کسرِ سکه در دفتر، و کلیدِ مالکیت در `UiPrefs`). خرجِ سکه
+ * از `GamificationRepository.trySpend` می‌گذرد: بررسیِ موجودی + ثبتِ ردیف در یک
+ * تراکنشِ Room است، و مالکیت فقط بعد از موفقیتِ خرج نوشته می‌شود - پس خرجِ ناموفق
+ * هرگز مالکیت نمی‌سازد، و خرجی که از قبل ثبت شده (`AlreadyRecorded`) دوباره خرج
+ * نمی‌کند، فقط مالکیتش جبران می‌شود. (مالکیتِ DataStore ذاتاً بیرونِ تراکنشِ Room
+ * است؛ جبرانِ `AlreadyRecorded` همان نقطه‌ی بازیابی است.)
  */
 @HiltViewModel
 class ShopViewModel @Inject constructor(
@@ -178,8 +182,28 @@ class ShopViewModel @Inject constructor(
         val now = repository.balance.first()
         if (now < item.price) return BuyResult.NotEnough(item.price - now)
 
+        // خرجِ اتمیک: بررسیِ موجودی + ثبتِ ردیف در یک تراکنشِ Room
+        // (`GamificationRepository.trySpend`)، و مالکیتِ DataStore **فقط بعد از موفقیتِ
+        // خرج** نوشته می‌شود. اگر خرج شکست بخورد (موجودی ناکافی یا خطای دیسک)، مالکیت
+        // هرگز ثبت نمی‌شود؛ اگر خرج از قبل ثبت شده بود (قطع‌شدن بینِ خرج و مالکیت در
+        // خریدِ قبلی)، `AlreadyRecorded` می‌آید و همین‌جا مالکیت جبران می‌شود، نه خرجِ دوباره.
         if (item.price > 0) {
-            repository.spend(item.price, item.id, GamificationRepository.Type.SPEND_THEME)
+            val outcome = runCatching {
+                repository.trySpend(item.price, item.id, spendTypeFor(item))
+            }.getOrElse { e ->
+                return BuyResult.Failed(
+                    ir.sadteam.loancalc.data.userMessageForDbError(e)
+                        ?: "خرید انجام نشد؛ دوباره تلاش کن",
+                )
+            }
+            when (outcome) {
+                GamificationRepository.SpendOutcome.NotEnough -> {
+                    val missing = item.price - repository.balance.first()
+                    return BuyResult.NotEnough(missing.coerceAtLeast(1))
+                }
+                GamificationRepository.SpendOutcome.AlreadyRecorded -> Unit // خرجِ قبلی؛ مالکیت را بده.
+                GamificationRepository.SpendOutcome.Ok -> Unit
+            }
         }
         uiPrefs.addOwnedItem(item.id)
         // هدفی که رسید، دیگر هدف نیست.
@@ -200,6 +224,18 @@ class ShopViewModel @Inject constructor(
         return BuyResult.Ok
     }
 
+    /** نوعِ خرجِ دفتر بر اساسِ دسته‌ی قلم - نه همیشه `SPEND_THEME`. */
+    private fun spendTypeFor(item: ShopItem): String = when (item.kind.category) {
+        ShopCategory.THEME -> GamificationRepository.Type.SPEND_THEME
+        ShopCategory.ICON -> GamificationRepository.Type.SPEND_ICON
+        ShopCategory.SYMBOL -> GamificationRepository.Type.SPEND_SYMBOL
+        ShopCategory.FRAME -> GamificationRepository.Type.SPEND_FRAME
+        ShopCategory.BACKDROP -> GamificationRepository.Type.SPEND_BACKDROP
+        ShopCategory.FONT -> GamificationRepository.Type.SPEND_FONT
+        ShopCategory.CHART -> GamificationRepository.Type.SPEND_CHART
+        ShopCategory.REWARD -> GamificationRepository.Type.SPEND_SUBSCRIPTION
+    }
+
     fun activate(item: ShopItem) {
         viewModelScope.launch {
             when (item.kind.category) {
@@ -211,8 +247,8 @@ class ShopViewModel @Inject constructor(
                 // همان را می‌خواند؛ پیشوندِ `bg_` فقط برای یکتاییِ ردیفِ فروشگاه است.
                 ShopCategory.BACKDROP -> uiPrefs.setActiveBackdrop(item.id.removePrefix("bg_"))
                 ShopCategory.SYMBOL -> {
-                    // «سکه‌ی کهن» هم دسته‌ی نماد است ولی هنوز مقصد ندارد (`comingSoon`)،
-                    // پس فقط ستِ دسته‌بندی فعال می‌شود.
+                    // فقط ستِ دسته‌بندی مقصد دارد؛ قلم‌های نمادِ دیگر (مثلاً نمادِ سکه)
+                    // هنوز مقصد ندارند و در کاتالوگ نیستند.
                     if (item.id.startsWith("symbolset:")) uiPrefs.setActiveSymbolSet(item.id)
                 }
                 ShopCategory.ICON -> {

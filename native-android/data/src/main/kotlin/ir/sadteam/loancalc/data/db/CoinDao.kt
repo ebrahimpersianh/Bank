@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -33,6 +34,29 @@ interface CoinDao {
      */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun award(event: CoinEventEntity): Long
+
+    /**
+     * خرجِ اتمیکِ سکه: بررسیِ موجودی + ثبتِ ردیفِ خرج در **یک تراکنش** - پس دو خریدِ
+     * هم‌زمان نمی‌توانند هر دو از یک موجودی خرج کنند و «بررسی بعد خرج» مسابقه ندارد.
+     *
+     * @return 1 = خرج ثبت شد؛ 0 = موجودی کافی نیست (هیچ ردیفی نوشته نشد)؛
+     * ‎-1 = همین خرج از قبل ثبت شده بود (کلیدِ ضدِتکرارِ `(type, dateKey)`)، یعنی خرج
+     * انجام شده ولی مالکیت بعدش نرسیده - صدازننده باید مالکیت را بدهد، نه اینکه دوباره خرج کند.
+     */
+    @Transaction
+    suspend fun trySpend(amount: Int, refId: String, type: String, createdAt: Long): Int {
+        if (getBalance() < amount) return 0
+        val rowId = award(
+            CoinEventEntity(
+                type = type,
+                amount = -amount,
+                dateKey = refId,
+                createdAt = createdAt,
+                refId = refId,
+            ),
+        )
+        return if (rowId == -1L) -1 else 1
+    }
 
     @Query("DELETE FROM coin_events")
     suspend fun clear()

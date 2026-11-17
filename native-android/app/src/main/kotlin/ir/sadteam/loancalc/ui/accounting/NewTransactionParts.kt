@@ -577,7 +577,9 @@ internal fun NewTxBottomBar(
                 // موفق نشده، فرم باز می‌ماند؛ در خطا هم کاربر همان‌جا پیام می‌بیند و اطلاعاتش
                 // را از دست نمی‌دهد.
                 val onSaveFailure: (Throwable) -> Unit = {
-                    error = "ثبت تراکنش ناموفق بود؛ دوباره تلاش کن."
+                    // پر بودنِ حافظه پیامِ خودش را دارد؛ بقیه‌ی خطاها پیامِ عمومی می‌گیرند.
+                    error = ir.sadteam.loancalc.data.userMessageForDbError(it)
+                        ?: "ثبت تراکنش ناموفق بود؛ دوباره تلاش کن."
                 }
                 if (kind == NewTxKind.TRANSFER) {
                     accountViewModel.addTransfer(

@@ -27,8 +27,9 @@ android {
         // کلید واقعیِ release: از متغیرهای محیطی خونده می‌شه (نه هاردکد تو گیت - این‌ها واقعاً محرمانه‌ان،
         // برخلاف کلید دیباگِ عمومیِ بالا)، چون بیلد release قبلاً با همون کلید دیباگِ عمومی امضا می‌شد که
         // برای انتشار واقعی رو کافه‌بازار خطرناکه (هرکسی می‌تونه یه آپدیتِ جعلی با همون کلید امضا کنه).
-        // اگه RELEASE_KEYSTORE_PATH ست نشده باشه (لوکال، یا CI بدون سکرت‌ها) از همین signingConfig
-        // استفاده نمی‌شه - رجوع کن به buildTypes.release پایین که فال‌بک می‌زنه رو کلید دیباگ.
+        // ⚠️ **دیگر هیچ فال‌بکی به کلیدِ دیباگ نیست**: اگر RELEASE_KEYSTORE_PATH ست نشده
+        // باشد، بیلدِ release با خطای صریح می‌ایستد (چکِ `gradle.startParameter` پایینِ
+        // همین فایل) — به‌جای آن‌که بی‌صدا با کلیدِ عمومی امضا شود و به استور برود.
         create("release") {
             val path = System.getenv("RELEASE_KEYSTORE_PATH")
             if (path != null) {
@@ -89,23 +90,41 @@ android {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // اگه کلید واقعیِ release در دسترس بود (RELEASE_KEYSTORE_PATH ست شده - رجوع کن به
-            // signingConfigs بالا) باهاش امضا می‌شه؛ وگرنه (لوکال/CI بدون سکرت‌ها) فال‌بک می‌زنه رو
-            // همون کلید دیباگِ عمومی، فقط برای این‌که بیلد لوکال/تستی خراب نشه - این بیلد هیچ‌وقت نباید
-            // مستقیم رو کافه‌بازار آپلود بشه.
-            signingConfig = if (System.getenv("RELEASE_KEYSTORE_PATH") != null) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            // signingConfigs بالا) باهاش امضا می‌شه؛ وگرنه بیلدِ release **با خطا می‌ایستد**
+            // (چکِ بعد از buildTypes) — دیگر فال‌بکِ بی‌صدا به کلیدِ دیباگِ عمومی نیست، چون
+            // همان بیلدِ اشتباهی می‌توانست مستقیم رو کافه‌بازار/مایکت آپلود شود.
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
 
+    // 🚨 **فال‌بکِ امضای release حذف شد** (آبان ۱۴۰۵): بیلدِ release بدونِ کلیدِ واقعی،
+    // به‌جای امضای بی‌صدا با کلیدِ دیباگِ عمومیِ کامیت‌شده، همین‌جا با خطای صریح
+    // می‌ایستد. چک فقط وقتی اجرا می‌شود که واقعاً یک تسکِ release خواسته شده باشد
+    // (assemble/bundle/install/...Release) — بیلدِ debug و تسک‌های دیگر بی‌کلید هم کار می‌کنند.
+    // CI باید RELEASE_KEYSTORE_PATH (و سه متغیرِ پسورد/aliasِ همراه) را از سکرت‌ها بدهد.
+    if (gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) } &&
+        System.getenv("RELEASE_KEYSTORE_PATH").isNullOrBlank()
+    ) {
+        error(
+            "بیلدِ release بدونِ کلیدِ امضا متوقف شد: RELEASE_KEYSTORE_PATH ست نشده است. " +
+                "بیلدِ release دیگر هرگز با کلیدِ دیباگِ عمومی (ci-debug.keystore) امضا نمی‌شود. " +
+                "کلیدِ واقعیِ release را از سکرت‌های CI بدهید (RELEASE_KEYSTORE_PATH / " +
+                "RELEASE_KEYSTORE_PASSWORD / RELEASE_KEY_ALIAS / RELEASE_KEY_PASSWORD).",
+        )
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // ⚠️ **desugaring روشن است** (minSdk=24، اندروید ۷): بدونِ این، `java.time`
+        // (LocalDate/LocalTime/Instant) فقط از API 26 در دسترس است و فروشگاه/سکه و
+        // ایمپورتِ پیامک روی اندروید ۷/۸ با NoClassDefFoundError کرش می‌کردند.
+        // `desugar_jdk_libs:2.0.4` با AGP 8.5.2 سازگار است (نسخه‌های 2.1.x به AGP 8.6+
+        // نیاز دارند). پس از این، استفاده از `java.time` در ماژول app امن است.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     buildFeatures {
@@ -141,6 +160,9 @@ dependencies {
     // 🚀 پروفایلِ از-پیش‌کامپایلِ خودِ Compose/AndroidX را روی گوشی نصب می‌کند؛ بی آن، بارِ اول و تعویضِ تب‌ها
     // با کدِ تفسیری اجرا می‌شود و «لگ» دارد. هیچ تغییرِ رفتاری ندارد.
     implementation("androidx.profileinstaller:profileinstaller:1.3.1")
+    // Desugaringِ کتابخانه‌ی جاوا برای minSdk=24 (اندروید ۷/۸) — رجوع کن به کامنتِ
+    // `compileOptions` بالا. بدونِ این خط، `java.time` روی API 24/25 کرش می‌کند.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     // اینترو/اسپلش‌اسکرین واقعی موقع باز شدن اپ (قبلاً اصلاً وجود نداشت - فقط یه صفحه‌ی خالی).
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")

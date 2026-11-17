@@ -14,6 +14,8 @@ import ir.sadteam.loancalc.server.execute
 import ir.sadteam.loancalc.server.adminTokenMatches
 import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.executeCounting
+import ir.sadteam.loancalc.server.giftBaseMs
+import ir.sadteam.loancalc.server.PurchaseRevalidation
 import ir.sadteam.loancalc.server.queryOne
 import ir.sadteam.loancalc.server.requireAuth
 import kotlinx.serialization.Serializable
@@ -93,6 +95,13 @@ internal val PLAN_PRICE_TOMAN = mapOf(
     "unlimited_loans_6m" to 299_000L,
     "unlimited_loans_1y" to 499_000L,
 )
+
+/**
+ * فقط خریدهای واقعیِ تأییدشده: خریدِ تستی و برگشت‌خورده فروش نیستند و در هیچ آمارِ
+ * فروش/درآمدی شمرده نمی‌شوند (رجوع کن به PurchaseRevalidation). در همه‌ی کوئری‌های
+ * `subscription_purchases` در buildStats/buildMoney/buildDigest استفاده می‌شود.
+ */
+internal const val REAL_PURCHASES = "is_test = 0 AND refunded = 0"
 
 /** گروهِ هفتگیِ نصب: چند نفر در هفته‌ی k بعد از نصب هنوز برنامه را باز کرده‌اند. */
 @Serializable
@@ -226,6 +235,20 @@ internal fun resolveUserCode(conn: Connection, input: String): Long? {
 @Serializable
 private data class AdminGiftBody(val user: String, val days: Int = 0, val coins: Int = 0, val text: String = "")
 
+/**
+ * علامت‌زدنِ دستیِ یک خرید به‌عنوانِ تستی و/یا برگشت‌خورده (۲۷ آبان).
+ * هیچ‌کدام از استورها نشانه‌ی «تستی» در پاسخِ اعتبارسنجی نمی‌دهند، پس خریدِ تستیِ شناخته‌شده
+ * (مثلاً همان ۶۹٬۰۰۰ تومانیِ ۱۷ آبان، کاربرِ 5405095) باید از این‌جا علامت بخورد؛
+ * بازبینیِ دوره‌ای ([PurchaseRevalidation]) خریدهای برگشت‌خورده را خودش پیدا می‌کند، ولی
+ * این مسیر هم برای همان‌هاست. علامت‌خورده از آمارِ فروش کنار می‌رود و اگر همین خرید
+ * انقضای فعلیِ کاربر را ساخته بود، روزهایش پس گرفته می‌شود.
+ */
+@Serializable
+private data class FlagPurchaseBody(val purchaseToken: String, val isTest: Boolean = false, val refunded: Boolean = false)
+
+@Serializable
+private data class FlagPurchaseResponse(val ok: Boolean = true, val isTest: Boolean, val refunded: Boolean, val subscriptionRevoked: Boolean)
+
 internal fun Connection.list(sql: String, vararg params: Any?, map: (java.sql.ResultSet) -> Unit) {
     prepareStatement(sql).use { ps ->
         params.forEachIndexed { i, p -> ps.setObject(i + 1, p) }
@@ -358,12 +381,12 @@ internal fun buildStats(conn: Connection): StatsResponse {
         )
     }
 
-    // 💰 فروش - فقط از خرید‌هایی که سرور خودش تأیید کرده.
+    // 💰 فروش - فقط از خرید‌هایی که سرور خودش تأیید کرده و تستی/برگشت‌خورده نیستند.
     val sales = buildList {
         conn.list(
             "SELECT product_id, SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END), COUNT(*), " +
                 "coalesce(SUM(CASE WHEN created_at >= ? THEN price_toman ELSE 0 END),0), coalesce(SUM(price_toman),0) " +
-                "FROM subscription_purchases GROUP BY product_id ORDER BY 3 DESC",
+                "FROM subscription_purchases WHERE $REAL_PURCHASES GROUP BY product_id ORDER BY 3 DESC",
             d30, d30,
         ) {
             val product = it.getString(1)
@@ -371,7 +394,7 @@ internal fun buildStats(conn: Connection): StatsResponse {
         }
     }
     val salesByStore = buildList {
-        conn.list("SELECT store, COUNT(*) FROM subscription_purchases WHERE created_at >= ? GROUP BY store ORDER BY 2 DESC", d30) {
+        conn.list("SELECT store, COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND $REAL_PURCHASES GROUP BY store ORDER BY 2 DESC", d30) {
             add(NamedCount(it.getString(1), it.getInt(2)))
         }
     }
@@ -398,7 +421,7 @@ internal fun buildStats(conn: Connection): StatsResponse {
     val smsAllByStore = smsBy("")
     val smsFailed30 = conn.int("SELECT COUNT(*) FROM sms_log WHERE ok = 0 AND day >= ?", d30)
     val salesByDay = HashMap<String, Int>()
-    conn.list("SELECT substr(created_at, 1, 10), COUNT(*) FROM subscription_purchases WHERE created_at >= ? GROUP BY 1", d30) {
+    conn.list("SELECT substr(created_at, 1, 10), COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND $REAL_PURCHASES GROUP BY 1", d30) {
         salesByDay[it.getString(1)] = it.getInt(2)
     }
     val salesDaily = (29 downTo 0).map { back -> iranDay(-back.toLong()).let { d -> NamedCount(d, salesByDay[d] ?: 0) } }
@@ -566,28 +589,75 @@ fun Route.adminRoutes() {
             }
             val result = Db.withConnection { conn ->
                 val uid = resolveUserCode(conn, body.user) ?: return@withConnection "user_not_found"
-                if (body.days > 0) {
-                    val currentUntil = conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", uid) { it.getString(1) }
-                    val now = System.currentTimeMillis()
-                    val current = currentUntil?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
-                    val expiry = java.time.Instant.ofEpochMilli(maxOf(current, now) + body.days * 24L * 60 * 60 * 1000).toString()
-                    conn.executeCounting("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, uid)
+                // تمدید + درجِ پیام در **یک تراکنش**؛ پایه max(الان، انقضا، پایانِ دوره‌ی آزمایشی)
+                // تا روزهای هدیه با ماهِ مجانی هم‌پوشانی نکنند (مثلِ broadcast).
+                conn.autoCommit = false
+                try {
+                    if (body.days > 0) {
+                        val expiry = java.time.Instant.ofEpochMilli(
+                            giftBaseMs(conn, uid) + body.days * 24L * 60 * 60 * 1000,
+                        ).toString()
+                        conn.executeCounting("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, uid)
+                    }
+                    // رقمِ فارسی با «٬» (گزارشِ کاربر ۹ مهر: «5000 …» لاتین و بریده دیده می‌شد).
+                    fun fa(n: Int) = "%,d".format(n).map { c -> if (c.isDigit()) "۰۱۲۳۴۵۶۷۸۹"[c - '0'] else if (c == ',') '٬' else c }.joinToString("")
+                    val title = when {
+                        body.days > 0 && body.coins > 0 -> "🎁 ${fa(body.days)} روز اشتراک + ${fa(body.coins)} سکه"
+                        body.days > 0 -> "🎁 ${fa(body.days)} روز اشتراکِ هدیه"
+                        else -> "🎁 ${fa(body.coins)} سکه‌ی هدیه"
+                    }
+                    // نوعِ «gift» تا برنامه کارتِ طلایی و جشن نشان دهد (نسخه‌های قدیمی همان «اطلاعیه» می‌بینند).
+                    conn.executeCounting(
+                        "INSERT INTO announcements (title, body, kind, target_user_id, coins) VALUES (?, ?, 'gift', ?, ?)",
+                        title, body.text.ifBlank { "از طرفِ تیمِ جیبک، با آرزوی بهترین‌ها." }, uid, body.coins,
+                    )
+                    conn.commit()
+                    "ok"
+                } catch (e: Exception) {
+                    runCatching { conn.rollback() }
+                    throw e
+                } finally {
+                    runCatching { conn.autoCommit = true }
                 }
-                // رقمِ فارسی با «٬» (گزارشِ کاربر ۹ مهر: «5000 …» لاتین و بریده دیده می‌شد).
-                fun fa(n: Int) = "%,d".format(n).map { c -> if (c.isDigit()) "۰۱۲۳۴۵۶۷۸۹"[c - '0'] else if (c == ',') '٬' else c }.joinToString("")
-                val title = when {
-                    body.days > 0 && body.coins > 0 -> "🎁 ${fa(body.days)} روز اشتراک + ${fa(body.coins)} سکه"
-                    body.days > 0 -> "🎁 ${fa(body.days)} روز اشتراکِ هدیه"
-                    else -> "🎁 ${fa(body.coins)} سکه‌ی هدیه"
-                }
-                // نوعِ «gift» تا برنامه کارتِ طلایی و جشن نشان دهد (نسخه‌های قدیمی همان «اطلاعیه» می‌بینند).
-                conn.executeCounting(
-                    "INSERT INTO announcements (title, body, kind, target_user_id, coins) VALUES (?, ?, 'gift', ?, ?)",
-                    title, body.text.ifBlank { "از طرفِ تیمِ جیبک، با آرزوی بهترین‌ها." }, uid, body.coins,
-                )
-                "ok"
             }
             if (result == "ok") call.respond(mapOf("ok" to true)) else call.respond(HttpStatusCode.NotFound, mapOf("error" to result))
+        }
+        post("/purchases/flag") {
+            val admin = call.isAdminUser() ?: return@post
+            if (!admin) {
+                call.respond(HttpStatusCode.Forbidden, mapOf("error" to "admin_only"))
+                return@post
+            }
+            val body = runCatching { call.receive<FlagPurchaseBody>() }.getOrNull()
+            val token = body?.purchaseToken?.trim()
+            if (token.isNullOrEmpty() || (body.isTest == false && body.refunded == false)) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid_request"))
+                return@post
+            }
+            val result = Db.withConnection { conn ->
+                val row = conn.queryOne(
+                    "SELECT user_id, is_test, refunded FROM subscription_purchases WHERE purchase_token = ?",
+                    token,
+                ) { Triple(it.getLong(1), it.getInt(2), it.getInt(3)) } ?: return@withConnection null
+                val (uid, wasTest, wasRefunded) = row
+                val beforeUntil = conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", uid) { it.getString(1) }
+                // علامت‌زدن + پس‌گرفتنِ روزهای اشتراک (اگر همین خرید انقضای فعلی را ساخته بود)؛
+                // فراخوانیِ دوباره بی‌اثر است.
+                if (body.isTest && wasTest == 0) PurchaseRevalidation.markTest(conn, token)
+                if (body.refunded && wasRefunded == 0) PurchaseRevalidation.markRefunded(conn, token)
+                val after = conn.queryOne(
+                    "SELECT is_test, refunded FROM subscription_purchases WHERE purchase_token = ?",
+                    token,
+                ) { it.getInt(1) to it.getInt(2) } ?: return@withConnection null
+                val afterUntil = conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", uid) { it.getString(1) }
+                FlagPurchaseResponse(
+                    isTest = after.first == 1,
+                    refunded = after.second == 1,
+                    subscriptionRevoked = beforeUntil != afterUntil,
+                )
+            }
+            if (result == null) call.respond(HttpStatusCode.NotFound, mapOf("error" to "not_found"))
+            else call.respond(result)
         }
         post("/grant") {
             val token = env("ADMIN_TOKEN", "")
@@ -670,12 +740,12 @@ internal fun buildDigest(conn: Connection, period: String, store: String? = null
     m += pair("new_users", "SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
     m += pair("new_installs", "SELECT COUNT(*) FROM installs WHERE first_day >= ? AND first_day < ?$insF", da, db, *fArgs, prevParams = arrayOf(dpa, da, *fArgs))
     m += pair("active", "SELECT COUNT(DISTINCT install_id) FROM usage_daily WHERE day >= ? AND day < ?$useF", da, db, *fArgs, prevParams = arrayOf(dpa, da, *fArgs))
-    m += pair("purchases", "SELECT COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?$buyF", a, b, *bArgs, prevParams = arrayOf(pa, a, *bArgs))
+    m += pair("purchases", "SELECT COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?$buyF AND $REAL_PURCHASES", a, b, *bArgs, prevParams = arrayOf(pa, a, *bArgs))
     // فروشِ ناخالص به تفکیکِ استور + خالص بعد از سهمِ استور (۸ مهر، خواسته‌ی کاربر).
     fun revenue(x: String, y: String, store: String?): Long {
         var sum = 0L
         conn.list(
-            "SELECT coalesce(SUM(price_toman),0) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?" +
+            "SELECT coalesce(SUM(price_toman),0) FROM subscription_purchases WHERE created_at >= ? AND created_at < ? AND $REAL_PURCHASES" +
                 (if (store != null) " AND store = ?" else ""),
             *(if (store != null) arrayOf(x, y, store) else arrayOf(x, y)),
         ) { sum += it.getLong(1) }
@@ -711,7 +781,7 @@ internal fun buildDigest(conn: Connection, period: String, store: String? = null
             day = day(s0),
             active = conn.int("SELECT COUNT(DISTINCT install_id) FROM usage_daily WHERE day = ?$useF", day(s0), *fArgs),
             installs = conn.int("SELECT COUNT(*) FROM installs WHERE first_day = ?$insF", day(s0), *fArgs),
-            purchases = conn.int("SELECT COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?$buyF", x, y, *bArgs),
+            purchases = conn.int("SELECT COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?$buyF AND $REAL_PURCHASES", x, y, *bArgs),
             revenueNet = if (store != null) STORE_PAYOUT[store]?.let { r -> revenue(x, y, store) * r.first / r.second } ?: revenue(x, y, store) else net(x, y),
         )
     }

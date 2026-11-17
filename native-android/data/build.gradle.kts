@@ -23,6 +23,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // desugaring برای `java.time` روی minSdk=24 — هم‌الگو با ماژول app (رجوع کن به
+        // کامنتِ همان‌جا). این ماژول فعلاً مستقیم `java.time` ندارد، ولی با روشن‌بودنِ
+        // آن، کامنت‌های «بدونِ desugaring کرش می‌کند» دیگر درست نیستند.
+        isCoreLibraryDesugaringEnabled = true
     }
 }
 
@@ -43,6 +47,9 @@ kapt {
 
 dependencies {
     implementation(project(":core"))
+
+    // Desugaringِ کتابخانه‌ی جاوا برای minSdk=24 — هم‌الگو با ماژول app.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")

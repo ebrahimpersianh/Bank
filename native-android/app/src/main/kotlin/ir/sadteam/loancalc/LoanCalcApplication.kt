@@ -116,6 +116,18 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
             authRepository.remoteConfig("app")?.let { ir.sadteam.loancalc.data.RemoteApp.update(this@LoanCalcApplication, it) }
         }
         ir.sadteam.loancalc.notifications.BudgetAlerts.start(this, accountRepository)
+        // ⚠️ **حافظه‌ی پر** (بازبینیِ data.md §6/§7): موقعِ باز شدنِ اپ، اگر فضای خالی کم
+        // باشد (زیرِ ۱۰۰ مگابایت)، کش و فایل‌های نیمه‌کاره/یتیمِ خودِ اپ پاک می‌شوند تا
+        // نوشتنِ بعدی با `SQLITE_FULL` شکست نخورد. پاک‌سازی فقط وقتی اجرا می‌شود که
+        // فضا واقعاً کم باشد — کشِ سالمِ روزمره دست نمی‌خورد. هشدارِ دیداریِ داخلِ
+        // برنامه هنوز سطحِ نمایشیِ سراسری ندارد (رجوع کن به گزارشِ بازبینی).
+        CoroutineScope(Dispatchers.IO).launch {
+            runCatching {
+                if (ir.sadteam.loancalc.data.StorageSpace.isLow(this@LoanCalcApplication)) {
+                    ir.sadteam.loancalc.data.StorageCleanup.cleanup(this@LoanCalcApplication, database)
+                }
+            }
+        }
         // قلابِ «داده‌ی وام عوض شد» → تازه‌کردنِ ویجت. `:data` خودِ ویجت را نمی‌بیند، پس
         // این‌جا پُر می‌شود - رجوع کن به [LoanDataChange]. بی این، ویجت تا شش ساعت عددِ
         // کهنه نشان می‌دهد.

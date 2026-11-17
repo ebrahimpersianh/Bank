@@ -88,9 +88,9 @@ class AccountRepository(
     private val uiPrefs: ir.sadteam.loancalc.data.prefs.UiPrefs? = null,
 ) {
     /** بدنه را داخلِ یک تراکنشِ دیتابیس اجرا می‌کند - یا اگر دیتابیسی نداریم، همان‌طور. */
-    private suspend fun <T> inTransaction(block: suspend () -> T): T {
-        val db = database ?: return block()
-        return db.withTransaction { block() }
+    private suspend fun <T> inTransaction(block: suspend () -> T): T = runDbWrite {
+        val db = database ?: return@runDbWrite block()
+        db.withTransaction { block() }
     }
     fun observeAccounts(): Flow<List<AccountEntity>> = accountDao.observeAll()
     fun observeTransactions(): Flow<List<AccountTransactionEntity>> = transactionDao.observeAll()
@@ -109,7 +109,7 @@ class AccountRepository(
         iconKey: String? = null,
         accountNumber: String? = null,
         sheba: String? = null,
-    ) {
+    ) = runDbWrite {
         accountDao.upsert(
             AccountEntity(
                 id = System.currentTimeMillis(),
@@ -127,7 +127,7 @@ class AccountRepository(
         )
     }
 
-    suspend fun updateAccount(account: AccountEntity) {
+    suspend fun updateAccount(account: AccountEntity) = runDbWrite {
         accountDao.upsert(account)
     }
 
@@ -139,7 +139,7 @@ class AccountRepository(
     }
 
     /** پورت پاک‌سازیِ لوکالِ بعد از خروج - رجوع کن به توضیح [ir.sadteam.loancalc.data.LoanRepository.clearLocal]. */
-    suspend fun clearLocal() {
+    suspend fun clearLocal() = runDbWrite {
         accountDao.clear()
         transactionDao.clear()
         budgetDao.clear()
@@ -178,7 +178,7 @@ class AccountRepository(
         receiptPath: String? = null,
         tags: String? = null,
         reimbursable: Boolean = false,
-    ): Long {
+    ): Long = runDbWrite {
         UsageStats.action("transaction_added")
         // 🧠 پرداختِ دستیِ قسط/چک/قبض بعد از اینکه پیامک/اعلانِ بانک همان مبلغ را ثبت کرده:
         // تراکنشِ خودکار «جذب» می‌شود (به پرداخت وصل و تأیید)، نه اینکه دو بار کم شود.
@@ -403,7 +403,7 @@ class AccountRepository(
         deposit: Boolean = false,
         date: ir.sadteam.loancalc.core.PersianDate? = null,
         category: String = "قسط/چک",
-    ): Boolean {
+    ): Boolean = runDbWrite {
         if (amount <= 0) return false
         val target = accountId ?: observeAccounts().first().singleOrNull()?.id ?: return false
         val d = date ?: ir.sadteam.loancalc.core.JalaliCalendar.today()
@@ -444,7 +444,7 @@ class AccountRepository(
         sourceIdPrefix: String,
         rowM: Int? = null,
         partAmount: Double = 0.0,
-    ) {
+    ) = runDbWrite {
         val all = observeTransactions().first().filter { it.sourceType == sourceType }
         if (rowM == null) {
             all.filter { it.sourceId == sourceIdPrefix }.forEach { transactionDao.delete(it) }
@@ -465,14 +465,14 @@ class AccountRepository(
     }
 
     /** ویرایشِ دنگ: مبلغِ واریزِ سهمی که قبلاً تسویه شده بود با سهمِ تازه یکی می‌شود. */
-    suspend fun updateLinkedAmountByPrefix(sourceType: String, prefix: String, amount: Double) {
+    suspend fun updateLinkedAmountByPrefix(sourceType: String, prefix: String, amount: Double) = runDbWrite {
         observeTransactions().first()
             .filter { it.sourceType == sourceType && it.sourceId?.startsWith(prefix) == true }
             .forEach { transactionDao.upsert(it.copy(amount = amount)) }
     }
 
     /** همه‌ی تراکنش‌های وصل به یک منبع که `sourceId`شان با [prefix] شروع می‌شود (حذفِ دارایی). */
-    suspend fun removeLinkedPaymentsByPrefix(sourceType: String, prefix: String) {
+    suspend fun removeLinkedPaymentsByPrefix(sourceType: String, prefix: String) = runDbWrite {
         observeTransactions().first()
             .filter { it.sourceType == sourceType && it.sourceId?.startsWith(prefix) == true }
             .forEach { transactionDao.delete(it) }
@@ -507,7 +507,7 @@ class AccountRepository(
     }
 
     /** تاییدِ یه تراکنشِ خودکار - از همین لحظه رو موجودی و گزارش‌ها اثر می‌ذاره. */
-    suspend fun confirmTransaction(id: Long) {
+    suspend fun confirmTransaction(id: Long) = runDbWrite {
         transactionDao.confirm(id)
         // 🚨 ۱۱ آبان: جابه‌جایی دو سمت دارد. قبلاً فقط سمتی که کاربر تأیید کرد تأیید می‌شد و سمتِ دیگر
         // (مثلاً واریزِ ساخته‌شده از روی مقصدِ پیامک) برای همیشه «منتظر» می‌ماند - پول از حسابِ اول کم
@@ -528,7 +528,7 @@ class AccountRepository(
      * می‌شد. حالا مبلغ و توضیحِ **هر دو** با هم می‌روند. حساب و نوعِ هر سمت عمداً دست‌نخورده
      * می‌مانَد: عوض‌کردنشان یعنی جابه‌جاییِ دیگری.
      */
-    suspend fun updateTransaction(transaction: AccountTransactionEntity) {
+    suspend fun updateTransaction(transaction: AccountTransactionEntity) = runDbWrite {
         val legs = transferLegsOf(transaction)
         if (legs.size < 2) {
             transactionDao.upsert(transaction)
@@ -541,7 +541,7 @@ class AccountRepository(
 
     /** حذفِ جابه‌جایی **هر دو سمتش** را با هم می‌برد - وگرنه یک سمتِ یتیم می‌مانْد و موجودیِ کل
      * به‌اندازه‌ی همان مبلغ غلط می‌شد. */
-    suspend fun deleteTransaction(transaction: AccountTransactionEntity) {
+    suspend fun deleteTransaction(transaction: AccountTransactionEntity) = runDbWrite {
         val legs = transferLegsOf(transaction)
         if (legs.size < 2) {
             transactionDao.delete(transaction)
@@ -637,7 +637,7 @@ class AccountRepository(
         monthlyCap: Double,
         existingId: Long? = null,
         accountId: Long? = null,
-    ) {
+    ) = runDbWrite {
         budgetDao.upsert(
             BudgetEntity(
                 id = existingId ?: System.currentTimeMillis(),
@@ -661,7 +661,7 @@ class AccountRepository(
      * (جای چهارم `ParsingRuleEntity.category` است که مخزنِ خودش را دارد و در
      * `CategoryViewModel` هم‌قدم به‌روز می‌شود.)
      */
-    suspend fun renameCategoryEverywhere(oldName: String, newName: String) {
+    suspend fun renameCategoryEverywhere(oldName: String, newName: String) = runDbWrite {
         transactionDao.getAll()
             .filter { it.category == oldName }
             .forEach { transactionDao.upsert(it.copy(category = newName)) }
@@ -673,7 +673,7 @@ class AccountRepository(
             .forEach { recurringPaymentDao.upsert(it.copy(categoryName = newName)) }
     }
 
-    suspend fun deleteBudget(budget: BudgetEntity) {
+    suspend fun deleteBudget(budget: BudgetEntity) = runDbWrite {
         budgetDao.delete(budget)
     }
 
@@ -705,7 +705,7 @@ class AccountRepository(
         accountId: Long?,
         dayOfMonth: Int,
         reminderDayOffsets: String?,
-    ) {
+    ) = runDbWrite {
         recurringPaymentDao.upsert(
             RecurringPaymentEntity(
                 id = System.currentTimeMillis(),
@@ -721,7 +721,7 @@ class AccountRepository(
         )
     }
 
-    suspend fun deleteRecurringPayment(payment: RecurringPaymentEntity) {
+    suspend fun deleteRecurringPayment(payment: RecurringPaymentEntity) = runDbWrite {
         recurringPaymentDao.delete(payment)
     }
 
@@ -742,6 +742,10 @@ class AccountRepository(
 
     suspend fun importBackupJson(json: String): Boolean = try {
         importBackupJsonOrThrow(json)
+    } catch (e: StorageFullException) {
+        // پر بودنِ حافظه خطای فایل نیست — به صدازننده برگردد تا پیامِ «حافظه پر است»
+        // را نشان بدهد، نه اینکه بی‌صدا `false` (فایل نامعتبر) گزارش شود.
+        throw e
     } catch (e: Exception) {
         UsageStats.error("accounts_import")
         // گزارشِ تشخیصی (فقط نوع و متنِ خطا، بدونِ داده) - ۷ مهر حساب‌ها بی‌صدا برنمی‌گشتند.

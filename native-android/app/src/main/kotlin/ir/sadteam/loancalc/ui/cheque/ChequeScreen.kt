@@ -241,10 +241,12 @@ fun ChequeScreen(
                 if (json == null) {
                     banner.show("فایل قابل خواندن نبود")
                 } else {
-                    viewModel.importBackup(json) { ok ->
+                    viewModel.importBackup(json, { ok ->
                         val message = if (ok) "بازیابی چک انجام شد" else "فایل معتبر نیست"
                         banner.show(message, isSuccess = ok)
-                    }
+                    }, {
+                        banner.show(ir.sadteam.loancalc.data.STORAGE_FULL_MESSAGE)
+                    })
                 }
             }
         }

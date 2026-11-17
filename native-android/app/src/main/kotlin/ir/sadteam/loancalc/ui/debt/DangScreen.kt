@@ -408,14 +408,18 @@ fun DangCreateScreen(
                     error = when {
                         totalAmount <= 0 -> "مبلغِ کل را وارد کن"
                         participants.value.size < 2 -> "حداقل یک شرکت‌کننده‌ی دیگر اضافه کن"
+                        // جمعِ درصدها با تلرانسِ اعشاری سنجیده می‌شود، نه با بریدن به int:
+                        // ۱۰۰٫۹٪ باید رد شود و ۳۳٫۳٪ + ۳۳٫۳٪ + ۳۳٫۴٪ باید قبول شود.
                         method == DangMethod.PERCENTAGE &&
-                            participants.value.sumOf { it.percentageText.toDoubleOrNull() ?: 0.0 }.toInt() != 100 ->
+                            kotlin.math.abs(participants.value.sumOf { it.percentageText.toDoubleOrNull() ?: 0.0 } - 100.0) > 0.01 ->
                             "جمعِ درصدها باید ۱۰۰٪ شود"
+                        // مبلغ‌ها در فرم تومان‌اند؛ تلرانس ۰٫۱ تومان = ۱ ریال، فقط برای خطای
+                        // گردکردنِ اعشاری است، نه برای اختلافِ واقعی.
                         method == DangMethod.CUSTOM &&
-                            participants.value.sumOf { it.customAmountText.toLongOrNull()?.toDouble() ?: 0.0 } != totalAmount ->
+                            kotlin.math.abs(participants.value.sumOf { it.customAmountText.toLongOrNull()?.toDouble() ?: 0.0 } - totalAmount) > 0.1 ->
                             "جمعِ مبلغ‌های دلخواه باید با مبلغِ کل برابر باشد"
                         method == DangMethod.ITEMIZED &&
-                            items.value.sumOf { it.amountText.toLongOrNull()?.toDouble() ?: 0.0 } != totalAmount ->
+                            kotlin.math.abs(items.value.sumOf { it.amountText.toLongOrNull()?.toDouble() ?: 0.0 } - totalAmount) > 0.1 ->
                             "جمعِ قلم‌ها باید با مبلغِ کل برابر باشد"
                         method == DangMethod.ITEMIZED && items.value.any { it.sharedByIndices.isEmpty() } ->
                             "هر قلم باید حداقل یک شرکت‌کننده داشته باشد"

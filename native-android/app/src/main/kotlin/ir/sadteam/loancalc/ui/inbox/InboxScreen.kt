@@ -271,7 +271,13 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                 item(key = "jibak_label") { SectionLabel("از طرفِ جیبک") }
                 val list = if (showAllJibak) jibak else jibak.take(2)
                 items(list, key = { "j_" + it.id }) { message ->
-                    AnnouncementCard(message, onAction = { a -> viewModel.markRead(message.id); runAction(a) }) { if (isGift(message) && message.readAt == null) celebrate = message else viewModel.markRead(message.id) }
+                    AnnouncementCard(message, onAction = { a -> viewModel.markRead(message.id); runAction(a) }) {
+                        if (isGift(message) && message.readAt == null) celebrate = message
+                        // جوابِ پشتیبانی از همان مسیرِ markRead «دیده شد» می‌خورد، تا ادمین
+                        // ببیند کاربر جواب را خوانده است.
+                        else if (supportTicketOf(message.title) != null) viewModel.markSupportReplyRead(message)
+                        else viewModel.markRead(message.id)
+                    }
                 }
                 if (jibak.size > 2) item(key = "jibak_more") {
                     SeeAllButton(if (showAllJibak) "نمایشِ کمتر" else "همه‌ی خبرهای جیبک (${toFa(jibak.size)})", green = true) { showAllJibak = !showAllJibak }

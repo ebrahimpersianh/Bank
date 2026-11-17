@@ -13,6 +13,7 @@ import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.DebtRepository
 import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.StorageFullException
 import ir.sadteam.loancalc.data.db.IncomeEntity
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -39,6 +40,20 @@ class MyLoansViewModel @Inject constructor(
     private val debtRepository: DebtRepository,
     private val accountRepository: ir.sadteam.loancalc.data.AccountRepository,
 ) : ViewModel() {
+    /**
+     * اجرای یک نوشتنِ دیتابیس با پیامِ «حافظه پر است» به‌جای کرش: فقط
+     * [StorageFullException] گرفته می‌شود؛ بقیه‌ی خطاها مثلِ قبل رفتار می‌کنند.
+     */
+    private fun launchDb(onFailure: (Throwable) -> Unit = {}, block: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (e: StorageFullException) {
+                onFailure(e)
+            }
+        }
+    }
+
     init {
         // ترمیمِ یک‌بارِ وام‌هایی که پیشرفتشون قبلاً صفر شده بود (باگِ گزارش‌شده‌ی کاربر: بعد از
         // خروج و ورودِ دوباره، همه‌ی وام‌ها ۰٪ و «عقب‌افتاده» شدن). ردیف‌های قسط سالم موندن، پس
@@ -83,9 +98,10 @@ class MyLoansViewModel @Inject constructor(
         paidCount: Int,
         startDate: PersianDate,
         onSaved: () -> Unit,
+        onFailure: (Throwable) -> Unit = {},
     ) {
         ir.sadteam.loancalc.data.UsageStats.action("loan_added_manual")
-        viewModelScope.launch {
+        launchDb(onFailure) {
             loanRepository.addManualLoan(
                 name = name,
                 bank = bank,
@@ -109,8 +125,9 @@ class MyLoansViewModel @Inject constructor(
         n: Int,
         startDate: PersianDate,
         onSaved: () -> Unit,
+        onFailure: (Throwable) -> Unit = {},
     ) {
-        viewModelScope.launch {
+        launchDb(onFailure) {
             loanRepository.updateManualLoan(
                 loan = loan,
                 name = name,
@@ -290,9 +307,9 @@ class MyLoansViewModel @Inject constructor(
     /** پورت saveLoan تو www/index.html - نتیجه‌ی محاسبه‌ی تب «وام بانکی» رو تو «وام‌های من» ذخیره
      * می‌کنه (با نگه‌داشتن ردیف‌های واقعیِ محاسبه‌شده). محدودیتِ «۱ وام رایگان» باید قبلِ صدا زدن
      * این، سمتِ UI چک بشه (مثل onAddLoanClick تو MyLoansScreen). */
-    fun saveComputedLoan(outcome: BankLoanOutcome, paidCount: Int = 0, onSaved: () -> Unit) {
+    fun saveComputedLoan(outcome: BankLoanOutcome, paidCount: Int = 0, onSaved: () -> Unit, onFailure: (Throwable) -> Unit = {}) {
         ir.sadteam.loancalc.data.UsageStats.action("loan_saved_from_calc")
-        viewModelScope.launch {
+        launchDb(onFailure) {
             val r = outcome.result
             val loanName = outcome.borrower.takeIf { it != "—" && it.isNotBlank() } ?: outcome.bankName
             loanRepository.saveComputedLoan(
@@ -410,8 +427,8 @@ class MyLoansViewModel @Inject constructor(
     suspend fun getRows(loan: LoanEntity): List<Map<String, Any?>> = loanRepository.getRows(loan)
 
     /** پورت handlePayButton برای برگردوندن قسط به حالت پرداخت‌نشده. */
-    fun setRowUnpaid(loan: LoanEntity, m: Int) {
-        viewModelScope.launch {
+    fun setRowUnpaid(loan: LoanEntity, m: Int, onFailure: (Throwable) -> Unit = {}) {
+        launchDb(onFailure) {
             // برداشتنِ پرداخت = پس‌گرفتنِ همان مبلغ از حساب (وگرنه موجودی برای همیشه کم می‌ماند).
             val part = loanRepository.getRows(loan).firstOrNull { (it["m"] as? Number)?.toInt() == m }
                 ?.let { (it["installment"] as? Number)?.toDouble() } ?: loan.installment
@@ -422,18 +439,18 @@ class MyLoansViewModel @Inject constructor(
     }
 
     /** پورت payOnTime تو www/index.html. */
-    fun setRowPaidOnTime(loan: LoanEntity, m: Int) {
+    fun setRowPaidOnTime(loan: LoanEntity, m: Int, onFailure: (Throwable) -> Unit = {}) {
         ir.sadteam.loancalc.data.UsageStats.action("installment_paid")
-        viewModelScope.launch {
+        launchDb(onFailure) {
             loanRepository.setRowPaidOnTime(loan, m)
             syncIfLoggedIn()
         }
     }
 
     /** پورت confirmLatePayment تو www/index.html - [paidDate] تاریخ واقعیِ پرداخته، نه سررسید. */
-    fun setRowPaidLate(loan: LoanEntity, m: Int, paidDate: PersianDate) {
+    fun setRowPaidLate(loan: LoanEntity, m: Int, paidDate: PersianDate, onFailure: (Throwable) -> Unit = {}) {
         ir.sadteam.loancalc.data.UsageStats.action("installment_paid_late")
-        viewModelScope.launch {
+        launchDb(onFailure) {
             loanRepository.setRowPaidLate(
                 loan,
                 m,
@@ -444,18 +461,18 @@ class MyLoansViewModel @Inject constructor(
     }
 
     /** پرداختِ گروهیِ چندتا قسطِ پرداخت‌نشده به‌موقع - رجوع کن به [LoanRepository.setRowsPaidOnTime]. */
-    fun setRowsPaidOnTime(loan: LoanEntity, ms: List<Int>) {
+    fun setRowsPaidOnTime(loan: LoanEntity, ms: List<Int>, onFailure: (Throwable) -> Unit = {}) {
         ir.sadteam.loancalc.data.UsageStats.action("installments_paid_bulk")
-        viewModelScope.launch {
+        launchDb(onFailure) {
             loanRepository.setRowsPaidOnTime(loan, ms)
             syncIfLoggedIn()
         }
     }
 
     /** پرداختِ گروهیِ چندتا قسط با تاخیر - رجوع کن به [LoanRepository.setRowsPaidLate]. */
-    fun setRowsPaidLate(loan: LoanEntity, ms: List<Int>, paidDate: PersianDate) {
+    fun setRowsPaidLate(loan: LoanEntity, ms: List<Int>, paidDate: PersianDate, onFailure: (Throwable) -> Unit = {}) {
         ir.sadteam.loancalc.data.UsageStats.action("installments_paid_bulk_late")
-        viewModelScope.launch {
+        launchDb(onFailure) {
             loanRepository.setRowsPaidLate(
                 loan,
                 ms,
@@ -506,9 +523,9 @@ class MyLoansViewModel @Inject constructor(
 
     /** پورت confirmEditInstallment تو www/index.html - ویرایش دستی مبلغ یه قسط. [onSaved] بعد از
      * ذخیره صدا زده می‌شه تا UI بتونه سوال «رو همه اعمال کنم؟» رو نشون بده. */
-    fun setRowInstallment(loan: LoanEntity, m: Int, newAmount: Double, onSaved: () -> Unit = {}) {
+    fun setRowInstallment(loan: LoanEntity, m: Int, newAmount: Double, onSaved: () -> Unit = {}, onFailure: (Throwable) -> Unit = {}) {
         ir.sadteam.loancalc.data.UsageStats.action("installment_amount_edited")
-        viewModelScope.launch {
+        launchDb(onFailure) {
             loanRepository.setRowInstallment(loan, m, newAmount)
             syncIfLoggedIn()
             onSaved()
@@ -516,8 +533,8 @@ class MyLoansViewModel @Inject constructor(
     }
 
     /** پورت «می‌خوای این مبلغ رو برای همه‌ی اقساط اعمال کنی؟» تو confirmEditInstallment. */
-    fun setAllRowsInstallment(loan: LoanEntity, newAmount: Double) {
-        viewModelScope.launch {
+    fun setAllRowsInstallment(loan: LoanEntity, newAmount: Double, onFailure: (Throwable) -> Unit = {}) {
+        launchDb(onFailure) {
             loanRepository.setAllRowsInstallment(loan, newAmount)
             syncIfLoggedIn()
         }
@@ -530,11 +547,16 @@ class MyLoansViewModel @Inject constructor(
 
     /** پورت importBackup - کل لیست وام‌ها رو با محتوای [json] جایگزین می‌کنه. [onResult] با
      * true/false (فایل معتبر بود یا نه) صدا زده می‌شه. */
-    fun importBackup(json: String, onResult: (Boolean) -> Unit) {
+    fun importBackup(json: String, onResult: (Boolean) -> Unit, onStorageFull: () -> Unit = {}) {
         viewModelScope.launch {
-            val ok = loanRepository.importBackupJson(json)
-            if (ok) syncIfLoggedIn()
-            onResult(ok)
+            try {
+                val ok = loanRepository.importBackupJson(json)
+                if (ok) syncIfLoggedIn()
+                onResult(ok)
+            } catch (e: StorageFullException) {
+                onResult(false)
+                onStorageFull()
+            }
         }
     }
 

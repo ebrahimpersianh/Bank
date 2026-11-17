@@ -29,6 +29,10 @@ object PhotoSync {
     suspend fun sync(context: Context, token: String) = withContext(Dispatchers.IO) {
         if (!lock.tryLock()) return@withContext
         try {
+            // فایل‌های `*.part`ِ نیمه‌دانلودشده‌ی دفعاتِ قبل (قطع‌شدنِ وسطِ دانلود) این‌جا
+            // می‌مانند و فضا می‌گیرند — پیش از سینک پاک می‌شوند (فقط `*.part`؛ عکس‌های
+            // یتیم بدونِ دیتابیس پاک نمی‌شوند، رجوع کن به StorageCleanup).
+            runCatching { StorageCleanup.purgeStaleAttachments(context) }
             val auth = "Bearer $token"
             val remote = runCatching { api.listFiles(auth).files.orEmpty().toSet() }.getOrNull() ?: return@withContext
             for (dir in DIRS) {

@@ -10,6 +10,7 @@ import ir.sadteam.loancalc.core.ChequeType
 import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.DebtRepository
+import ir.sadteam.loancalc.data.StorageFullException
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -71,16 +72,22 @@ class ChequeViewModel @Inject constructor(
         depositAmount: Double?,
         counterpartyId: Long? = null,
         onSaved: () -> Unit,
+        /** پر بودنِ حافظه (StorageFullException) این‌جا می‌رسد؛ بقیه‌ی خطاها مثلِ قبل رفتار می‌کنند. */
+        onFailure: (Throwable) -> Unit = {},
     ) {
         ir.sadteam.loancalc.data.UsageStats.action("cheque_added")
         viewModelScope.launch {
-            chequeRepository.addCheque(
-                type, amount, chequeNumber, sayadId, bankName, branchName, ownerName,
-                dueYear, dueMonth, dueDay, notes, chequeBookId,
-                photoPath, nationalId, previousBalance, depositAmount, counterpartyId,
-            )
-            syncIfLoggedIn()
-            onSaved()
+            try {
+                chequeRepository.addCheque(
+                    type, amount, chequeNumber, sayadId, bankName, branchName, ownerName,
+                    dueYear, dueMonth, dueDay, notes, chequeBookId,
+                    photoPath, nationalId, previousBalance, depositAmount, counterpartyId,
+                )
+                syncIfLoggedIn()
+                onSaved()
+            } catch (e: StorageFullException) {
+                onFailure(e)
+            }
         }
     }
 
@@ -97,18 +104,22 @@ class ChequeViewModel @Inject constructor(
         viewModelScope.launch { attachmentStorage.delete(path) }
     }
 
-    fun updateCheque(cheque: ChequeEntity, onSaved: () -> Unit) {
+    fun updateCheque(cheque: ChequeEntity, onSaved: () -> Unit, onFailure: (Throwable) -> Unit = {}) {
         viewModelScope.launch {
-            // بازبینیِ ۹ مهر: چکِ پاس‌شده‌ای که مبلغش ویرایش شد، تراکنشِ وصل‌شده‌اش هم همان مبلغ را بگیرد.
-            val old = chequeRepository.getAllCheques().firstOrNull { it.id == cheque.id }
-            if (old != null && old.status == ChequeStatus.PASSED.name && old.amount != cheque.amount) {
-                accountRepository.observeTransactions().first()
-                    .filter { it.sourceType == "cheque" && it.sourceId == cheque.id.toString() }
-                    .forEach { accountRepository.updateTransaction(it.copy(amount = cheque.amount)) }
+            try {
+                // بازبینیِ ۹ مهر: چکِ پاس‌شده‌ای که مبلغش ویرایش شد، تراکنشِ وصل‌شده‌اش هم همان مبلغ را بگیرد.
+                val old = chequeRepository.getAllCheques().firstOrNull { it.id == cheque.id }
+                if (old != null && old.status == ChequeStatus.PASSED.name && old.amount != cheque.amount) {
+                    accountRepository.observeTransactions().first()
+                        .filter { it.sourceType == "cheque" && it.sourceId == cheque.id.toString() }
+                        .forEach { accountRepository.updateTransaction(it.copy(amount = cheque.amount)) }
+                }
+                chequeRepository.updateCheque(cheque)
+                syncIfLoggedIn()
+                onSaved()
+            } catch (e: StorageFullException) {
+                onFailure(e)
             }
-            chequeRepository.updateCheque(cheque)
-            syncIfLoggedIn()
-            onSaved()
         }
     }
 
@@ -208,11 +219,16 @@ class ChequeViewModel @Inject constructor(
         viewModelScope.launch { onResult(chequeRepository.exportBackupJson()) }
     }
 
-    fun importBackup(json: String, onResult: (Boolean) -> Unit) {
+    fun importBackup(json: String, onResult: (Boolean) -> Unit, onStorageFull: () -> Unit = {}) {
         viewModelScope.launch {
-            val ok = chequeRepository.importBackupJson(json)
-            if (ok) syncIfLoggedIn()
-            onResult(ok)
+            try {
+                val ok = chequeRepository.importBackupJson(json)
+                if (ok) syncIfLoggedIn()
+                onResult(ok)
+            } catch (e: StorageFullException) {
+                onResult(false)
+                onStorageFull()
+            }
         }
     }
 }

@@ -7,14 +7,18 @@ package ir.sadteam.loancalc.core
  * ⚠️ **فرمولِ موقته.** کاربر گفته «طرحِ دقیقِ فرمولِ امتیاز جدا مطرح می‌شود» - این نسخه‌ی ساده
  * (نسبتِ چکِ پاس‌شده به مجموعِ پاس+برگشت، روی ۱۰۰) تا رسیدنِ فرمولِ نهایی جای‌گیره. همه‌جا فقط
  * از همین تابع صدا زده بشه تا جایگزینیِ فرمول یه‌جا باشه، نه پخش تو چند فایل.
+ *
+ * ⚠️ **بی‌سابقه = بی‌امتیاز، نه امتیازِ کامل:** وقتی هنوز چکی پاس یا برگشت نخورده، [score]
+ * null است و UI باید «بدون سابقه» نشان دهد، نه «۱۰۰ از ۱۰۰» سبز - وگرنه طرفِ‌حسابی که
+ * هیچ سابقه‌ای ندارد بی‌نقص دیده می‌شود.
  */
-data class ChequeRiskScore(val score: Int, val passedCount: Int, val bouncedCount: Int) {
+data class ChequeRiskScore(val score: Int?, val passedCount: Int, val bouncedCount: Int) {
     /** تعدادِ کلِ چکِ وضع‌شده (پاس یا برگشت). صفر یعنی هنوز سابقه‌ای نیست - نمایشِ امتیاز بی‌معنیه. */
     val hasHistory: Boolean get() = passedCount + bouncedCount > 0
 }
 
 fun computeChequeRiskScore(passedCount: Int, bouncedCount: Int): ChequeRiskScore {
     val total = passedCount + bouncedCount
-    val score = if (total == 0) 100 else ((passedCount.toDouble() / total) * 100).toInt()
+    val score = if (total == 0) null else ((passedCount.toDouble() / total) * 100).toInt()
     return ChequeRiskScore(score, passedCount, bouncedCount)
 }

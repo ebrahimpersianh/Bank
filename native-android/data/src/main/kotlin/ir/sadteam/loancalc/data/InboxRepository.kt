@@ -35,7 +35,7 @@ class InboxRepository(
         id: Long? = null,
         sourceLabel: String? = null,
         sourceText: String? = null,
-    ): Long {
+    ): Long = runDbWrite {
         val messageId = id ?: System.currentTimeMillis()
         dao.upsert(
             InboxMessageEntity(
@@ -64,7 +64,7 @@ class InboxRepository(
      * شناسه‌های زمانیِ بقیه‌ی پیام‌ها هرگز برخورد نکند، و اطلاعیه‌ای که از قبل هست دوباره نوشته
      * نمی‌شود - وگرنه «خوانده‌شده» بودنش پاک می‌شد.
      */
-    suspend fun mergeAnnouncements(items: List<ir.sadteam.loancalc.data.network.AnnouncementDto>) {
+    suspend fun mergeAnnouncements(items: List<ir.sadteam.loancalc.data.network.AnnouncementDto>) = runDbWrite {
         items.forEach { a ->
             // یکتا به‌ازای شناسه‌ی پیام (نوعِ یکتا در دفتر) - تکرارِ دریافت دوباره سکه نمی‌دهد.
             if (a.coins > 0) runCatching { gamification?.awardOnce("admin_gift_${a.id}", a.coins) }
@@ -92,30 +92,38 @@ class InboxRepository(
     }
 
     /** `2026-09-24 10:15:00` (UTCِ SQLite) → میلی‌ثانیه. */
-    // ⚠️ SimpleDateFormat نه java.time: minSdk 24 است و desugaring روشن نیست.
+    // SimpleDateFormat نگه داشته شد (desugaring حالا روشن است و `java.time` هم امن است،
+    // ولی نیازی به تغییرِ کدِ کارا نبود).
     private fun parseServerUtc(raw: String): Long? = runCatching {
         java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US)
             .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
             .parse(raw)?.time
     }.getOrNull()
 
-    suspend fun markRead(id: Long) = dao.markRead(id, System.currentTimeMillis())
+    suspend fun markRead(id: Long) = runDbWrite { dao.markRead(id, System.currentTimeMillis()) }
+
+    /** شناسه‌های محلیِ اطلاعیه‌های خوانده‌نشده - برای گزارشِ دسته‌جمعیِ «خواندنِ همه» به سرور. */
+    suspend fun unreadAnnouncementIds(): List<Long> = dao.unreadAnnouncementIds()
 
     /** ⚠️ فقط `readAt`ِ **خبر**ها رو پر می‌کنه - تاییدِ ضمنیِ هیچ تراکنشی نیست (قاعده‌ی طرح). */
-    suspend fun markAllNewsRead() = dao.markAllNewsRead(System.currentTimeMillis())
+    suspend fun markAllNewsRead() = runDbWrite { dao.markAllNewsRead(System.currentTimeMillis()) }
 
-    suspend fun resolve(id: Long, done: Boolean) = dao.setActionState(
-        id = id,
-        state = if (done) InboxMessageEntity.ActionState.DONE else InboxMessageEntity.ActionState.DISMISSED,
-        now = System.currentTimeMillis(),
-    )
+    suspend fun resolve(id: Long, done: Boolean) = runDbWrite {
+        dao.setActionState(
+            id = id,
+            state = if (done) InboxMessageEntity.ActionState.DONE else InboxMessageEntity.ActionState.DISMISSED,
+            now = System.currentTimeMillis(),
+        )
+    }
 
     /** همان [resolve] ولی از روی شناسه‌ی تراکنش - مسیرِ دکمه‌های خودِ اعلانِ گوشی. */
-    suspend fun resolveByRefId(refId: String, done: Boolean) = dao.setActionStateByRefId(
-        refId = refId,
-        state = if (done) InboxMessageEntity.ActionState.DONE else InboxMessageEntity.ActionState.DISMISSED,
-        now = System.currentTimeMillis(),
-    )
+    suspend fun resolveByRefId(refId: String, done: Boolean) = runDbWrite {
+        dao.setActionStateByRefId(
+            refId = refId,
+            state = if (done) InboxMessageEntity.ActionState.DONE else InboxMessageEntity.ActionState.DISMISSED,
+            now = System.currentTimeMillis(),
+        )
+    }
 
     suspend fun byId(id: Long) = dao.byId(id)
 
@@ -123,20 +131,22 @@ class InboxRepository(
      * جایگزینیِ بی‌صدای یک پیام (زمان و «خوانده‌شده» همان می‌ماند؛ زنگوله دوباره نمی‌زند). حالتِ اقدام
      * مثلِ [post] از نو باز می‌شود - برای پیامِ اختلافِ موجودی که با مانده‌ی تازه‌ی بانک به‌روز می‌شود.
      */
-    suspend fun replaceQuietly(message: InboxMessageEntity) = dao.upsert(
-        message.copy(
-            actionState = if (InboxMessageEntity.Kind.isActionable(message.kind)) {
-                InboxMessageEntity.ActionState.OPEN
-            } else {
-                InboxMessageEntity.ActionState.NONE
-            },
-        ),
-    )
+    suspend fun replaceQuietly(message: InboxMessageEntity) = runDbWrite {
+        dao.upsert(
+            message.copy(
+                actionState = if (InboxMessageEntity.Kind.isActionable(message.kind)) {
+                    InboxMessageEntity.ActionState.OPEN
+                } else {
+                    InboxMessageEntity.ActionState.NONE
+                },
+            ),
+        )
+    }
 
-    suspend fun delete(id: Long) = dao.delete(id)
+    suspend fun delete(id: Long) = runDbWrite { dao.delete(id) }
 
     /** دو قاعده‌ی نگهداشتِ طرح: خبرِ خوانده‌شده‌ی کهنه‌تر از ۳۰ روز، و سقفِ ۲۰۰ ردیف. */
-    private suspend fun enforceLimits() {
+    private suspend fun enforceLimits() = runDbWrite {
         dao.purgeOldNews(System.currentTimeMillis() - NINETY_DAYS_MS)
         val total = dao.total()
         if (total > MAX_ROWS) dao.deleteOldest(total - MAX_ROWS)

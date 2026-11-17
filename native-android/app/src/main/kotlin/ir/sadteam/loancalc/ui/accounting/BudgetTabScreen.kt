@@ -312,7 +312,7 @@ fun BudgetTabScreen(
                         cap = totalCap,
                         spent = totalSpent,
                         percent = ((totalSpent / totalCap) * 100).roundToLong().toInt(),
-                        fraction = (totalSpent / totalCap).toFloat(),
+                        fraction = (totalSpent / totalCap).toFloat().coerceIn(0f, 1f),
                         projectedLeft = projectedLeft,
                         privacyMode = privacyMode,
                     )
@@ -446,7 +446,8 @@ private data class UndoableTransfer(
     val fromCap: Double,
 )
 data class BudgetRowData(val category: CategoryEntry, val cap: Double, val spent: Double) {
-    val fraction: Float get() = if (cap > 0) (spent / cap).toFloat() else 0f
+    /** سهمِ خرج‌شده از سقف — محدود به ۰ تا ۱ تا نوارِ بودجه بیرون از کادر نزند. */
+    val fraction: Float get() = if (cap > 0) (spent / cap).toFloat().coerceIn(0f, 1f) else 0f
     val percent: Int get() = if (cap > 0) ((spent / cap) * 100).roundToLong().toInt() else 0
     val over: Boolean get() = spent > cap
 }

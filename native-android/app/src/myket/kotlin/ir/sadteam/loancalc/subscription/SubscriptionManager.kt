@@ -7,6 +7,9 @@ import ir.myket.billingclient.IabHelper
 import ir.myket.billingclient.util.IabResult
 import ir.myket.billingclient.util.Inventory
 import ir.myket.billingclient.util.Purchase
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /** کلیدِ عمومیِ واقعیِ اپ (نه رازِ دولوپر)، از پنلِ توسعه‌دهندگانِ مایکت (بخشِ محصولات درون‌برنامه‌ای
  * → کلید عمومی) گرفته شده - برای تاییدِ محلیِ امضای خرید توسطِ IabHelper استفاده می‌شه. */
@@ -42,6 +45,13 @@ class SubscriptionManager(private val activity: ComponentActivity) {
     private var setupDone = false
     private var disposeWhenReady = false
     private var latestInventory: Inventory? = null
+    /**
+     * فهرستِ مالکیت آماده است؟ صفحه‌ی اشتراک بازیابی (`restorePurchases`) را فقط وقتی
+     * می‌زند که این true شده باشد - وگرنه `latestInventory` هنوز null است و بازیابی
+     * خالی برمی‌گردد و دیگر تلاشی نمی‌شود (مسابقه‌ی بازیابی).
+     */
+    private val _inventoryReady = MutableStateFlow(false)
+    val inventoryReady: StateFlow<Boolean> = _inventoryReady.asStateFlow()
     /** خریدهای دیده‌شده (از فهرستِ مالکیت یا همین خرید) - برای [consume] شیءِ Purchase لازم است. */
     private val knownPurchases = mutableMapOf<String, Purchase>()
 
@@ -59,7 +69,10 @@ class SubscriptionManager(private val activity: ComponentActivity) {
             }
             connected = true
             helper.queryInventoryAsync(true, subscriptionTiers.map { it.first }) { queryResult, inventory ->
-                if (queryResult.isSuccess) latestInventory = inventory
+                if (queryResult.isSuccess) {
+                    latestInventory = inventory
+                    _inventoryReady.value = true
+                }
                 onStateChange(true)
             }
         }
@@ -124,6 +137,12 @@ class SubscriptionManager(private val activity: ComponentActivity) {
             IabHelper.ITEM_TYPE_INAPP,
             { result: IabResult, purchase: Purchase? ->
                 when {
+                    // انصرافِ کاربر مسیرِ جدا دارد (`onCanceled`)، نه `onFailed`: برگشت از
+                    // صفحه‌ی پرداخت خطا نیست و UI نباید «خرید ناموفق بود» نشان دهد.
+                    // کدِ پاسخ از خودِ IabHelper می‌آید (پورتِ IAB v3 گوگل): ۱ = کاربر
+                    // انصراف داد، ‎-1005 = IabHelper همان را از onActivityResult گزارش می‌کند.
+                    result.response == IabHelper.BILLING_RESPONSE_RESULT_USER_CANCELED ||
+                        result.response == IabHelper.IABHELPER_USER_CANCELLED -> onCanceled()
                     result.isFailure -> onFailed()
                     purchase == null -> onFailed()
                     else -> { knownPurchases[purchase.token] = purchase; onSucceed(purchase.token) }

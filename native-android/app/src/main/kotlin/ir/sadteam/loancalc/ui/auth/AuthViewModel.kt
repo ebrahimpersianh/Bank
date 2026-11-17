@@ -75,7 +75,7 @@ class AuthViewModel @Inject constructor(
     /** پورت setSubscribed/refreshSubscriptionStatus تو www/index.html - از DataStore محلی خونده
      * می‌شه (بعد از verify-otp یا [verifySubscriptionPurchase] نوشته شده)، ولی حالا [refreshStatus]
      * هم از AppRoot هر بار اپ باز می‌شه صدا زده می‌شه تا وضعیت واقعاً زنده از سرور تازه بشه (مثلاً
-     * دقیقاً روزی که دوره‌ی آزمایشیِ ۷روزه تموم می‌شه، بدون نیاز به خروج/ورود دوباره). */
+     * دقیقاً روزی که دوره‌ی آزمایشیِ ۳۰روزه تموم می‌شه، بدون نیاز به خروج/ورود دوباره). */
     val subscribed: StateFlow<Boolean> = authPrefs.subscribed
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -364,6 +364,9 @@ class AuthViewModel @Inject constructor(
             when (val result = authRepository.verifySubscription(productId, purchaseToken, BuildConfig.FLAVOR)) {
                 is AuthResult.Success -> {
                     ir.sadteam.loancalc.data.UsageStats.action("purchase_done_" + productId.substringAfterLast('_'))
+                    // مثل redeemGiftCode: وضعیتِ کامل (تاریخِ انقضا، پلن) را فوراً از سرور
+                    // تازه کن تا صفحه‌ی اشتراک عددِ کهنه نشان ندهد.
+                    refreshStatus()
                     onSuccess()
                 }
                 is AuthResult.Error -> onError(result.code)
@@ -402,6 +405,15 @@ class AuthViewModel @Inject constructor(
 
     /** تاریخچه‌ی خریدهای اشتراک - صفحه‌ی اشتراک هر بار که باز می‌شه یه‌بار می‌خونتش. */
     val purchaseHistory: StateFlow<List<SubscriptionPurchaseDto>?> = _purchaseHistory
+
+    /** تیکت‌های پشتیبانیِ خودِ کاربر (`GET /api/support/tickets`) - بخشِ «پیگیری تیکت» در
+     * صفحه‌ی پشتیبانی. null = هنوز خوانده نشده؛ خالی = تیکتی نیست (یا سرور در دسترس نیست). */
+    private val _myTickets = MutableStateFlow<List<ir.sadteam.loancalc.data.network.SupportTicketDto>?>(null)
+    val myTickets: StateFlow<List<ir.sadteam.loancalc.data.network.SupportTicketDto>?> = _myTickets.asStateFlow()
+
+    fun loadMyTickets() {
+        viewModelScope.launch { _myTickets.value = authRepository.mySupportTickets() }
+    }
 
     fun loadPurchaseHistory() {
         viewModelScope.launch { _purchaseHistory.value = authRepository.subscriptionHistory() }

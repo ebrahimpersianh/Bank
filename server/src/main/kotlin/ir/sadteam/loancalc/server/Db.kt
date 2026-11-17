@@ -275,6 +275,19 @@ object Db {
                     )
                     """.trimIndent()
                 )
+                // «چه کسی کدام پیام را باز کرد» (۲۷ آبان): پیامِ همگانی `target_user_id` ندارد، پس
+                // `read_at`ِ روی ردیفِ announcements برایش هیچ‌وقت پر نمی‌شود؛ بازشدنِ هر کاربر
+                // این‌جا جدا ثبت می‌شود. کلیدِ مرکب یعنی باز کردنِ دوباره شمارش را دو برابر نمی‌کند.
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS announcement_reads (
+                        announcement_id INTEGER NOT NULL,
+                        user_id INTEGER NOT NULL,
+                        read_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        PRIMARY KEY (announcement_id, user_id)
+                    )
+                    """.trimIndent()
+                )
                 st.executeUpdate(
                     """
                     CREATE TABLE IF NOT EXISTS price_history (
@@ -314,6 +327,13 @@ object Db {
             // ۹ مهر: قیمتِ هر خرید لحظه‌ی ثبت ذخیره می‌شود تا تغییرِ قیمت، فروشِ گذشته را عوض نکند.
             // ردیف‌های قدیمی = قیمت‌های قبل از ۹ مهر (۳۰/۸۱/۱۴۴/۲۵۲ هزار تومان).
             addColumnIfMissing(conn, "ALTER TABLE subscription_purchases ADD COLUMN price_toman INTEGER")
+            // ۲۷ آبان (خریدِ تستی/ریفاند): هیچ‌کدام از استورها نشانه‌ی «تستی» در پاسخِ اعتبارسنجی
+            // ندارند و وب‌هوکِ ریفاند هم نمی‌دهند، پس وضعیت این‌جا نگه داشته می‌شود — رجوع کن به
+            // PurchaseRevalidation.kt. `is_test`/`refunded` از آمارِ فروش کنار می‌روند.
+            addColumnIfMissing(conn, "ALTER TABLE subscription_purchases ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(conn, "ALTER TABLE subscription_purchases ADD COLUMN refunded INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(conn, "ALTER TABLE subscription_purchases ADD COLUMN refunded_at TEXT")
+            addColumnIfMissing(conn, "ALTER TABLE subscription_purchases ADD COLUMN last_validated_at TEXT")
             conn.createStatement().use {
                 it.executeUpdate(
                     "UPDATE subscription_purchases SET price_toman = CASE product_id " +

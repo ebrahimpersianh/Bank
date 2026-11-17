@@ -18,7 +18,7 @@ import java.util.TimeZone
 class IncomeRepository(private val incomeDao: IncomeDao) {
     fun observeIncomes(): Flow<List<IncomeEntity>> = incomeDao.observeAll()
 
-    suspend fun addIncome(label: String, amount: Double, type: IncomeType) {
+    suspend fun addIncome(label: String, amount: Double, type: IncomeType) = runDbWrite {
         incomeDao.upsert(
             IncomeEntity(
                 id = System.currentTimeMillis(),
@@ -30,14 +30,14 @@ class IncomeRepository(private val incomeDao: IncomeDao) {
         )
     }
 
-    suspend fun deleteIncome(income: IncomeEntity) {
+    suspend fun deleteIncome(income: IncomeEntity) = runDbWrite {
         incomeDao.delete(income)
     }
 
     /** پورت پاک‌سازیِ لوکالِ بعد از خروج - رجوع کن به توضیح [ir.sadteam.loancalc.data.LoanRepository.clearLocal].
      * باگِ رفع‌شده: این جدول (برخلافِ وام/چک/حساب) اصلاً تو AuthViewModel.logout صدا زده نمی‌شد -
      * منابعِ درآمد رو گوشی بینِ خروج/ورودِ حساب‌های مختلف باقی می‌موند. */
-    suspend fun clearLocal() {
+    suspend fun clearLocal() = runDbWrite {
         incomeDao.clear()
     }
 

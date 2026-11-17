@@ -14,7 +14,7 @@ import java.util.TimeZone
 class CalculationHistoryRepository(private val dao: CalculationHistoryDao) {
     fun observeAll(): Flow<List<CalculationHistoryEntity>> = dao.observeAll()
 
-    suspend fun log(kind: String, title: String, summary: String, amount: Double) {
+    suspend fun log(kind: String, title: String, summary: String, amount: Double) = runDbWrite {
         dao.insert(
             CalculationHistoryEntity(
                 id = System.currentTimeMillis(),
@@ -27,9 +27,9 @@ class CalculationHistoryRepository(private val dao: CalculationHistoryDao) {
         )
     }
 
-    suspend fun delete(entry: CalculationHistoryEntity) = dao.delete(entry)
+    suspend fun delete(entry: CalculationHistoryEntity) = runDbWrite { dao.delete(entry) }
 
-    suspend fun clearAll() = dao.clearAll()
+    suspend fun clearAll() = runDbWrite { dao.clearAll() }
 
     private fun isoNow(): String {
         val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)

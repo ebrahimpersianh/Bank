@@ -45,7 +45,7 @@ class AssetRepository(
         day: Int,
         description: String = "",
         unitPriceRial: Double? = null,
-    ) {
+    ) = runDbWrite {
         val existing = assetDao.findBySymbol(symbol)
         val assetId = existing?.id ?: System.currentTimeMillis()
         if (existing == null) {
@@ -80,14 +80,14 @@ class AssetRepository(
         )
     }
 
-    suspend fun deleteAsset(asset: AssetEntity) {
+    suspend fun deleteAsset(asset: AssetEntity) = runDbWrite {
         tradeDao.deleteForAsset(asset.id)
         assetDao.delete(asset)
     }
 
-    suspend fun deleteTrade(trade: AssetTradeEntity) = tradeDao.delete(trade)
+    suspend fun deleteTrade(trade: AssetTradeEntity) = runDbWrite { tradeDao.delete(trade) }
 
-    suspend fun clearLocal() {
+    suspend fun clearLocal() = runDbWrite {
         tradeDao.clear()
         assetDao.clear()
     }
@@ -126,7 +126,7 @@ class AssetRepository(
         assetDao.getAll().forEach { asset ->
             val price = prices[asset.symbol] ?: return@forEach
             if (asset.unitPriceRial != price) {
-                assetDao.upsert(asset.copy(unitPriceRial = price, priceUpdatedAt = now))
+                runDbWrite { assetDao.upsert(asset.copy(unitPriceRial = price, priceUpdatedAt = now)) }
             }
         }
     }
@@ -149,7 +149,8 @@ class AssetRepository(
         runCatching {
             val r = apiService.getPrices()
             Triple(r.prices, r.updatedAt?.let { iso ->
-                // ⚠️ نه `java.time` - minSdk ۲۴ است و بدونِ desugaring روی اندروید ۷ کرش می‌کند.
+                // `java.time` هم حالا امن است (desugaring روشن است، رجوع کن به
+                // build.gradle.kts)؛ ولی SimpleDateFormatِ موجود بدونِ تغییر نگه داشته شد.
                 runCatching {
                     java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
                         .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }

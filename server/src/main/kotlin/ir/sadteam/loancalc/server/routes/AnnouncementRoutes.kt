@@ -18,6 +18,7 @@ import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.adminTokenMatches
 import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.executeCounting
+import ir.sadteam.loancalc.server.giftBaseMs
 import ir.sadteam.loancalc.server.insertReturningId
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -35,7 +36,13 @@ import ir.sadteam.loancalc.server.Log
 private val KINDS = setOf("update", "outage", "feature", "info")
 
 @Serializable
-data class AnnouncementDto(val id: Long, val title: String, val body: String, val kind: String, val createdAt: String, val coins: Int = 0, val action: String? = null, val imageId: String? = null)
+data class AnnouncementDto(
+    val id: Long, val title: String, val body: String, val kind: String, val createdAt: String, val coins: Int = 0, val action: String? = null, val imageId: String? = null,
+    /** کی این کاربر پیام را باز کرد (برای پیامِ همگانی از جدولِ announcement_reads، برای اختصاصی از read_atِ ردیف)؛ null یعنی هنوز باز نشده. */
+    val readAt: String? = null,
+    /** شناسه‌ی پیامِ گروهی (فقط پیام‌های broadcast)؛ null یعنی پیامِ تکی/همگانیِ معمولی. */
+    val batchId: Long? = null,
+)
 
 @Serializable
 private data class AnnouncementsResponse(val items: List<AnnouncementDto>)
@@ -104,13 +111,24 @@ private suspend fun ApplicationCall.isAdmin(): Boolean {
 
 fun Route.announcementRoutes() {
     route("/api/announcements") {
-        // «دیده شد» برای آمارِ پیامِ گروهی؛ فقط پیامِ اختصاصیِ خودِ همین کاربر.
+        // «دیده شد» برای آمارِ پیامِ گروهی؛ برای پیامِ اختصاصیِ خودِ کاربر read_atِ ردیف پر
+        // می‌شود و برای **همه‌ی** پیام‌ها (از جمله همگانی‌ها که target_user_id ندارند) بازشدنِ
+        // این کاربر در جدولِ announcement_reads ثبت می‌شود — کلیدِ مرکب یعنی باز کردنِ
+        // دوباره شمارش را دو برابر نمی‌کند.
         post("/{id}/read") {
             val uid = call.optionalUid() ?: return@post call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "auth"))
             val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "id"))
             Db.withConnection { conn ->
+                val visible = conn.queryOne(
+                    "SELECT 1 FROM announcements WHERE id = ? AND active = 1 AND (target_user_id IS NULL OR target_user_id = ?)",
+                    id, uid,
+                ) { true } == true
+                if (!visible) return@withConnection
                 conn.executeCounting(
                     "UPDATE announcements SET read_at = datetime('now') WHERE id = ? AND target_user_id = ? AND read_at IS NULL", id, uid,
+                )
+                conn.execute(
+                    "INSERT OR IGNORE INTO announcement_reads (announcement_id, user_id) VALUES (?, ?)", id, uid,
                 )
             }
             call.respond(mapOf("ok" to true))
@@ -135,12 +153,15 @@ fun Route.announcementRoutes() {
             val uid = call.optionalUid() ?: -1L
             val items = Db.withConnection { conn ->
                 conn.prepareStatement(
-                    "SELECT id, title, body, kind, created_at, coins, action, image_id FROM announcements " +
-                        "WHERE active = 1 AND id > ? AND (target_user_id IS NULL OR target_user_id = ?) " +
-                        "ORDER BY id DESC LIMIT 30",
+                    "SELECT a.id, a.title, a.body, a.kind, a.created_at, a.coins, a.action, a.image_id, " +
+                        "a.read_at, a.batch_id, r.read_at FROM announcements a " +
+                        "LEFT JOIN announcement_reads r ON r.announcement_id = a.id AND r.user_id = ? " +
+                        "WHERE a.active = 1 AND a.id > ? AND (a.target_user_id IS NULL OR a.target_user_id = ?) " +
+                        "ORDER BY a.id DESC LIMIT 30",
                 ).use { ps ->
-                    ps.setLong(1, since)
-                    ps.setLong(2, uid)
+                    ps.setLong(1, uid)
+                    ps.setLong(2, since)
+                    ps.setLong(3, uid)
                     ps.executeQuery().use { rs ->
                         buildList {
                             while (rs.next()) {
@@ -154,6 +175,10 @@ fun Route.announcementRoutes() {
                                         coins = rs.getInt("coins"),
                                         action = rs.getString("action"),
                                         imageId = rs.getString("image_id"),
+                                        // پیامِ همگانی read_atِ ردیف ندارد؛ بازشدنِ این کاربر از جدولِ جدا می‌آید.
+                                        // ستونِ ۹ = a.read_at، ستونِ ۱۱ = r.read_at (هر دو هم‌نام‌اند، پس با شماره خوانده می‌شوند).
+                                        readAt = rs.getString(11) ?: rs.getString(9),
+                                        batchId = rs.getLong("batch_id").takeIf { !rs.wasNull() },
                                     ),
                                 )
                             }
@@ -198,22 +223,28 @@ fun Route.announcementRoutes() {
             }
             val result = Db.withConnection { conn ->
                 val uid = resolveUser(conn, body.userId, body.phone) ?: return@withConnection null
-                val currentUntil = conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", uid) {
-                    it.getString("subscribed_until")
+                // تمدید + درجِ پیام در **یک تراکنش**: خرابیِ وسطِ کار نباید تمدیدِ بی‌پیام (یا برعکس) بگذارد.
+                // پایه از max(الان، انقضا، پایانِ دوره‌ی آزمایشی) است تا روزهای هدیه با ماهِ مجانی هم‌پوشانی نکنند.
+                conn.autoCommit = false
+                try {
+                    val expiry = java.time.Instant.ofEpochMilli(
+                        giftBaseMs(conn, uid) + body.days * 24L * 60 * 60 * 1000,
+                    ).toString()
+                    conn.execute("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, uid)
+                    val text = body.message?.trim()?.takeIf { it.isNotEmpty() }?.take(1000)
+                        ?: "${body.days} روز اشتراکِ جیبک هدیه گرفتی. ممنون که همراهِ ما هستی!"
+                    conn.insertReturningId(
+                        "INSERT INTO announcements (title, body, kind, target_user_id) VALUES (?, ?, ?, ?)",
+                        "🎁 هدیه‌ی اشتراک", text, "info", uid,
+                    )
+                    conn.commit()
+                    GiftResponse(userId = uid, subscribedUntil = expiry)
+                } catch (e: Exception) {
+                    runCatching { conn.rollback() }
+                    throw e
+                } finally {
+                    runCatching { conn.autoCommit = true }
                 }
-                // اشتراکِ فعال از دست نمی‌رود: از انقضای فعلی جلو می‌رویم (همان قاعده‌ی کدِ هدیه).
-                val now = System.currentTimeMillis()
-                val current = currentUntil?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
-                val base = if (current > now) current else now
-                val expiry = java.time.Instant.ofEpochMilli(base + body.days * 24L * 60 * 60 * 1000).toString()
-                conn.execute("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, uid)
-                val text = body.message?.trim()?.takeIf { it.isNotEmpty() }?.take(1000)
-                    ?: "${body.days} روز اشتراکِ جیبک هدیه گرفتی. ممنون که همراهِ ما هستی!"
-                conn.insertReturningId(
-                    "INSERT INTO announcements (title, body, kind, target_user_id) VALUES (?, ?, ?, ?)",
-                    "🎁 هدیه‌ی اشتراک", text, "info", uid,
-                )
-                GiftResponse(userId = uid, subscribedUntil = expiry)
             }
             if (result == null) {
                 call.respond(HttpStatusCode.NotFound, mapOf("error" to "user_not_found"))
@@ -285,27 +316,27 @@ fun Route.announcementRoutes() {
 }
 
 /**
- * هدیه‌ی انتشار برای کسی که «در انتظار» است (launch_gift_granted = 2): N روز از max(الان، انقضای فعلی)
- * + پیامِ تشکرِ گروهِ خودش. ضدِتکرار: شرطِ `= 2` در همان UPDATE، پس دو درخواستِ هم‌زمان دو بار نمی‌دهند.
+ * هدیه‌ی انتشار برای کسی که «در انتظار» است (launch_gift_granted = 2): N روز از
+ * max(الان، انقضای فعلی، پایانِ دوره‌ی آزمایشی) + پیامِ تشکرِ گروهِ خودش.
+ * ضدِتکرار: شرطِ `= 2` در همان UPDATE، پس دو درخواستِ هم‌زمان دو بار نمی‌دهند.
  */
 internal fun claimLaunchGift(uid: Long) {
     runCatching {
         Db.withConnection { conn ->
             val cfgJson = conn.queryOne("SELECT json FROM app_config WHERE key = 'launch_gift'") { it.getString(1) } ?: return@withConnection
             val cfg = Json { ignoreUnknownKeys = true }.decodeFromString(LaunchGiftBody.serializer(), cfgJson)
-            val row = conn.queryOne(
-                "SELECT u.subscribed_until, (u.subscription_tier IS NOT NULL OR EXISTS " +
+            val isPaid = conn.queryOne(
+                "SELECT (u.subscription_tier IS NOT NULL OR EXISTS " +
                     "(SELECT 1 FROM subscription_purchases p WHERE p.user_id = u.id)) FROM users u " +
                     "WHERE u.id = ? AND u.launch_gift_granted = 2",
                 uid,
-            ) { it.getString(1) to (it.getInt(2) != 0) } ?: return@withConnection
-            val current = row.first?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
-            val expiry = java.time.Instant.ofEpochMilli(maxOf(current, System.currentTimeMillis()) + cfg.days * 24L * 60 * 60 * 1000).toString()
+            ) { it.getInt(1) != 0 } ?: return@withConnection
+            // پایه مثلِ بقیه‌ی هدیه‌ها: max(الان، انقضا، پایانِ دوره‌ی آزمایشی).
+            val expiry = java.time.Instant.ofEpochMilli(giftBaseMs(conn, uid) + cfg.days * 24L * 60 * 60 * 1000).toString()
             val n = conn.executeCounting(
                 "UPDATE users SET subscribed_until = ?, launch_gift_granted = 1 WHERE id = ? AND launch_gift_granted = 2", expiry, uid,
             )
             if (n == 0) return@withConnection
-            val isPaid = row.second
             conn.insertReturningId(
                 "INSERT INTO announcements (title, body, kind, target_user_id) VALUES (?, ?, ?, ?)",
                 (if (isPaid) cfg.paidTitle else cfg.oldTitle).trim(),

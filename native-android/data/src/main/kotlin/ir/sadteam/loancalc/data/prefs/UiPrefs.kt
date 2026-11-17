@@ -96,6 +96,11 @@ class UiPrefs(private val context: Context) {
         val RATE_PROMPT_OPENS = intPreferencesKey("rate_prompt_opens")
         val RATE_PROMPT_DISMISSED = booleanPreferencesKey("rate_prompt_dismissed")
         val RATE_PROMPT_LAST_SHOWN_AT_OPENS = intPreferencesKey("rate_prompt_last_shown_at_opens")
+        /** نسخه‌ای که درخواستِ امتیازِ «بعد از موفقیت» آخرین بار برایش نشان داده شد + شمارِ
+         * نمایش‌ها در همان نسخه - سقفِ هر نسخه جدا شمرده می‌شود (رجوع کن به
+         * [claimRatePromptAfterSuccess]). */
+        val RATE_PROMPT_SUCCESS_VERSION = stringPreferencesKey("rate_prompt_success_version")
+        val RATE_PROMPT_SUCCESS_COUNT = intPreferencesKey("rate_prompt_success_count")
         val SMS_AUTO_IMPORT_ENABLED = booleanPreferencesKey("sms_auto_import_enabled")
         val LAST_SMS_IMPORT_AT = stringPreferencesKey("last_sms_import_at")
         val NOTIF_AUTO_IMPORT_ENABLED = booleanPreferencesKey("notif_auto_import_enabled")
@@ -664,6 +669,31 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setRateDialogLastShownAtOpens(value: Int) {
         context.uiPrefsDataStore.edit { it[Keys.RATE_PROMPT_LAST_SHOWN_AT_OPENS] = value }
+    }
+
+    /**
+     * درخواستِ امتیازِ «بعد از موفقیت» (مثلاً بعد از تسویه‌ی دنگ) - حداکثر [maxPerVersion]
+     * بار در هر نسخه‌ی برنامه، و هیچ‌وقت بعد از «دیگر نپرس»/«امتیاز می‌دم».
+     *
+     * true یعنی همین حالا نشانش بده (و شمارش همان‌جا زیاد شد)؛ false یعنی سقف پر شده یا
+     * کاربر برای همیشه رد کرده است.
+     */
+    suspend fun claimRatePromptAfterSuccess(version: String, maxPerVersion: Int = 3): Boolean {
+        var show = false
+        context.uiPrefsDataStore.edit { prefs ->
+            if (prefs[Keys.RATE_PROMPT_DISMISSED] == true) return@edit
+            val count = if (prefs[Keys.RATE_PROMPT_SUCCESS_VERSION] == version) {
+                prefs[Keys.RATE_PROMPT_SUCCESS_COUNT] ?: 0
+            } else {
+                0
+            }
+            if (count < maxPerVersion) {
+                prefs[Keys.RATE_PROMPT_SUCCESS_VERSION] = version
+                prefs[Keys.RATE_PROMPT_SUCCESS_COUNT] = count + 1
+                show = true
+            }
+        }
+        return show
     }
 
     /** خوندنِ خودکارِ پیامکِ بانکی (رجوع کن به BankSmsReceiver/BankSmsParser تو core) - پیش‌فرض

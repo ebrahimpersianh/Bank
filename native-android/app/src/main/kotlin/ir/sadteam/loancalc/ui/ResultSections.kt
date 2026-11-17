@@ -107,11 +107,15 @@ internal fun ResultSaveSection(
                         when {
                             canSaveAnotherLoan -> {
                                 saving = true
-                                myLoansViewModel.saveComputedLoan(outcome, paidCount) {
+                                myLoansViewModel.saveComputedLoan(outcome, paidCount, {
                                     saving = false
                                     saved = true
                                     saveMessage = null
-                                }
+                                }, {
+                                    saving = false
+                                    saveMessage = ir.sadteam.loancalc.data.userMessageForDbError(it)
+                                        ?: "ذخیره‌ی وام ناموفق بود؛ دوباره تلاش کن."
+                                })
                             }
                             gateState == null -> Unit
                             gateState != GateState.LOGGED_IN ->

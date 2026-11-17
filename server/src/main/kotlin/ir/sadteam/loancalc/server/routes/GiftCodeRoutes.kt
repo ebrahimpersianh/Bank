@@ -12,6 +12,7 @@ import ir.sadteam.loancalc.server.adminTokenMatches
 import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.execute
 import ir.sadteam.loancalc.server.executeCounting
+import ir.sadteam.loancalc.server.giftBaseMs
 import ir.sadteam.loancalc.server.queryOne
 import ir.sadteam.loancalc.server.rateLimitOk
 import ir.sadteam.loancalc.server.requireAuth
@@ -114,15 +115,9 @@ fun Route.giftCodeRoutes() {
                         conn.rollback()
                         return@withConnection "already_used" to null
                     }
-                    val currentUntil = conn.queryOne(
-                        "SELECT subscribed_until FROM users WHERE id = ?", authed.uid,
-                    ) { rs -> rs.getString("subscribed_until") }
-                    // اشتراکِ فعال از دست نمی‌رود: از تاریخِ انقضای فعلی جلو می‌رویم، نه از الان.
-                    val now = System.currentTimeMillis()
-                    val currentExpiry = currentUntil
-                        ?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0
-                    val base = if (currentExpiry > now) currentExpiry else now
-                    val expiry = Instant.ofEpochMilli(base + days * 24L * 60 * 60 * 1000).toString()
+                    // اشتراکِ فعال از دست نمی‌رود و روزهای هدیه با ماهِ مجانی هم‌پوشانی نمی‌کنند:
+                    // پایه max(الان، انقضای فعلی، پایانِ دوره‌ی آزمایشی) است.
+                    val expiry = Instant.ofEpochMilli(giftBaseMs(conn, authed.uid) + days * 24L * 60 * 60 * 1000).toString()
                     conn.execute("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, authed.uid)
                     conn.commit()
                     "ok" to RedeemResponse(days = days, subscribedUntil = expiry)

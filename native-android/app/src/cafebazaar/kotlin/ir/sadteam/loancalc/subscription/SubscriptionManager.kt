@@ -9,6 +9,9 @@ import ir.cafebazaar.poolakey.Payment
 import ir.cafebazaar.poolakey.config.PaymentConfiguration
 import ir.cafebazaar.poolakey.config.SecurityCheck
 import ir.cafebazaar.poolakey.request.PurchaseRequest
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /** پورت CAFEBAZAAR_RSA_PUBLIC_KEY تو www/index.html - همون کلید واقعی که برای اپ کافه‌بازار
  * (applicationId مشترک ir.sadteam.loancalc) قبلاً ثبت و تایید شده. */
@@ -47,6 +50,13 @@ class SubscriptionManager(private val activity: ComponentActivity) {
     /** خریدهای مصرف‌نشده‌ی کاربر (productId → توکن) - از لحظه‌ی اتصال. */
     @Volatile private var owned: List<Pair<String, String>> = emptyList()
 
+    /**
+     * فهرستِ مالکیت آماده است؟ (هم‌معنا با `inventoryReady`ی فلیورِ مایکت - صفحه‌ی
+     * اشتراک بازیابی را فقط وقتی می‌زند که این true شده باشد.)
+     */
+    private val _inventoryReady = MutableStateFlow(false)
+    val inventoryReady: StateFlow<Boolean> = _inventoryReady.asStateFlow()
+
     fun connect(onStateChange: (connected: Boolean) -> Unit) {
         connection = payment.connect {
             connectionSucceed {
@@ -57,8 +67,9 @@ class SubscriptionManager(private val activity: ComponentActivity) {
                         querySucceed { list ->
                             owned = list.filter { p -> subscriptionTiers.any { it.first == p.productId } }
                                 .map { it.productId to it.purchaseToken }
+                            _inventoryReady.value = true
                         }
-                        queryFailed { }
+                        queryFailed { _inventoryReady.value = true }
                     }
                 }
             }

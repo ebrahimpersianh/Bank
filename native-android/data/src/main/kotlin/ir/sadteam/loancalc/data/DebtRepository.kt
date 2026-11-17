@@ -33,7 +33,7 @@ class DebtRepository(
      * رنگِ آواتار **قطعی از رو نامه** تعیین می‌شه، نه تصادفی/دستی (جوابِ سوالِ ۱۱ی
      * design/MESSAGE-round4-to-design.md) - همون نام همیشه همون رنگ رو می‌گیره.
      */
-    suspend fun addCounterparty(name: String, phone: String? = null, id: Long = System.currentTimeMillis()): Long {
+    suspend fun addCounterparty(name: String, phone: String? = null, id: Long = System.currentTimeMillis()): Long = runDbWrite {
         val color = avatarColorNames[abs(name.hashCode()) % avatarColorNames.size]
         counterpartyDao.upsert(
             CounterpartyEntity(id = id, name = name, createdAt = isoNow(), phone = phone, avatarColor = color),
@@ -41,7 +41,7 @@ class DebtRepository(
         return id
     }
 
-    suspend fun updateCounterparty(counterparty: CounterpartyEntity) {
+    suspend fun updateCounterparty(counterparty: CounterpartyEntity) = runDbWrite {
         counterpartyDao.upsert(counterparty)
     }
 
@@ -58,7 +58,7 @@ class DebtRepository(
         return addCounterparty(UNKNOWN_COUNTERPARTY_NAME)
     }
 
-    suspend fun deleteCounterparty(counterparty: CounterpartyEntity) {
+    suspend fun deleteCounterparty(counterparty: CounterpartyEntity) = runDbWrite {
         counterpartyDao.delete(counterparty)
         debtDao.deleteForCounterparty(counterparty.id)
     }
@@ -71,7 +71,7 @@ class DebtRepository(
         year: Int,
         month: Int,
         day: Int,
-    ): Long {
+    ): Long = runDbWrite {
         val id = System.currentTimeMillis()
         debtDao.upsert(
             DebtEntity(
@@ -90,11 +90,11 @@ class DebtRepository(
         return id
     }
 
-    suspend fun setSettled(debt: DebtEntity, settled: Boolean) {
+    suspend fun setSettled(debt: DebtEntity, settled: Boolean) = runDbWrite {
         debtDao.upsert(debt.copy(settled = settled))
     }
 
-    suspend fun deleteDebt(debt: DebtEntity) {
+    suspend fun deleteDebt(debt: DebtEntity) = runDbWrite {
         debtDao.delete(debt)
     }
 
@@ -104,7 +104,7 @@ class DebtRepository(
         debts.filter { it.counterpartyId == counterpartyId && !it.settled }
             .sumOf { if (it.type == DebtType.OWED_TO_ME.name) it.amount else -it.amount }
 
-    suspend fun clearLocal() {
+    suspend fun clearLocal() = runDbWrite {
         counterpartyDao.clear()
         debtDao.clear()
     }

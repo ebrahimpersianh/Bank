@@ -60,9 +60,9 @@ class LoanRepository(
     private val gson = Gson()
     /** بدنه را داخلِ یک تراکنشِ دیتابیس اجرا می‌کند - یا اگر دیتابیسی نداریم، همان‌طور.
      * تودرتو امن است: Room تراکنشِ داخلی را به همان تراکنشِ بیرونی می‌چسبانَد. */
-    private suspend fun <T> inTransaction(block: suspend () -> T): T {
-        val db = database ?: return block()
-        return db.withTransaction { block() }
+    private suspend fun <T> inTransaction(block: suspend () -> T): T = runDbWrite {
+        val db = database ?: return@runDbWrite block()
+        db.withTransaction { block() }
     }
 
 
@@ -70,17 +70,17 @@ class LoanRepository(
 
     suspend fun getLoans(): List<LoanEntity> = loanDao.getAll()
 
-    suspend fun saveLoan(loan: LoanEntity) = loanDao.upsert(loan)
+    suspend fun saveLoan(loan: LoanEntity) = runDbWrite { loanDao.upsert(loan) }
 
     /** وام‌هایی که هنوز به طرفِ‌حساب وصل نشدن - برای حدسِ خودکارِ یه‌بارِ دیتای قدیمی (سوالِ ۶ی
      * design/ANSWERS-chequecounterpartydang.md، هم‌الگو با [ir.sadteam.loancalc.data.ChequeRepository.chequesWithoutCounterparty]). */
     suspend fun loansWithoutCounterparty(): List<LoanEntity> = loanDao.getAll().filter { it.counterpartyId == null }
 
-    suspend fun setLoanCounterparty(loan: LoanEntity, counterpartyId: Long) {
+    suspend fun setLoanCounterparty(loan: LoanEntity, counterpartyId: Long) = runDbWrite {
         loanDao.upsert(loan.copy(counterpartyId = counterpartyId))
     }
 
-    suspend fun deleteLoan(id: Long) {
+    suspend fun deleteLoan(id: Long) = runDbWrite {
         loanDao.deleteById(id)
         loanRowDao.deleteForLoan(id)
         LoanDataChange.notifyChanged()
@@ -89,7 +89,7 @@ class LoanRepository(
     /** پورت پاک‌سازیِ لوکالِ بعد از خروج - وگرنه وام‌های همون گوشی زیرِ حسابِ قبلی، موقع ورود با یه
      * شماره‌ی دیگه (که سرورش هنوز خالیه)، تو [syncAfterLogin] به‌جای «سرور خالیه» به «پوشِ محلی به
      * سرور» می‌رفت و اشتباهی وام‌های کاربرِ قبلی رو زیرِ حسابِ جدید آپلود می‌کرد. */
-    suspend fun clearLocal() {
+    suspend fun clearLocal() = runDbWrite {
         loanDao.clear()
         loanRowDao.clearAll()
         LoanDataChange.notifyChanged()
@@ -108,7 +108,7 @@ class LoanRepository(
         n: Int,
         paidCount: Int,
         startDate: Map<String, Int>,
-    ) {
+    ) = runDbWrite {
         val id = System.currentTimeMillis()
         val amount = installment * n
         val createdAt = isoNow()
@@ -220,7 +220,7 @@ class LoanRepository(
 
     /** بعدِ رهاکردنِ کارتِ یه وامِ کشیده‌شده - همه‌ی وام‌های [orderedLoans] رو به همون ترتیب
      * عددگذاری (۰..n-۱) و ذخیره می‌کنه؛ از این به بعد مرتب‌سازیِ CUSTOM از رو همین عدد کار می‌کنه. */
-    suspend fun reorderLoans(orderedLoans: List<LoanEntity>) {
+    suspend fun reorderLoans(orderedLoans: List<LoanEntity>) = runDbWrite {
         orderedLoans.forEachIndexed { index, loan ->
             val data = parseDataMutable(loan)
             data["sortOrder"] = index
@@ -230,7 +230,7 @@ class LoanRepository(
 
     /** ذخیره‌ی یادداشتِ وام - رو هر نوع وامی (دستی یا محاسبه‌شده) امنه، چون فقط dataJson رو دست
      * می‌زنه، نه مبلغ/نرخ/ردیف‌ها. */
-    suspend fun updateNotes(loan: LoanEntity, notes: String) {
+    suspend fun updateNotes(loan: LoanEntity, notes: String) = runDbWrite {
         val data = parseDataMutable(loan)
         data["notes"] = notes
         loanDao.upsert(loan.copy(dataJson = gson.toJson(data)))
@@ -250,7 +250,7 @@ class LoanRepository(
         borrower: String,
         startDate: Map<String, Int>,
         category: String? = null,
-    ) {
+    ) = runDbWrite {
         val data = parseDataMutable(loan)
         data["name"] = name
         data["bank"] = bank
@@ -288,7 +288,7 @@ class LoanRepository(
         installment: Double,
         n: Int,
         startDate: Map<String, Int>,
-    ) {
+    ) = runDbWrite {
         val oldRowsByM = getOrMigrateRows(loan).associateBy { it.m }
         val newRows = (1..n).map { m ->
             oldRowsByM[m]?.copy(installment = installment)
@@ -342,7 +342,7 @@ class LoanRepository(
         n: Int,
         startDate: Map<String, Int>,
         category: String? = null,
-    ) {
+    ) = runDbWrite {
         require(loan.paidCount == 0) {
             "updateComputedLoanAmount فقط رو وامی که هنوز هیچ قسطی پرداخت نشده مجازه"
         }
@@ -416,7 +416,7 @@ class LoanRepository(
         // برای وامی که تازه (نه از امروز) واقعاً وجود داره و کاربر داره از رو محاسبه‌گر واردش
         // می‌کنه - همون قابلیتِ فرمِ افزودنِ دستی (addManualLoan)، این‌جا هم برای وامِ محاسبه‌شده.
         paidCount: Int = 0,
-    ): Long {
+    ): Long = runDbWrite {
         val id = System.currentTimeMillis()
         val createdAt = isoNow()
         val webShape = linkedMapOf(
@@ -716,7 +716,7 @@ class LoanRepository(
 
     /** ویرایش دستی مبلغ یه قسط (کارمزد/جریمه‌ی بانکی که نمی‌تونیم حدس بزنیم) - پورت
      * confirmEditInstallment. */
-    suspend fun setRowInstallment(loan: LoanEntity, m: Int, newAmount: Double) {
+    suspend fun setRowInstallment(loan: LoanEntity, m: Int, newAmount: Double) = runDbWrite {
         val rows = getOrMigrateRows(loan).map { if (it.m == m) it.copy(installment = newAmount) else it }
         saveRows(loan, rows)
     }
@@ -725,7 +725,7 @@ class LoanRepository(
      * برخلاف وب که فقط اقساطِ همون نتیجه‌ی محاسبه رو عوض می‌کنه، اینجا مستقیم همه‌ی ردیف‌های
      * ذخیره‌شده رو آپدیت می‌کنه (چون :app به rows مستقیم دسترسی نداره، جایی برای «نگه داشتن اون
      * نسخه‌ی موقت تو حافظه» مثل وب نیست). */
-    suspend fun setAllRowsInstallment(loan: LoanEntity, newAmount: Double) {
+    suspend fun setAllRowsInstallment(loan: LoanEntity, newAmount: Double) = runDbWrite {
         val rows = getOrMigrateRows(loan).map { it.copy(installment = newAmount) }
         // چون این‌جا واقعاً همه‌ی اقساط برابرِ newAmount شدن، loan.installment (که دایره‌ی بالای
         // صفحه و کارتِ «مبلغ هر قسط» ازش می‌خونن، نه از rows) هم باید هم‌قدمش بشه - وگرنه بعد از
@@ -744,7 +744,7 @@ class LoanRepository(
      *   قاعده‌ی «یک عدد، یک نقطه‌ی نوشتن» که برای `paidCount` در [withPaidCount] رعایت شده بود.
      *   بی این، پشتیبان و سرور خلاصه‌ی کهنه می‌گرفتند و بازیابی مبلغ‌های قدیمی را برمی‌گرداند.
      */
-    private suspend fun saveRows(loan: LoanEntity, rows: List<LoanRowEntity>, installment: Double? = null) {
+    private suspend fun saveRows(loan: LoanEntity, rows: List<LoanRowEntity>, installment: Double? = null) = runDbWrite {
         loanRowDao.upsertAll(rows)
         val newTotal = rows.sumOf { it.installment }
         val data = parseDataMutable(loan)
@@ -762,7 +762,7 @@ class LoanRepository(
     /** ردیف‌های این وام رو از `loan_rows` می‌خونه؛ اگه خالی بود (لبه‌ی نادرِ مهاجرت یا وامِ خیلی
      * قدیمی)، از رو dataJsonِ قدیمی/پیش‌فرضِ اقساطِ برابر بازسازی و همون‌جا persist می‌کنه - رجوع کن
      * به کامنتِ بالای کلاس. */
-    private suspend fun getOrMigrateRows(loan: LoanEntity): List<LoanRowEntity> {
+    private suspend fun getOrMigrateRows(loan: LoanEntity): List<LoanRowEntity> = runDbWrite {
         val stored = loanRowDao.getForLoan(loan.id)
         if (stored.isNotEmpty()) return stored
         val legacy = legacyRowsFromDataJson(loan).map { it.toLoanRowEntity(loan.id) }
@@ -792,7 +792,7 @@ class LoanRepository(
      *
      * تعدادِ وام‌های ترمیم‌شده رو برمی‌گردونه. اجرای دوباره‌ش بی‌ضرره (بارِ دوم چیزی برای اصلاح نیست).
      */
-    suspend fun repairPaidCounts(): Int {
+    suspend fun repairPaidCounts(): Int = runDbWrite {
         var repaired = 0
         loanDao.getAll().forEach { loan ->
             val rows = loanRowDao.getForLoan(loan.id)
@@ -903,7 +903,13 @@ class LoanRepository(
 
         return when {
             serverHasData && !localHasData -> {
-                replaceAllWithServerData(serverLoans)
+                // پر بودنِ حافظه موقعِ بازیابیِ بعد از ورود نباید ورود را کرش کند —
+                // `Failed` یعنی «سینک نشد»، نه «داده پاک شد» (جایگزینی تراکنشی است).
+                try {
+                    replaceAllWithServerData(serverLoans)
+                } catch (e: StorageFullException) {
+                    return SyncOutcome.Failed
+                }
                 SyncOutcome.RestoredFromServer
             }
             serverHasData && localHasData && !sameLoans(local, serverLoans) -> {
@@ -916,7 +922,7 @@ class LoanRepository(
         }
     }
 
-    suspend fun replaceAllWithServerData(serverLoans: List<Map<String, Any?>>) {
+    suspend fun replaceAllWithServerData(serverLoans: List<Map<String, Any?>>) = runDbWrite {
         val parsed = serverLoans.mapNotNull { fromWebMap(it) }
         // 🚨 **وام و ردیف‌های قسطش یک کارند**: قطعِ کار بینِ `clearAll` و درجِ دوباره،
         // وام‌هایی بی هیچ قسطی به‌جا می‌گذاشت - یعنی پیشرفتِ پرداختِ همه صفر.

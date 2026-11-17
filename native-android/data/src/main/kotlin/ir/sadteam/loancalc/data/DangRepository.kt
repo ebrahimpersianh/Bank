@@ -67,7 +67,7 @@ class DangRepository(
         isEventMode: Boolean,
         participants: List<DangParticipantInput>,
         items: List<DangItemInput> = emptyList(),
-    ): Pair<List<Long>, List<DangParticipantEntity>> {
+    ): Pair<List<Long>, List<DangParticipantEntity>> = runDbWrite {
         val old = participantDao.getForEvent(event.id)
         val pool = old.toMutableList()
         var idCounter = System.currentTimeMillis()
@@ -131,7 +131,7 @@ class DangRepository(
         isEventMode: Boolean,
         participants: List<DangParticipantInput>,
         items: List<DangItemInput> = emptyList(),
-    ): Long {
+    ): Long = runDbWrite {
         val base = System.currentTimeMillis()
         val eventId = base
         eventDao.upsert(
@@ -180,11 +180,11 @@ class DangRepository(
         return eventId
     }
 
-    suspend fun setEventSettled(event: DangEventEntity, settled: Boolean) {
+    suspend fun setEventSettled(event: DangEventEntity, settled: Boolean) = runDbWrite {
         eventDao.upsert(event.copy(settled = settled))
     }
 
-    suspend fun setParticipantSettled(participant: DangParticipantEntity, settled: Boolean) {
+    suspend fun setParticipantSettled(participant: DangParticipantEntity, settled: Boolean) = runDbWrite {
         participantDao.upsert(participant.copy(settled = settled))
         // تیکِ همه = دنگ خودبه‌خود تسویه؛ برداشتنِ یک تیک = دوباره باز (۱۶ مهر، خواسته‌ی کاربر).
         val all = participantDao.getForEvent(participant.eventId)
@@ -195,14 +195,14 @@ class DangRepository(
     }
 
     /** «همه پرداخت کردند»: تیکِ همه‌ی دیگران. خروجی = سهم‌هایی که تازه تیک خوردند. */
-    suspend fun settleAllOthers(event: DangEventEntity): List<DangParticipantEntity> {
+    suspend fun settleAllOthers(event: DangEventEntity): List<DangParticipantEntity> = runDbWrite {
         val open = participantDao.getForEvent(event.id).filter { it.counterpartyId != null && !it.settled }
         open.forEach { participantDao.upsert(it.copy(settled = true)) }
         eventDao.upsert(event.copy(settled = true))
         return open
     }
 
-    suspend fun deleteEvent(event: DangEventEntity) {
+    suspend fun deleteEvent(event: DangEventEntity) = runDbWrite {
         itemShareDao.deleteForEvent(event.id)
         itemDao.deleteForEvent(event.id)
         participantDao.deleteForEvent(event.id)
@@ -212,7 +212,7 @@ class DangRepository(
     suspend fun getAllEvents(): List<DangEventEntity> = eventDao.getAll()
     suspend fun getAllParticipants(): List<DangParticipantEntity> = participantDao.getAll()
 
-    suspend fun clearLocal() {
+    suspend fun clearLocal() = runDbWrite {
         itemShareDao.clear()
         itemDao.clear()
         participantDao.clear()

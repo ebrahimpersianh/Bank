@@ -296,11 +296,16 @@ class AccountViewModel @Inject constructor(
         viewModelScope.launch { onResult(accountRepository.exportBackupJson()) }
     }
 
-    fun importBackup(json: String, onResult: (Boolean) -> Unit) {
+    fun importBackup(json: String, onResult: (Boolean) -> Unit, onStorageFull: () -> Unit = {}) {
         viewModelScope.launch {
-            val ok = accountRepository.importBackupJson(json)
-            if (ok) syncIfLoggedIn()
-            onResult(ok)
+            try {
+                val ok = accountRepository.importBackupJson(json)
+                if (ok) syncIfLoggedIn()
+                onResult(ok)
+            } catch (e: ir.sadteam.loancalc.data.StorageFullException) {
+                onResult(false)
+                onStorageFull()
+            }
         }
     }
 }

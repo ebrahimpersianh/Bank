@@ -131,10 +131,6 @@ fun SubscriptionScreen(
     var prices by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var purchasingProductId by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-    // کدِ هدیه: متنِ فیلد، در حالِ ارسال، و پیامِ موفقیت.
-    var giftCode by rememberSaveable { mutableStateOf("") }
-    var redeeming by remember { mutableStateOf(false) }
-    var giftMessage by remember { mutableStateOf<String?>(null) }
     // این صفحه دو نما داره (خواسته‌ی صریحِ کاربر، هم‌الگو با اپِ رفرنس): «مرورِ اشتراک» که وضعیت و
     // مزیت‌ها رو نشون می‌ده، و «تعرفه‌ها» که همون لیستِ خریدِ قبلیه. پیش‌فرض مرورـه.
     var showPlans by remember { mutableStateOf(false) }
@@ -155,8 +151,14 @@ fun SubscriptionScreen(
     // بازیابیِ خودکارِ خریدهایی که پول‌شون گرفته شده ولی (به‌خاطرِ باگِ قبلیِ فلیورِ myket، رجوع کن
     // به SubscriptionManager.handleActivityResult) هیچ‌وقت به سرور اعلام نشدن - کاربر مجبور نیست
     // دوباره پول بده یا با پشتیبانی تماس بگیره، فقط با بازکردنِ همین صفحه خودش حل می‌شه.
-    LaunchedEffect(subscriptionManager, gateState) {
-        if (gateState != GateState.LOGGED_IN) return@LaunchedEffect
+    // ⚠️ بازیابی فقط وقتی زده می‌شود که فهرستِ مالکیتِ استور آماده باشد (`inventoryReady`):
+    // قبلاً اثر با بازشدنِ صفحه اجرا می‌شد و اگر `latestInventory` هنوز نرسیده بود، لیستِ
+    // خالی برمی‌گرداند و دیگر تلاشی نمی‌شد.
+    val inventoryReady by remember(subscriptionManager) {
+        subscriptionManager?.inventoryReady ?: kotlinx.coroutines.flow.MutableStateFlow(false)
+    }.collectAsState()
+    LaunchedEffect(subscriptionManager, gateState, inventoryReady) {
+        if (gateState != GateState.LOGGED_IN || !inventoryReady) return@LaunchedEffect
         subscriptionManager?.restorePurchases()?.forEach { (productId, purchaseToken) ->
             authViewModel.verifySubscriptionPurchase(
                 productId = productId,
@@ -172,7 +174,6 @@ fun SubscriptionScreen(
     // سه ردیفِ بازشونده‌ی پایینِ صفحه.
     var showHistory by remember { mutableStateOf(false) }
     var showExpiryInfo by remember { mutableStateOf(false) }
-    var showGift by remember { mutableStateOf(false) }
 
     // صفحه‌ی اشتراک مسیرِ ناوبری نیست (پنجره است)، پس دیدنش جدا شمرده می‌شود - اولین پله‌ی مسیرِ خرید.
     androidx.compose.runtime.LaunchedEffect(Unit) { ir.sadteam.loancalc.data.UsageStats.action("paywall_view") }

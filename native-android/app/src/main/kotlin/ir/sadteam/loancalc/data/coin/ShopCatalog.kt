@@ -16,7 +16,7 @@ import java.time.temporal.ChronoUnit
  *
  * پس کلیدِ مالکیت **شناسه‌ی گونه** است نه نامِ enum:
  *
- *     "theme:lapis"   "icon:piggy"   "coinskin:ancient"
+ *     "theme:lapis"   "icon:piggy"   "symbolset:outlined"
  *
  * `CoinSpend` همان می‌ماند و کارش را می‌کند: قیمت، دسته، و `timeGated`. این فایل
  * می‌گوید **چه چیزهایی** با آن قیمت خریدنی‌اند.
@@ -378,19 +378,6 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     add(ShopItem("symbolset:solid", CoinSpend.CATEGORY_ICON_SET, "نمادهای برجسته", "۱۸ نمادِ توپر با طرحِ اختصاصیِ جیبک", addedOn = "1405-07-01"))
     add(ShopItem("symbolset:cute", CoinSpend.CATEGORY_ICON_SET, "نمادهای گرد و بامزه", "۱۸ نمادِ توپر با گوشه‌های کاملاً گرد", addedOn = "1405-07-01"))
     add(ShopItem("symbolset:line", CoinSpend.CATEGORY_ICON_SET, "نمادهای خطیِ ظریف", "۱۸ نمادِ خطی با ضخامتِ یکدست", addedOn = "1405-07-01"))
-    add(ShopItem("coinskin:ancient", CoinSpend.COIN_SKIN, "سکه‌ی کهن", "شکلِ سکه در همه‌ی برنامه", comingSoon = true))
-    add(
-        ShopItem(
-            id = "coinskin:aged_gold",
-            kind = CoinSpend.COIN_SKIN,
-            label = "سکه‌ی طلای کهنه",
-            blurb = "با نشانِ «وامِ بسته» باز می‌شود",
-            // ⚠️ قبلاً `YEAR_COMPLETE` بود که **هیچ نشانی با آن کد وجود ندارد** - یعنی
-            // این ردیف برای همیشه قفل می‌مانْد و برچسبِ دیالوگ هم کدِ خام را نشان می‌داد.
-            unlockBadge = "loan_closed",
-            comingSoon = true,
-        ),
-    )
 
     // ═══ قابِ آواتار (`72a` بندِ ۲) ═══
     // ارزان‌ترین قلم و همین درست است: پنج‌شش شکلِ سادهٔ وکتوری. قیمت کارِ ساخت را می‌گوید،
@@ -453,8 +440,6 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     add(ShopItem("chart:gradient_columns", CoinSpend.CHART_STYLE, "ستون‌های گرادیانی", "ستون‌هایی که پایینشان محو می‌شود", addedOn = "1405-07-01", priceOverride = 350))
     add(ShopItem("chart:area_wave", CoinSpend.CHART_STYLE, "ناحیه‌ای", "منحنیِ نرم با سطحِ پُرشده زیرش", addedOn = "1405-07-01", priceOverride = 400))
     add(ShopItem("chart:bubbles", CoinSpend.CHART_STYLE, "حبابی", "هر روز یک حباب روی ساقه", addedOn = "1405-07-01", priceOverride = 500))
-    add(ShopItem("sub:3d", CoinSpend.SUBSCRIPTION_3D, "اشتراکِ ۳ روزه", "همه‌ی امکاناتِ اشتراکی، سه روز", comingSoon = true))
-    add(ShopItem("sub:7d", CoinSpend.SUBSCRIPTION_7D, "اشتراکِ ۷ روزه", "همه‌ی امکاناتِ اشتراکی، یک هفته", comingSoon = true))
 }
 
 /** ردیف‌های یک دسته، به ترتیبِ کاتالوگ. */

@@ -170,7 +170,7 @@ class AuthRepository(
 
     /** پورت «refreshSubscriptionStatus» که تو کامنتِ قبلیِ AuthViewModel «فاز بعد» علامت خورده بود -
      * چون قبلاً هیچ‌جا GET /api/auth/me واقعاً صدا زده نمی‌شد، وضعیتِ اشتراک/دوره‌ی آزمایشیِ محلی
-     * می‌تونست کهنه بمونه (مثلاً دقیقاً روز هشتم که آزمایشی تموم می‌شه، بدون خروج/ورودِ دوباره تا
+     * می‌تونست کهنه بمونه (مثلاً دقیقاً روز سی‌ویکم که آزمایشی تموم می‌شه، بدون خروج/ورودِ دوباره تا
      * مدت‌ها اپ فکر می‌کرد هنوز مشترکه). حالا از AppRoot هر بار اپ باز می‌شه صدا زده می‌شه. */
     suspend fun refreshSubscriptionStatus() {
         val token = authPrefs.authToken.first() ?: return
@@ -210,6 +210,9 @@ class AuthRepository(
                 VerifySubscriptionRequest(productId, purchaseToken, store),
             )
             authPrefs.setSubscribed(result.subscribed)
+            // تاریخِ انقضای برگشتی را هم ذخیره می‌کنیم تا «تا …»ی صفحه‌ی اشتراک تا
+            // تازه‌سازیِ بعدی (/api/auth/me) کهنه نماند.
+            authPrefs.setSubscribedUntil(result.subscribedUntil)
             AuthResult.Success
         } catch (e: HttpException) {
             AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))
@@ -267,6 +270,29 @@ class AuthRepository(
     suspend fun adminSupport(): ir.sadteam.loancalc.data.network.AdminSupportResponse? {
         val token = authPrefs.authToken.first() ?: return null
         return runCatching { apiService.adminSupport("Bearer $token") }.getOrNull()
+    }
+
+    /**
+     * تیکت‌های پشتیبانیِ خودِ کاربر (`GET /api/support/tickets`) - برای بخشِ «پیگیری تیکت»
+     * در صفحه‌ی پشتیبانی. خالی = واردنشده، سرور در دسترس نیست، یا هنوز تیکتی نیست (و یا
+     * سرور هنوز این مسیر را نساخته - در هر صورت خطا بی‌صدا قورت داده می‌شود).
+     *
+     * پاسخِ سرور ممکن است آرایه‌ی خام باشد یا زیرِ کلیدِ `tickets`/`items` - هر سه شکل
+     * خوانده می‌شوند تا قراردادِ دقیقِ سمتِ سرور (که موازی ساخته می‌شود) مهم نباشد.
+     */
+    suspend fun mySupportTickets(): List<ir.sadteam.loancalc.data.network.SupportTicketDto> {
+        val token = authPrefs.authToken.first() ?: return emptyList()
+        return runCatching {
+            val body = apiService.mySupportTickets("Bearer $token").string()
+            val json = com.google.gson.JsonParser.parseString(body)
+            val array = when {
+                json.isJsonArray -> json.asJsonArray
+                json.isJsonObject && json.asJsonObject.has("tickets") -> json.asJsonObject.getAsJsonArray("tickets")
+                json.isJsonObject && json.asJsonObject.has("items") -> json.asJsonObject.getAsJsonArray("items")
+                else -> return emptyList()
+            }
+            array.mapNotNull { runCatching { gson.fromJson(it, ir.sadteam.loancalc.data.network.SupportTicketDto::class.java) }.getOrNull() }
+        }.getOrDefault(emptyList())
     }
 
     suspend fun adminSupportFile(id: String): ByteArray? {

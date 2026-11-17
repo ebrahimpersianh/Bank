@@ -60,6 +60,21 @@ interface ApiService {
         @Body body: BugReportRequest,
     ): BugReportResponse
 
+    /**
+     * تیکت‌های پشتیبانیِ خودِ کاربرِ واردشده (قرارداد: `GET /api/support/tickets`، احرازشده؛
+     * هر تیکت `{ticket, message, status: open|answered|closed, category, created_at,
+     * reply: آخرین جوابِ ادمین یا null, replied_at}`).
+     *
+     * ⚠️ پاسخ ممکن است آرایه‌ی خام باشد یا زیرِ کلیدِ `tickets`/`items` بیاید - تجزیه‌ی
+     * انعطاف‌پذیرش در [ir.sadteam.loancalc.data.AuthRepository.mySupportTickets] است، نه اینجا.
+     * اگر سرور هنوز این مسیر را ندارد (در دستِ ساختِ موازی)، آن‌جا خطا قورت داده می‌شود و
+     * فهرستِ خالی برمی‌گردد.
+     */
+    @GET("api/support/tickets")
+    suspend fun mySupportTickets(
+        @Header("Authorization") authHeader: String,
+    ): okhttp3.ResponseBody
+
     // 🔒 پیوستِ پیامِ پشتیبانی: فقط عکس/فیلم؛ سرور نوع را از بایت‌ها می‌سنجد و عکس را بازسازی می‌کند.
     @POST("api/support/upload")
     suspend fun uploadSupportFile(
@@ -285,7 +300,7 @@ data class VerifyOtpResponse(
     val trialDaysLeft: Int? = null,
 )
 
-/** [trialDaysLeft] چند روز از دوره‌ی آزمایشیِ ۷روزه‌ی رایگان مونده - عددِ نهایی، از قبل سمت سرور
+/** [trialDaysLeft] چند روز از دوره‌ی آزمایشیِ ۳۰روزه‌ی رایگان مونده - عددِ نهایی، از قبل سمت سرور
  * (SubscriptionStatus.trialDaysLeft، کلید‌خورده به created_at شماره‌موبایل) با ساعتِ خودِ سرور
  * حساب شده، نه یه timestampِ خام که کلاینت بخواد با ساعتِ گوشی حسابش کنه. [subscribed] از قبل
  * ترکیبِ اشتراکِ واقعی + دوره‌ی آزمایشیِ فعاله - برای گیت «۱ وام رایگان» فقط همون کافیه. */
@@ -364,6 +379,22 @@ data class AdminSupportReplyRequest(val id: Long, val text: String, val close: B
 data class AdminSupportStatusRequest(val id: Long, val status: String)
 
 data class BugReportResponse(val ok: Boolean, val ticket: String)
+
+/**
+ * یک تیکتِ پشتیبانیِ خودِ کاربر - قراردادِ `GET /api/support/tickets`.
+ * [status] یکی از `open`/`answered`/`closed`؛ [reply] آخرین جوابِ ادمین است یا null.
+ */
+data class SupportTicketDto(
+    val ticket: String,
+    val message: String,
+    val status: String,
+    val category: String = "bug",
+    @com.google.gson.annotations.SerializedName(value = "created_at", alternate = ["createdAt"])
+    val created_at: String? = null,
+    val reply: String? = null,
+    @com.google.gson.annotations.SerializedName(value = "replied_at", alternate = ["repliedAt"])
+    val replied_at: String? = null,
+)
 
 data class RedeemGiftRequest(val code: String)
 

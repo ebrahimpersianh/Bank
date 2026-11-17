@@ -125,6 +125,9 @@ fun DebtScreen(
     viewModel: DebtViewModel = hiltViewModel(),
     dangViewModel: DangViewModel = hiltViewModel(),
     dangAccountVm: ir.sadteam.loancalc.ui.account.AccountViewModel = hiltViewModel(),
+    /** لحظه‌ی موفقیتِ «تسویه‌ی دنگ» درخواستِ امتیاز را فعال می‌کند - همان دیالوگِ
+     * سفارشی، با سقفِ ۳ بار در هر نسخه (رجوع کن به RatePromptViewModel). */
+    ratePromptViewModel: ir.sadteam.loancalc.ui.rating.RatePromptViewModel = hiltViewModel(),
 ) {
     val counterparties by viewModel.counterparties.collectAsState()
     val debts by viewModel.debts.collectAsState()
@@ -296,7 +299,13 @@ fun DebtScreen(
                         dangViewModel.deleteEvent(event); dangScreen = "list"; openedDangEventId = null
                     },
                     onSettleAll = {
-                        dangViewModel.settleAll(event) { newly -> newly.forEach { recordDangShare(event, it) } }
+                        dangViewModel.settleAll(event) { newly ->
+                            newly.forEach { recordDangShare(event, it) }
+                            // لحظه‌ی موفقیت: دنگ واقعاً تسویه شد (دستِ‌کم یک سهمِ تازه).
+                            if (newly.isNotEmpty()) {
+                                ratePromptViewModel.maybeShowAfterSuccess(ir.sadteam.loancalc.BuildConfig.VERSION_NAME)
+                            }
+                        }
                     },
                     onOpenCounterparty = { id ->
                         if (dangFromCounterparty && openedCounterpartyId == id) { closeDangDetail(); return@DangDetailScreen }

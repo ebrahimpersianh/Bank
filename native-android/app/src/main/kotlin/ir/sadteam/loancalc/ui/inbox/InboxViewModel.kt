@@ -108,7 +108,29 @@ class InboxViewModel @Inject constructor(
         }
     }
 
-    fun markAllNewsRead() = viewModelScope.launch { inbox.markAllNewsRead() }
+    fun markAllNewsRead() = viewModelScope.launch {
+        // اول شناسه‌های خوانده‌نشده را می‌گیریم (بعد از علامت‌زدنِ محلی دیگر معلوم نیست
+        // کدام‌ها تازه خوانده شدند)، بعد محلی علامت می‌زنیم و برای هر اطلاعیه‌ی سرور
+        // (شناسه‌ی محلیِ منفی) «دیده شد» را هم به سرور گزارش می‌کنیم - مثل markReadِ تکی.
+        // پیام‌های عمومی بی‌هدف روی سرور به‌روز نمی‌شوند (سرور فقط target_user_id را می‌زند)
+        // ولی فرستادن‌شان بی‌ضرر است و جواب‌های اختصاصیِ پشتیبانی را پوشش می‌دهد.
+        val unreadIds = inbox.unreadAnnouncementIds()
+        inbox.markAllNewsRead()
+        if (unreadIds.isEmpty()) return@launch
+        val auth = authPrefs.authToken.first()?.let { "Bearer $it" } ?: return@launch
+        unreadIds.forEach { id ->
+            runCatching { api.markAnnouncementRead(-id, auth) }
+        }
+    }
+
+    /**
+     * بازکردنِ جوابِ پشتیبانی - همان مسیرِ [markRead]: محلی خوانده می‌شود و «دیده شد» با
+     * `POST /api/announcements/{id}/read` به سرور گزارش می‌شود، پس ادمین می‌بیند کاربر
+     * جواب را خوانده است. (جواب‌ها اطلاعیه‌ی اختصاصی‌اند، پس سرور واقعاً به‌روزشان می‌کند.)
+     */
+    fun markSupportReplyRead(message: InboxMessageEntity) {
+        markRead(message.id)
+    }
 
     /**
      * تاییدِ تراکنشِ تشخیص‌داده‌شده - از این لحظه رو موجودی اثر می‌ذاره.
@@ -217,3 +239,13 @@ data class TxCategoryLabel(
     val color: androidx.compose.ui.graphics.Color?,
     val confirmed: Boolean,
 )
+
+/**
+ * عنوانِ «💬 جوابِ پشتیبانی (<ticket>)» (ساخته‌ی سرور، `SupportRoutes.kt` → `POST /reply`)
+ * را به کدِ پیگیری‌اش تبدیل می‌کند؛ هر عنوانِ دیگری null می‌دهد.
+ */
+fun supportTicketOf(title: String): String? {
+    val prefix = "💬 جوابِ پشتیبانی ("
+    if (!title.startsWith(prefix)) return null
+    return title.removePrefix(prefix).substringBefore(")").takeIf { it.isNotBlank() }
+}

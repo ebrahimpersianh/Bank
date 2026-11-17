@@ -7,4 +7,6 @@
     <string name="shortcut_due_long">قسط و چکِ نزدیک</string>
     <string name="shortcut_report_short">گزارش</string>
     <string name="shortcut_report_long">خرجِ این ماه</string>
+    <!-- پر بودنِ حافظه‌ی گوشی موقعِ نوشتن در دیتابیس (StorageFullException) -->
+    <string name="storage_full">حافظه گوشی شما پر است</string>
 </resources>

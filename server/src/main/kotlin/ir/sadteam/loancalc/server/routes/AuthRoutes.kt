@@ -256,7 +256,7 @@ fun Route.authRoutes() {
                     }
                 }
                 // بعد از insert دوباره از دیتابیس می‌خونیم (نه یه آبجکت دستیِ ناقص) تا created_at
-                // واقعی (لازم برای محاسبه‌ی دوره‌ی آزمایشی ۷ روزه‌ی isSubscribed) رو داشته باشیم.
+                // واقعی (لازم برای محاسبه‌ی دوره‌ی آزمایشی ۳۰ روزه‌ی isSubscribed) رو داشته باشیم.
                 user = Db.withConnection { conn ->
                     conn.queryOne(
                         "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at, trial_blocked, name, legacy_gift_granted FROM users WHERE id = ?", newId

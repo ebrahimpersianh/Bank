@@ -722,12 +722,8 @@ internal fun LoanCalcApp(
         RatePromptDialog(
             onRateNow = {
                 ratePromptViewModel.onRateNow()
-                val storeUrl = if (BuildConfig.FLAVOR == "myket") {
-                    "https://myket.ir/app/ir.sadteam.loancalc"
-                } else {
-                    "https://cafebazaar.ir/app/ir.sadteam.loancalc"
-                }
-                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(storeUrl))) }
+                // استورِ نصب‌کننده از PackageManager خوانده می‌شود، نه فقط از فلیور.
+                ir.sadteam.loancalc.ui.rating.openStorePage(context)
             },
             onLater = { ratePromptViewModel.onLater() },
             onDismissForever = { ratePromptViewModel.onDismissForever() },
@@ -808,12 +804,12 @@ internal fun LoanCalcApp(
     val subUntil by authViewModel.subscribedUntil.collectAsState()
     val trialLeft by authViewModel.trialDaysLeft.collectAsState()
     Box(modifier = Modifier.fillMaxSize()) {
-        // ⚠️ **بازطراحیِ سبکِ «جیبک»**: پس‌زمینه‌ی زنده‌ی «شفق» (`AuroraBackground` - دو هاله‌ی
-        // گرادیانیِ سبزآبی/طلایی که آروم نفس می‌کشیدن) **حذف شد**. سبکِ جدید یه زمینه‌ی
-        // **تختِ تک‌رنگ** می‌خواد (`#F5FBFF` روشن / `#10181F` تیره) تا کارت‌های ماتِ سفید و
-        // سایه‌های سختشون رو یه سطحِ آروم بشینن؛ هاله‌ی متحرک پشتشون همون «شلوغیِ» بصری‌ای بود
-        // که این بازطراحی می‌خواد ازش فاصله بگیره.
-        // `AuroraBackground.kt` عمداً پاک نشد (ممکنه برای اسپلش/صفحه‌ی خوش‌آمد لازم بشه).
+        // ⚠️ **بازطراحیِ سبکِ «جیبک»**: پس‌زمینه‌ی زنده‌ی «شفق» (دو هاله‌ی گرادیانیِ
+        // سبزآبی/طلایی که آروم نفس می‌کشیدن) **حذف شد** - فایلش هم پاک شد چون هیچ
+        // فراخوانی نداشت. سبکِ جدید یه زمینه‌ی **تختِ تک‌رنگ** می‌خواد (`#F5FBFF` روشن /
+        // `#10181F` تیره) تا کارت‌های ماتِ سفید و سایه‌های سختشون رو یه سطحِ آروم بشینن؛
+        // هاله‌ی متحرک پشتشون همون «شلوغیِ» بصری‌ای بود که این بازطراحی می‌خواد ازش
+        // فاصله بگیره.
         // **پس‌زمینه‌ی زنده‌ی خریدنی** (قلمِ تازه‌ی فروشگاه، دورِ ۱۳). زیرِ `Scaffold` که
         // خودش `containerColor` دارد نمی‌شود کشیدش، پس یک `Box` بیرونی می‌گیرد: رنگِ تخت
         // + لایه‌ی متحرک + محتوا. `Scaffold` بعدش شفاف می‌شود وگرنه لایه را می‌پوشاند.

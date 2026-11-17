@@ -9,9 +9,9 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import ir.sadteam.loancalc.server.trialEndsAtMs
 import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.execute
+import ir.sadteam.loancalc.server.giftBaseMs
 import ir.sadteam.loancalc.server.queryOne
 import kotlinx.serialization.Serializable
 import java.sql.Connection
@@ -62,7 +62,7 @@ private fun maskPhone(p: String?): String {
 private fun recentPurchases(conn: Connection): List<RecentPurchase> = buildList {
     conn.list(
         "SELECT p.user_id, u.phone, p.product_id, p.store, coalesce(p.price_toman, 0), p.created_at FROM subscription_purchases p " +
-            "LEFT JOIN users u ON u.id = p.user_id ORDER BY p.created_at DESC LIMIT 50",
+            "LEFT JOIN users u ON u.id = p.user_id WHERE p.is_test = 0 AND p.refunded = 0 ORDER BY p.created_at DESC LIMIT 50",
     ) {
         val uid = it.getLong(1)
         add(
@@ -90,7 +90,7 @@ private fun salesPeriods(conn: Connection): List<SalesPeriod> {
     ).map { (label, from) ->
         var count = 0; var net = 0L; var bazaar = 0; var myket = 0
         conn.list(
-            "SELECT store, COUNT(*), coalesce(SUM(price_toman),0) FROM subscription_purchases WHERE created_at >= ? GROUP BY store",
+            "SELECT store, COUNT(*), coalesce(SUM(price_toman),0) FROM subscription_purchases WHERE created_at >= ? AND $REAL_PURCHASES GROUP BY store",
             from.format(fmt),
         ) {
             val store = it.getString(1); val c = it.getInt(2); val gross = it.getLong(3)
@@ -189,7 +189,7 @@ private suspend fun ApplicationCall.adminOrNull(): Boolean {
 
 private fun Connection.revenueTotal(net: Boolean): Long {
     var sum = 0L
-    list("SELECT product_id, store, coalesce(SUM(price_toman),0) FROM subscription_purchases GROUP BY 1, 2") {
+    list("SELECT product_id, store, coalesce(SUM(price_toman),0) FROM subscription_purchases WHERE $REAL_PURCHASES GROUP BY 1, 2") {
         val gross = it.getLong(3)
         val r = STORE_PAYOUT[it.getString(2)]
         sum += if (net && r != null) gross * r.first / r.second else gross
@@ -217,7 +217,7 @@ private fun moneyDaily(conn: Connection): List<MoneyDay> {
     val rows = mutableMapOf<String, MoneyDay>()
     conn.list(
         "SELECT date(created_at, '+210 minutes'), product_id, store, COUNT(*), coalesce(SUM(price_toman),0) FROM subscription_purchases " +
-            "WHERE created_at >= datetime('now', '-31 days') GROUP BY 1, 2, 3",
+            "WHERE created_at >= datetime('now', '-31 days') AND $REAL_PURCHASES GROUP BY 1, 2, 3",
     ) {
         val gross = it.getLong(5)
         val r = STORE_PAYOUT[it.getString(3)]
@@ -234,10 +234,10 @@ internal fun buildMoney(conn: Connection): MoneyResponse {
     // آزمایشیِ ۳۰روزه تمام‌شده = ثبت‌نامِ بیش از ۳۰ روز پیش (و قفل‌نشده).
     val ended = "created_at <= datetime('now', '-30 days') AND trial_blocked = 0"
     val trialEnded = conn.int("SELECT COUNT(*) FROM users WHERE $ended")
-    val converted = conn.int("SELECT COUNT(*) FROM users WHERE $ended AND id IN (SELECT user_id FROM subscription_purchases)")
-    val payers = conn.int("SELECT COUNT(DISTINCT user_id) FROM subscription_purchases")
+    val converted = conn.int("SELECT COUNT(*) FROM users WHERE $ended AND id IN (SELECT user_id FROM subscription_purchases WHERE $REAL_PURCHASES)")
+    val payers = conn.int("SELECT COUNT(DISTINCT user_id) FROM subscription_purchases WHERE $REAL_PURCHASES")
     // تمدید: از کسانی که اولین اشتراکِ خریده‌شده‌شان تمام شده، چند نفر دوباره خریدند.
-    val expired = "user_id IN (SELECT user_id FROM subscription_purchases GROUP BY user_id HAVING min(subscribed_until) < datetime('now'))"
+    val expired = "user_id IN (SELECT user_id FROM subscription_purchases WHERE $REAL_PURCHASES GROUP BY user_id HAVING min(subscribed_until) < datetime('now'))"
     val expiredPayers = conn.int("SELECT COUNT(DISTINCT user_id) FROM subscription_purchases WHERE $expired")
     val renewed = conn.int("SELECT COUNT(*) FROM (SELECT user_id FROM subscription_purchases WHERE $expired GROUP BY user_id HAVING COUNT(*) >= 2)")
     return MoneyResponse(
@@ -342,15 +342,10 @@ internal fun broadcast(conn: Connection, b: BroadcastBody): BroadcastResult? {
     )
     ids.forEach { uid ->
         if (b.days > 0) {
-            val cur = conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", uid) { it.getString(1) }
-                ?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
             // ۲۰ مهر (خواسته‌ی کاربر): کسی که هنوز در ماهِ رایگان است، هدیه را **بعد از پایانِ** آن می‌گیرد،
-            // نه از امروز (وگرنه روزهای هدیه با روزهای رایگانِ باقی‌مانده روی هم می‌افتادند).
-            val trialEnd = conn.queryOne("SELECT created_at, trial_days, trial_blocked FROM users WHERE id = ?", uid) { r ->
-                if (r.getInt(3) != 0) 0L
-                else trialEndsAtMs(r.getString(1), r.getInt(2).takeIf { !r.wasNull() }) ?: 0L
-            } ?: 0L
-            val expiry = java.time.Instant.ofEpochMilli(maxOf(cur, now, trialEnd) + b.days * 24L * 60 * 60 * 1000).toString()
+            // نه از امروز (وگرنه روزهای هدیه با روزهای رایگانِ باقی‌مانده روی هم می‌افتادند) —
+            // همان هلپرِ مشترکِ همه‌ی مسیرهای هدیه ([giftBaseMs]).
+            val expiry = java.time.Instant.ofEpochMilli(giftBaseMs(conn, uid, now) + b.days * 24L * 60 * 60 * 1000).toString()
             conn.execute("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, uid)
         }
         conn.execute(
@@ -361,10 +356,13 @@ internal fun broadcast(conn: Connection, b: BroadcastBody): BroadcastResult? {
     return BroadcastResult(b.segment, ids.size, true)
 }
 
-/** ۱۰ پیامِ گروهیِ آخر با تعدادِ فرستاده/دیده‌شده. */
+/** ۱۰ پیامِ گروهیِ آخر با تعدادِ فرستاده/دیده‌شده. «دیده‌شده» یعنی read_atِ ردیف پر شده
+ * **یا** بازشدنِ کاربر در جدولِ announcement_reads ثبت شده (پیامِ همگانی read_atِ ردیف ندارد). */
 internal fun broadcastHistory(conn: Connection): List<BroadcastHistoryItem> = buildList {
     conn.list(
-        "SELECT batch_id, MIN(title), MIN(created_at), COUNT(*), SUM(CASE WHEN read_at IS NOT NULL THEN 1 ELSE 0 END) " +
+        "SELECT batch_id, MIN(title), MIN(created_at), COUNT(*), " +
+            "SUM(CASE WHEN read_at IS NOT NULL OR EXISTS " +
+            "(SELECT 1 FROM announcement_reads r WHERE r.announcement_id = announcements.id) THEN 1 ELSE 0 END) " +
             "FROM announcements WHERE batch_id IS NOT NULL GROUP BY batch_id ORDER BY batch_id DESC LIMIT 10",
     ) {
         val id = it.getLong(1)
