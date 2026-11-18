@@ -83,6 +83,7 @@ fun AddEditChequeScreen(
     onCancel: () -> Unit,
     viewModel: ChequeViewModel,
     debtViewModel: DebtViewModel = hiltViewModel(),
+    ratePromptViewModel: ir.sadteam.loancalc.ui.rating.RatePromptViewModel = hiltViewModel(),
 ) {
     val chequeCount = viewModel.cheques.collectAsState().value.size
     ir.sadteam.loancalc.ui.subscription.PremiumBlock(
@@ -460,7 +461,12 @@ fun AddEditChequeScreen(
                                     previousBalance = cleanNumDecimal(previousBalanceText).toDoubleOrNull(),
                                     depositAmount = cleanNumDecimal(depositAmountText).toDoubleOrNull(),
                                     counterpartyId = counterpartyId,
-                                    onSaved = { savedOk = true },
+                                    // لحظه‌ی موفقیت: چکِ تازه ثبت شد - درخواستِ امتیاز/نظر
+                                    // (با فاصله‌ی حداقلی و سقفِ هر نسخه، رجوع کن به RatePromptViewModel).
+                                    onSaved = {
+                                        savedOk = true
+                                        ratePromptViewModel.maybeShowAfterSuccess(ir.sadteam.loancalc.BuildConfig.VERSION_NAME)
+                                    },
                                     onFailure = {
                                         error = ir.sadteam.loancalc.data.userMessageForDbError(it)
                                             ?: "ثبت چک ناموفق بود؛ دوباره تلاش کن."

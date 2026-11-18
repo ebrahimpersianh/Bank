@@ -9,22 +9,29 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextFieldDefaults
 import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,7 +47,7 @@ import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
- * ═══════════ درخواستِ امتیاز ═══════════
+ * ═══════════ درخواستِ امتیاز + نظر ═══════════
  *
  * بازطراحی‌شده (۲۳ شهریور، خواسته‌ی صریحِ کاربر). نسخه‌ی قبلی یک `AlertDialog`ِ خامِ
  * متریال بود - سطحِ صورتیِ پیش‌فرضِ متریال، دکمه‌های غیرِ سیستمِ طراحی، و «دیگه نپرس»
@@ -51,6 +58,11 @@ import ir.sadteam.loancalc.ui.theme.AppText
  * ستاره یعنی «بله» - همان [onRateNow]. این تپِ اضافه را حذف می‌کند بی‌آن‌که چیزی از
  * دست برود، چون امتیازِ واقعی را خودِ استور می‌گیرد نه ما.
  *
+ * **نظرِ متنی همین‌جاست.** کاربر می‌تواند نظرش را تو همین دیالوگ بنویسد و با
+ * «ارسال نظر» بفرستد - متن به پشتیبانی می‌رسد (دسته‌ی «پیشنهاد»)، نه به استور؛
+ * استور متن را فقط از خودِ کاربر تو صفحه‌ی خودش قبول می‌کند. بعد از فرستادنِ
+ * موفق، دیگر هیچ‌وقت این دیالوگ نمی‌آید.
+ *
  * دو راهِ خروج **هم‌وزن نیستند**: «بعداً» عادی است و «دیگه نپرس» کم‌رنگ‌تر - چون
  * انتخابِ دائمی نباید به‌اشتباه زده شود.
  */
@@ -60,19 +72,51 @@ fun RatePromptDialog(
     onRateNow: () -> Unit,
     onLater: () -> Unit,
     onDismissForever: () -> Unit,
+    onSendFeedback: (String, (Boolean) -> Unit) -> Unit,
 ) {
     // ستاره‌ای که انگشت رویش است تا همان‌جا پر می‌شود - بازخوردِ لمسی، نه امتیازِ ذخیره‌شده.
     var hovered by remember { mutableIntStateOf(0) }
+    var feedbackText by remember { mutableStateOf("") }
+    // null = هنوز نفرستاده؛ true = رسید؛ false = نشد.
+    var feedbackResult by remember { mutableStateOf<Boolean?>(null) }
+    var sending by remember { mutableStateOf(false) }
 
     BasicAlertDialog(onDismissRequest = onLater) {
         Column(
             modifier = Modifier
                 .clip(RoundedCornerShape(AppRadius.sheet))
                 .background(AppSurface)
+                .verticalScroll(rememberScrollState())
                 .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (feedbackResult == true) {
+                // ── تشکر بعد از فرستادنِ موفقِ نظر ──
+                Box(
+                    Modifier.size(60.dp).clip(RoundedCornerShape(20.dp)).background(Color(0xFF2F9E6E).copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color(0xFF2F9E6E), modifier = Modifier.size(34.dp)) }
+                Text(
+                    "ممنون! نظرت رسید.",
+                    color = AppText,
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Black,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    "نظرت رو خوندیم؛ اگه چیزی لازم بود از پشتیبانی جواب می‌دیم.",
+                    color = AppMuted,
+                    fontSize = 13.5.sp,
+                    lineHeight = 24.sp,
+                    textAlign = TextAlign.Center,
+                )
+                GradientButton(onClick = onLater, modifier = Modifier.fillMaxWidth()) {
+                    Text("باشه", fontSize = 15.sp, fontWeight = FontWeight.Black)
+                }
+                return@Column
+            }
+
             // طرحِ Claude Design (۸ مهر): کاشیِ ستاره‌ی طلایی بالای عنوان، ستاره‌های طلایی.
             Box(
                 Modifier.size(60.dp).clip(RoundedCornerShape(20.dp)).background(StarGold.copy(alpha = 0.16f)),
@@ -118,8 +162,57 @@ fun RatePromptDialog(
                 }
             }
 
-            GradientButton(onClick = onRateNow, modifier = Modifier.fillMaxWidth()) {
-                Text("بله! امتیاز می‌دم", fontSize = 15.sp, fontWeight = FontWeight.Black)
+            // ── نظرِ متنی، همین‌جا ──
+            OutlinedTextField(
+                value = feedbackText,
+                onValueChange = { feedbackText = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("نظرت رو همین‌جا بنویس... (اختیاری)", color = AppMuted, fontSize = 13.5.sp) },
+                minLines = 2,
+                maxLines = 3,
+                shape = RoundedCornerShape(16.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = AppPrimary,
+                    unfocusedIndicatorColor = AppLine,
+                    cursorColor = AppPrimary,
+                ),
+            )
+            if (feedbackResult == false) {
+                Text(
+                    "فرستاده نشد — دوباره تلاش کن، یا از بخش پشتیبانی بفرست.",
+                    color = Color(0xFFE5484D),
+                    fontSize = 12.5.sp,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            GradientButton(
+                onClick = {
+                    if (feedbackText.isBlank() || sending) return@GradientButton
+                    sending = true
+                    onSendFeedback(feedbackText.trim()) { ok ->
+                        sending = false
+                        feedbackResult = ok
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(if (sending) "در حالِ فرستادن..." else "ارسال نظر", fontSize = 15.sp, fontWeight = FontWeight.Black)
+            }
+
+            // دکمه‌ی ثانویه: باز کردنِ صفحه‌ی استور برای امتیاز.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(AppPrimaryPill)
+                    .pressScaleClickable(onClick = onRateNow)
+                    .padding(vertical = 14.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("بله! امتیاز می‌دم", color = AppPrimary, fontSize = 15.sp, fontWeight = FontWeight.Black)
             }
 
             Row(

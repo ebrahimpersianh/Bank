@@ -50,6 +50,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 import androidx.compose.runtime.MutableState
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 internal fun ResultSaveSection(
@@ -61,6 +62,7 @@ internal fun ResultSaveSection(
     saveMessageState: MutableState<String?>,
     savingState: MutableState<Boolean>,
     paidCountTextState: MutableState<String>,
+    ratePromptViewModel: ir.sadteam.loancalc.ui.rating.RatePromptViewModel = hiltViewModel(),
 ) {
     var saved by savedState
     var saveMessage by saveMessageState
@@ -111,6 +113,9 @@ internal fun ResultSaveSection(
                                     saving = false
                                     saved = true
                                     saveMessage = null
+                                    // لحظه‌ی موفقیت: وامِ محاسبه‌شده ذخیره شد - درخواستِ امتیاز/نظر
+                                    // (با فاصله‌ی حداقلی و سقفِ هر نسخه، رجوع کن به RatePromptViewModel).
+                                    ratePromptViewModel.maybeShowAfterSuccess(ir.sadteam.loancalc.BuildConfig.VERSION_NAME)
                                 }, {
                                     saving = false
                                     saveMessage = ir.sadteam.loancalc.data.userMessageForDbError(it)

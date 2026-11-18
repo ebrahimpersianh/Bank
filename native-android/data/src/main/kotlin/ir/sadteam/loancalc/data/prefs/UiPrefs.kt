@@ -101,6 +101,13 @@ class UiPrefs(private val context: Context) {
          * [claimRatePromptAfterSuccess]). */
         val RATE_PROMPT_SUCCESS_VERSION = stringPreferencesKey("rate_prompt_success_version")
         val RATE_PROMPT_SUCCESS_COUNT = intPreferencesKey("rate_prompt_success_count")
+        /** آخرین باری (میلی‌ثانیه) که درخواستِ «بعد از موفقیت» واقعاً نشان داده شد - فاصله‌ی
+         * حداقلی بین دو نمایش تا پشتِ سرِ هم نیاید (رجوع کن به RatePromptViewModel). */
+        val RATE_PROMPT_SUCCESS_LAST_SHOWN_AT_MILLIS = longPreferencesKey("rate_prompt_success_last_shown_at_millis")
+        /** درخواستِ «بعد از موفقیت» که هنوز نمایش داده نشده - چون DataStore بینِ همه‌ی نمونه‌های
+         * ViewModel مشترک است، لحظه‌ی موفقیت از هر صفحه‌ای (دنگ، وام، چک) که باشد به
+         * MainActivity می‌رسد (رجوع کن به RatePromptViewModel). */
+        val RATE_PROMPT_SUCCESS_PENDING_AT = longPreferencesKey("rate_prompt_success_pending_at")
         val SMS_AUTO_IMPORT_ENABLED = booleanPreferencesKey("sms_auto_import_enabled")
         val LAST_SMS_IMPORT_AT = stringPreferencesKey("last_sms_import_at")
         val NOTIF_AUTO_IMPORT_ENABLED = booleanPreferencesKey("notif_auto_import_enabled")
@@ -694,6 +701,25 @@ class UiPrefs(private val context: Context) {
             }
         }
         return show
+    }
+
+    /** آخرین نمایشِ «بعد از موفقیت» (میلی‌ثانیه) - برای فاصله‌ی حداقلی تا پشتِ سرِ هم نیاید. */
+    val ratePromptSuccessLastShownAtMillis: Flow<Long?> =
+        context.uiPrefsDataStore.data.map { it[Keys.RATE_PROMPT_SUCCESS_LAST_SHOWN_AT_MILLIS] }
+
+    suspend fun setRatePromptSuccessLastShownAtMillis(value: Long) {
+        context.uiPrefsDataStore.edit { it[Keys.RATE_PROMPT_SUCCESS_LAST_SHOWN_AT_MILLIS] = value }
+    }
+
+    /** درخواستِ «بعد از موفقیت» که هنوز نمایش داده نشده (میلی‌ثانیه) - null یعنی هیچی. */
+    val ratePromptSuccessPendingAt: Flow<Long?> =
+        context.uiPrefsDataStore.data.map { it[Keys.RATE_PROMPT_SUCCESS_PENDING_AT] }
+
+    suspend fun setRatePromptSuccessPendingAt(value: Long?) {
+        context.uiPrefsDataStore.edit {
+            if (value == null) it.remove(Keys.RATE_PROMPT_SUCCESS_PENDING_AT)
+            else it[Keys.RATE_PROMPT_SUCCESS_PENDING_AT] = value
+        }
     }
 
     /** خوندنِ خودکارِ پیامکِ بانکی (رجوع کن به BankSmsReceiver/BankSmsParser تو core) - پیش‌فرض

@@ -80,6 +80,7 @@ fun AddManualLoanScreen(
     onCancel: () -> Unit,
     editingLoan: LoanEntity? = null,
     viewModel: MyLoansViewModel = hiltViewModel(),
+    ratePromptViewModel: ir.sadteam.loancalc.ui.rating.RatePromptViewModel = hiltViewModel(),
 ) {
     // بازبینیِ ۹ مهر: سقفِ «یک وام» نسخه‌ی رایگان فقط در مسیرِ محاسبه‌گر بود؛ وامِ دستی بی‌سقف ساخته می‌شد.
     val existingLoans by viewModel.loans.collectAsState()
@@ -402,7 +403,12 @@ fun AddManualLoanScreen(
                                     n = n,
                                     paidCount = paidCount,
                                     startDate = startDate,
-                                    onSaved = { savedOk = true },
+                                    // لحظه‌ی موفقیت: وامِ تازه ذخیره شد - درخواستِ امتیاز/نظر
+                                    // (با فاصله‌ی حداقلی و سقفِ هر نسخه، رجوع کن به RatePromptViewModel).
+                                    onSaved = {
+                                        savedOk = true
+                                        ratePromptViewModel.maybeShowAfterSuccess(ir.sadteam.loancalc.BuildConfig.VERSION_NAME)
+                                    },
                                 )
                             }
                         }

@@ -27,6 +27,26 @@ class RatePromptViewModel @Inject constructor(
     private companion object {
         const val FIRST_THRESHOLD = 5
         const val REPEAT_INTERVAL = 15
+        /** فاصله‌ی حداقلی بین دو نمایشِ «بعد از موفقیت» تا پشتِ سرِ هم نیاید (۳ روز). */
+        const val SUCCESS_COOLDOWN_MILLIS = 3L * 24 * 60 * 60 * 1000
+        /** یک درخواستِ «بعد از موفقیت» تا این‌قدر تازه حساب می‌شود (۶۰ ثانیه). */
+        const val PENDING_FRESH_MILLIS = 60_000L
+    }
+
+    init {
+        // لحظه‌ی موفقیت از هر صفحه‌ای (دنگ، وام، چک) که باشد، درخواستش را تو UiPrefs
+        // (DataStoreِ مشترک) می‌نویسد؛ نمونه‌ای که MainActivity می‌بیند این‌جا آن را
+        // برمی‌دارد و دیالوگ را نشان می‌دهد، بعد پاکش می‌کند تا دوباره نیاید. این‌طوری
+        // فرقی نمی‌کند درخواست از کدام نمونه‌ی ViewModel آمده باشد.
+        viewModelScope.launch {
+            uiPrefs.ratePromptSuccessPendingAt.collect { at ->
+                if (at == null) return@collect
+                if (System.currentTimeMillis() - at > PENDING_FRESH_MILLIS) return@collect
+                if (uiPrefs.rateDialogDismissedForever.first()) return@collect
+                uiPrefs.setRatePromptSuccessPendingAt(null)
+                _shouldShow.value = true
+            }
+        }
     }
 
     fun onAppOpened() {
@@ -52,17 +72,38 @@ class RatePromptViewModel @Inject constructor(
     }
 
     /**
+     * نظرِ متنی فرستاده شد - برای همیشه دیگر نشان نده. برخلافِ [onDismissForever] دیالوگ
+     * را پنهان نمی‌کند، چون صفحه‌ی «ممنون! نظرت رسید.» فعلاً باید باز بماند؛ کاربر با
+     * «باشه» خودش آن را می‌بندد.
+     */
+    fun onFeedbackSent() {
+        viewModelScope.launch { uiPrefs.setRateDialogDismissedForever(true) }
+    }
+
+    /**
      * درخواستِ امتیاز بعد از یک «لحظه‌ی موفقیت» (در حالِ حاضر: تسویه‌ی دنگ،
-     * `DebtScreen.onSettleAll`) - با همان دیالوگِ سفارشیِ [RatePromptDialog]، ولی با
+     * `DebtScreen.onSettleAll`؛ ذخیره‌ی وام؛ ثبتِ چک) - با همان دیالوگِ سفارشیِ [RatePromptDialog]، ولی با
      * سقفِ جدا: حداکثر ۳ بار در هر نسخه، و هیچ‌وقت بعد از «دیگر نپرس».
      *
      * نمایشِ واقعی دستِ `MainActivity` است (`StartupPopups.canShowRate`): اگر تور،
      * آپدیتِ اجباری، یادآورِ انقضا یا چک‌اینِ روزانه باز باشد، دیالوگ روی آن‌ها نمی‌آید -
      * پس جریانِ پرداخت/اشتراک را سد نمی‌کند.
+     *
+     * فاصله‌ی حداقلی: اگر همین چند روز پیش یک‌بار بعد از موفقیت نشان داده شده باشد،
+     * این درخواست نادیده گرفته می‌شود تا پشتِ سرِ هم نیاید. درخواست از طریقِ UiPrefs
+     * (مشترک) به MainActivity می‌رسد، پس فرقی نمی‌کند از کدام صفحه آمده باشد.
      */
     fun maybeShowAfterSuccess(version: String) {
         viewModelScope.launch {
-            if (uiPrefs.claimRatePromptAfterSuccess(version)) _shouldShow.value = true
+            if (uiPrefs.rateDialogDismissedForever.first()) return@launch
+            val now = System.currentTimeMillis()
+            val lastShown = uiPrefs.ratePromptSuccessLastShownAtMillis.first()
+            if (lastShown != null && now - lastShown < SUCCESS_COOLDOWN_MILLIS) return@launch
+            if (uiPrefs.claimRatePromptAfterSuccess(version)) {
+                uiPrefs.setRatePromptSuccessLastShownAtMillis(now)
+                uiPrefs.setRatePromptSuccessPendingAt(now)
+                _shouldShow.value = true
+            }
         }
     }
 

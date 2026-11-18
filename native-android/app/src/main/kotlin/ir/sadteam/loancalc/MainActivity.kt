@@ -727,6 +727,21 @@ internal fun LoanCalcApp(
             },
             onLater = { ratePromptViewModel.onLater() },
             onDismissForever = { ratePromptViewModel.onDismissForever() },
+            // نظرِ متنیِ همین‌جا به پشتیبانی می‌رسد (دسته‌ی «پیشنهاد») - نه به استور.
+            // موفق که شد، برای همیشه دیگر نشان داده نمی‌شود.
+            onSendFeedback = { text, onDone ->
+                val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} · اندروید ${android.os.Build.VERSION.RELEASE}"
+                authViewModel.reportBug(
+                    message = text.trim(),
+                    appVersion = ir.sadteam.loancalc.BuildConfig.VERSION_NAME,
+                    device = device,
+                    category = "idea",
+                    onResult = { ticket ->
+                        if (ticket != null) ratePromptViewModel.onFeedbackSent()
+                        onDone(ticket != null)
+                    },
+                )
+            },
         )
     }
 
