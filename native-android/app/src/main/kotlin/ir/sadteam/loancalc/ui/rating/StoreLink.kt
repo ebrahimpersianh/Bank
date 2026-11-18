@@ -51,3 +51,43 @@ fun storeWebUrl(context: Context): String {
         }
     }
 }
+
+/**
+ * بازکردنِ صفحه‌ی نظر/امتیازِ جیبک در استور - برای ثبتِ نظرِ متنی.
+ *
+ * مایکت intent رسمیِ `myket://comment?id=<package>` را دارد که کاربر را
+ * مستقیم به صفحه‌ی امتیاز + نظر می‌برد (متنِ از پیش‌پرشده نمی‌گیرد - کاربر
+ * متن را با «چسباندن» وارد می‌کند). بازار چنین intentای ندارد، پس صفحه‌ی
+ * اپ باز می‌شود تا کاربر خودش به بخشِ نظر برود. اگر intent گرفته نشد،
+ * صفحه‌ی استور ([openStorePage]) باز می‌شود.
+ */
+fun openStoreReviewPage(context: Context) {
+    if (isMyketStore(context)) {
+        val opened = runCatching {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse("myket://comment?id=ir.sadteam.loancalc")),
+            )
+            true
+        }.getOrDefault(false)
+        if (!opened) openStorePage(context)
+        return
+    }
+    openStorePage(context)
+}
+
+/** آیا استورِ نصب‌کننده مایکت است (همان قاعده‌ی [storeWebUrl]). */
+private fun isMyketStore(context: Context): Boolean {
+    val installer = runCatching {
+        if (Build.VERSION.SDK_INT >= 30) {
+            context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName
+        } else {
+            @Suppress("DEPRECATION")
+            context.packageManager.getInstallerPackageName(context.packageName)
+        }
+    }.getOrNull()
+    return when (installer) {
+        "com.myket", "ir.myket" -> true
+        "com.farsitel.bazaar" -> false
+        else -> BuildConfig.FLAVOR == "myket"
+    }
+}

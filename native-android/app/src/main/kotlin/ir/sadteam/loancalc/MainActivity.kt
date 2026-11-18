@@ -2,6 +2,9 @@ package ir.sadteam.loancalc
 
 import ir.sadteam.loancalc.ui.subscription.SubscriptionExpiryReminder
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -727,20 +730,19 @@ internal fun LoanCalcApp(
             },
             onLater = { ratePromptViewModel.onLater() },
             onDismissForever = { ratePromptViewModel.onDismissForever() },
-            // نظرِ متنیِ همین‌جا به پشتیبانی می‌رسد (دسته‌ی «پیشنهاد») - نه به استور.
-            // موفق که شد، برای همیشه دیگر نشان داده نمی‌شود.
-            onSendFeedback = { text, onDone ->
-                val device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} · اندروید ${android.os.Build.VERSION.RELEASE}"
-                authViewModel.reportBug(
-                    message = text.trim(),
-                    appVersion = ir.sadteam.loancalc.BuildConfig.VERSION_NAME,
-                    device = device,
-                    category = "idea",
-                    onResult = { ticket ->
-                        if (ticket != null) ratePromptViewModel.onFeedbackSent()
-                        onDone(ticket != null)
-                    },
-                )
+            // نظر به پشتیبانی نمی‌رود - هدف زیادشدنِ نظرهای استور است: متن تو
+            // کلیپ‌بورد کپی می‌شود و صفحه‌ی نظرِ استور باز می‌شود؛ کاربر تو
+            // استور با یک لمس «چسباندن» را می‌زند و نظر را ثبت می‌کند.
+            // بعد از ثبت، دیالوگ برای همیشه دیگر نمی‌آید.
+            onSubmitReview = { text ->
+                if (text.isNotBlank()) {
+                    runCatching {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("جیبک - نظر", text))
+                    }
+                }
+                ratePromptViewModel.onFeedbackSent()
+                ir.sadteam.loancalc.ui.rating.openStoreReviewPage(context)
             },
         )
     }

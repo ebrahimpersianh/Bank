@@ -72,12 +72,13 @@ class RatePromptViewModel @Inject constructor(
     }
 
     /**
-     * نظرِ متنی فرستاده شد - برای همیشه دیگر نشان نده. برخلافِ [onDismissForever] دیالوگ
-     * را پنهان نمی‌کند، چون صفحه‌ی «ممنون! نظرت رسید.» فعلاً باید باز بماند؛ کاربر با
-     * «باشه» خودش آن را می‌بندد.
+     * نظر ثبت شد (متن کپی و صفحه‌ی نظرِ استور باز شد) - برای همیشه دیگر نشان
+     * نده و دیالوگ را هم ببند، چون استور باز می‌شود و صفحه‌ی «ممنون»ی در کار
+     * نیست.
      */
     fun onFeedbackSent() {
         viewModelScope.launch { uiPrefs.setRateDialogDismissedForever(true) }
+        _shouldShow.value = false
     }
 
     /**
