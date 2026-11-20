@@ -1,14 +1,14 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 /**
  * مقدارِ عددیِ «بالارونده» - وقتی صفحه باز می‌شه (یا عدد عوض می‌شه) به‌جای ظاهر شدنِ ناگهانی،
@@ -27,6 +27,11 @@ import androidx.compose.runtime.LaunchedEffect
  *
  * اگه [enabled] خاموش باشه (مثلاً حالتِ خصوصی، که عدد پشتِ ••• مخفیه) انیمیشن کاملاً دور زده
  * می‌شه و مقدارِ نهایی مستقیم برمی‌گرده.
+ *
+ * مورد ۱۳C: فقط **پیشرفتِ ۰ تا ۱** با `Float` انیمیت می‌شود و خودِ مبلغ همیشه با `Double`
+ * حساب می‌شود. قبلاً خودِ مبلغ با `Float` انیمیت می‌شد و `Float`ی ۳۲بیتی برای عددهای بزرگ
+ * دقت ندارد (۹۶٬۴۲۴٬۳۳۲٫۶۹ ریال → ۹۶٬۴۲۴٬۳۳۶) و «خرجِ هفته» ۱ تومان اضافه نشان می‌داد.
+ * حالا مقدارِ نهایی دقیقاً همان هدف است.
  */
 @Composable
 fun countUpAmount(
@@ -36,14 +41,20 @@ fun countUpAmount(
 ): Double {
     if (!enabled) return target
 
-    // بارِ اول از صفر، دفعه‌های بعد از مقدارِ قبلی - رجوع کن به توضیحِ بالا.
-    var started by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { started = true }
+    val progress = remember { Animatable(0f) }
+    // مبدأِ انیمیشنِ جاری (بارِ اول صفر، بعداً هدفِ قبلی یا مقدارِ وسطِ انیمیشنِ قبلی).
+    var from by remember { mutableStateOf(0.0) }
+    var prevTarget by remember { mutableStateOf(target) }
 
-    val animated by animateFloatAsState(
-        targetValue = if (started) target.toFloat() else 0f,
-        animationSpec = tween(durationMillis = durationMillis, easing = FastOutSlowInEasing),
-        label = "countUpAmount",
-    )
-    return animated.toDouble()
+    LaunchedEffect(target) {
+        // هدف عوض شد: مبدأِ انیمیشنِ جدید، مقداری است که همین حالا دیده می‌شود.
+        from = from + (prevTarget - from) * progress.value.toDouble()
+        prevTarget = target
+        progress.snapTo(0f)
+        progress.animateTo(
+            1f,
+            animationSpec = tween(durationMillis = durationMillis, easing = FastOutSlowInEasing),
+        )
+    }
+    return from + (target - from) * progress.value.toDouble()
 }

@@ -225,7 +225,9 @@ fun ReportTabScreen(
             ReportHeader(
                 period = period,
                 onPeriod = {
-                    if (isPremium || it == ReportPeriod.MONTH) period = it
+                    // مورد ۱۱A: «هفته» گزارشِ رایگان است (مثلِ «ماه»)؛ فقط فصل و سال پولی‌اند.
+                    // قبلاً هفته هم به پی‌والِ «فصل و سال» می‌رفت و گزارشِ هفته هیچ‌وقت دیده نمی‌شد.
+                    if (isPremium || it == ReportPeriod.MONTH || it == ReportPeriod.WEEK) period = it
                     else ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("report_period", "گزارشِ فصل و سال")
                 },
                 privacyMode = privacyMode,

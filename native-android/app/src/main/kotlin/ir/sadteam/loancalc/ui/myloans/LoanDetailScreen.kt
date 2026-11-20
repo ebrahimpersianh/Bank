@@ -155,6 +155,8 @@ fun LoanDetailScreen(
 ) {
     val privacyMode = LocalPrivacyMode.current
     val accounts by accountViewModel.accounts.collectAsState()
+    // موجودیِ حساب‌ها برای چکِ کسریِ موجودی موقعِ پرداختِ قسط (مورد ۱۳B).
+    val transactions by accountViewModel.transactions.collectAsState()
     // rows دیگه نمی‌تونه محاسبه‌ی همزمان (remember{}) باشه چون از رو رَدیف‌های واقعیِ Room
     // (loan_rows) می‌خونه، نه دیگه از رو JSONِ درون‌حافظه‌ای که همیشه از قبل تو خودِ loan بود - رجوع
     // کن به CLAUDE.md. با هر تغییرِ loan (مثلاً بعدِ پرداختِ یه قسط) دوباره لود می‌شه، دقیقاً همون
@@ -304,7 +306,23 @@ fun LoanDetailScreen(
     // «به‌موقع»/«با تاخیر»، قبلِ ثبتِ واقعیِ پرداخت، باید حساب/کارتِ پرداخت‌کننده مشخص بشه - فقط
     // وقتی حداقل یه حساب از قبل ساخته شده (وگرنه این مرحله معنی نداره، مستقیم ثبت می‌شه).
     var pendingPayment by remember { mutableStateOf<PendingLoanPayment?>(null) }
-    fun commitPayment(payment: PendingLoanPayment, account: AccountEntity?) {
+    // مورد ۱۳B: پرداختِ قسطی که از موجودیِ حساب بیشتر است - اول هشدار و تأیید می‌خواهد.
+    var overdraftConfirm by remember { mutableStateOf<Pair<PendingLoanPayment, AccountEntity>?>(null) }
+    /** جمعِ مبلغِ قسط‌های این پرداخت (تکی یا گروهی) - همان محاسبه‌ی داخلِ `commitPayment`. */
+    fun paymentAmount(payment: PendingLoanPayment): Double = payment.ms.sumOf { m ->
+        (rows.firstOrNull { (it["m"] as? Number)?.toInt() == m }?.get("installment") as? Number)?.toDouble()
+            ?: loan.installment
+    }
+    fun commitPayment(payment: PendingLoanPayment, account: AccountEntity?, confirmedOverdraft: Boolean = false) {
+        // مورد ۱۳B: اگر موجودیِ حسابِ انتخاب‌شده از مبلغِ قسط کمتر است، بی‌سروصدا منفی
+        // نمی‌شود - اول پنجره‌ی هشدار با مبلغِ کسری باز می‌شود و فقط با تأییدِ کاربر ثبت می‌شود.
+        if (account != null && !confirmedOverdraft) {
+            val amount = paymentAmount(payment)
+            if (accountViewModel.balanceOf(account, transactions) < amount) {
+                overdraftConfirm = payment to account
+                return
+            }
+        }
         // پر بودنِ حافظه موقعِ ثبتِ پرداخت: به‌جای کرش، همان پیامِ پایینِ صفحه نشان داده می‌شود.
         val onPayFailure: (Throwable) -> Unit = {
             calendarMessage = ir.sadteam.loancalc.data.userMessageForDbError(it)
@@ -317,10 +335,7 @@ fun LoanDetailScreen(
             if (payment.paidDate != null) viewModel.setRowsPaidLate(loan, payment.ms, payment.paidDate, onPayFailure) else viewModel.setRowsPaidOnTime(loan, payment.ms, onPayFailure)
         }
         if (account != null) {
-            val amount = payment.ms.sumOf { m ->
-                (rows.firstOrNull { (it["m"] as? Number)?.toInt() == m }?.get("installment") as? Number)?.toDouble()
-                    ?: loan.installment
-            }
+            val amount = paymentAmount(payment)
             // تاریخِ تراکنش = تاریخِ واقعیِ پرداخت اگر «با تأخیر» ثبت شد، وگرنه امروز.
             val today = payment.paidDate ?: JalaliCalendar.today()
             val description = if (payment.ms.size == 1) {
@@ -360,6 +375,22 @@ fun LoanDetailScreen(
                 pendingPayment = null
             },
             onDismiss = { pendingPayment = null },
+        )
+    }
+    // مورد ۱۳B: هشدارِ کسریِ موجودی - موجودی، مبلغِ قسط و مانده‌ی منفیِ بعد از پرداخت را
+    // نشان می‌دهد؛ فقط با تأییدِ صریحِ کاربر ثبت می‌شود.
+    overdraftConfirm?.let { (payment, account) ->
+        val amount = paymentAmount(payment)
+        val balance = accountViewModel.balanceOf(account, transactions)
+        ir.sadteam.loancalc.ui.components.ConfirmPayDialog(
+            title = "موجودیِ حساب کم است",
+            text = "موجودیِ «${account.name}» ${amountToman(balance)} ${ir.sadteam.loancalc.ui.jibak.unitFa()} است، ولی مبلغِ این قسط ${amountToman(amount)} ${ir.sadteam.loancalc.ui.jibak.unitFa()} است. با پرداخت، موجودی ${amountToman(balance - amount)} ${ir.sadteam.loancalc.ui.jibak.unitFa()} می‌شود.",
+            onConfirm = {
+                commitPayment(payment, account, confirmedOverdraft = true)
+                overdraftConfirm = null
+            },
+            onDismiss = { overdraftConfirm = null },
+            confirmLabel = "بله، با کسری پرداخت کن",
         )
     }
 

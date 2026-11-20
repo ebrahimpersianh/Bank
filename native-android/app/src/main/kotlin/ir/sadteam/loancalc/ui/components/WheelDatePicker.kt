@@ -33,7 +33,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
@@ -167,8 +166,8 @@ fun WheelDatePickerScreen(
 
 internal val WheelItemHeight = 46.dp
 
-/** نگه‌داشتنِ بی‌حرکتِ انگشت روی چرخونه‌ی قفل این‌قدر = «می‌خواهم بچرخانم». */
-private const val HoldToSpinMillis = 160L
+/** پنجره‌ی تصمیمِ تپ/اسکرول: انگشتِ بی‌حرکت تا این‌قدر = تپ؛ حرکتِ بیشتر از `touchSlop` = اسکرولِ صفحه. */
+private const val WheelTapWindowMillis = 160L
 
 private enum class GateGesture { Tap, PageScroll }
 
@@ -224,16 +223,19 @@ internal fun WheelColumn(
 
     // 🚨 یافته‌ی ۴۱: چرخونه‌ی اینلاین وسطِ فرمِ اسکرولی «اسکرولِ صفحه را می‌دزدید» - کاربر
     // صفحه را می‌کشید، انگشتش روی چرخ بود و ماه بی‌صدا آبان → اسفند می‌شد. حالا با [onUnlock]
-    // چرخونه قفل است: کشیدنِ سریع = اسکرولِ صفحه؛ لمس = باز شدن برای کشیدن‌های بعدی؛ نگه‌داشتنِ
-    // بی‌حرکت ([HoldToSpinMillis]) = همان لحظه با همان انگشت بچرخان.
-    val scope = rememberCoroutineScope()
+    // چرخونه قفل است: کشیدنِ سریع = اسکرولِ صفحه؛ تپ = باز شدن برای کشیدن‌های بعدی.
+    //
+    // مورد ۱۵A: نگه‌داشتنِ بی‌حرکتِ انگشت (گذشتنِ پنجره‌ی تصمیم) قبلاً همان لحظه چرخونه را
+    // باز می‌کرد و کشیدنِ همان انگشت را می‌خورد - یعنی اسکرولِ فرم که با یک مکثِ کوتاه روی
+    // چرخ شروع می‌شد روز را عوض می‌کرد (۲۸ → ۲۹ آبان). حالا نگه‌داشتن هیچ نمی‌کند؛ چرخ
+    // فقط با تپِ جداگانه باز می‌شود و بعد با کشیدنِ بعدی می‌چرخد.
     val enabledNow by rememberUpdatedState(scrollEnabled)
     val gate = if (onUnlock == null) Modifier else Modifier.pointerInput(Unit) {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
             if (enabledNow) return@awaitEachGesture
             val slop = viewConfiguration.touchSlop
-            val decided = withTimeoutOrNull(HoldToSpinMillis) {
+            val decided = withTimeoutOrNull(WheelTapWindowMillis) {
                 while (true) {
                     val ch = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id }
                         ?: return@withTimeoutOrNull GateGesture.Tap
@@ -245,17 +247,8 @@ internal fun WheelColumn(
             when (decided) {
                 GateGesture.PageScroll -> Unit
                 GateGesture.Tap -> onUnlock()
-                null -> {
-                    onUnlock()
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    while (true) {
-                        val ch = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
-                        if (!ch.pressed) break
-                        val dy = ch.positionChange().y
-                        if (dy != 0f) { listState.dispatchRawDelta(-dy); ch.consume() }
-                    }
-                    scope.launch { listState.animateScrollToItem(centered) }
-                }
+                // نگه‌داشتنِ بی‌حرکت: هیچ - نه باز می‌شود، نه می‌چرخد؛ کشیدنِ بعدی اسکرولِ صفحه است.
+                null -> Unit
             }
         }
     }

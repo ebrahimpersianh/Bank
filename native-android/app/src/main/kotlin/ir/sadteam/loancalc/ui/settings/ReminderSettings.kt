@@ -25,11 +25,15 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
 import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,31 +60,47 @@ internal fun ReminderToggles(
     val notificationsEnabled by notificationsViewModel.enabled.collectAsState()
     val dailyExpenseReminderEnabled by notificationsViewModel.dailyExpenseReminderEnabled.collectAsState()
     val dangReminderEnabled by notificationsViewModel.dangReminderEnabled.collectAsState()
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> if (granted) notificationsViewModel.enable() }
-    val dailyPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> if (granted) notificationsViewModel.enableDailyExpenseReminder() }
 
     /** مجوزِ نوتیفیکیشن فقط از اندروید ۱۳ (TIRAMISU) به بعد لازمه. */
-    fun withNotificationPermission(onGranted: () -> Unit, launcher: () -> Unit) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+    fun hasNotificationPermission(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
-        ) {
+
+    // مورد ۲۱A: وضعیتِ اجازه قبلاً فقط یک‌بار موقعِ اولین ترکیب حساب می‌شد؛ بعد از دادنِ
+    // اجازه (از پنجره‌ی سیستمی یا تنظیماتِ گوشی) بنرِ «اجازه‌ی اعلان نیست» تا ورودِ دوباره
+    // می‌ماند. حالا هم نتیجه‌ی درخواست و هم برگشتن به صفحه آن را تازه می‌کنند.
+    var permissionGranted by remember { mutableStateOf(hasNotificationPermission()) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                permissionGranted = hasNotificationPermission()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        permissionGranted = hasNotificationPermission()
+        if (granted) notificationsViewModel.enable()
+    }
+    val dailyPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        permissionGranted = hasNotificationPermission()
+        if (granted) notificationsViewModel.enableDailyExpenseReminder()
+    }
+
+    fun withNotificationPermission(onGranted: () -> Unit, launcher: () -> Unit) {
+        if (hasNotificationPermission()) {
             onGranted()
         } else {
             launcher()
         }
-    }
-
-    var permissionGranted by remember {
-        mutableStateOf(
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED,
-        )
     }
 
     val anyReminderOn = notificationsEnabled || dailyExpenseReminderEnabled

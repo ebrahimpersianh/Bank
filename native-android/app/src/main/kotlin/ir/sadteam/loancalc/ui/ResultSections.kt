@@ -191,7 +191,8 @@ internal fun ResultActionsSection(
                 // حداکثر ۵ قسط تو صفحه جا می‌شه، بقیه با اسکرول - کنارش یه اسکرول‌بار سبز نشون می‌ده
                 // چقدر پایین رفتیم (خواسته‌ی کاربر).
                 val tableState = rememberLazyListState()
-                val rowH = 48.dp
+                // مورد ۱۳A: ردیف دولاینه شد (۶۶dp) - خطِ دوم سود/اصل/مانده‌ی بعد از این قسط.
+                val rowH = 66.dp
                 val visibleRows = minOf(result.rows.size, 5)
                 LazyColumn(
                     state = tableState,
@@ -212,18 +213,30 @@ internal fun ResultActionsSection(
                             "${toFa(due.d)} ${persianMonthName(due.m)}"
                         }
                         Column(Modifier.fillMaxWidth().height(rowH)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text("قسط ${toFa(row.month)}", fontSize = 12.sp)
-                                Text(dateLabel, fontSize = 12.sp)
+                            Column(modifier = Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.Center) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text("قسط ${toFa(row.month)}", fontSize = 12.sp)
+                                    Text(dateLabel, fontSize = 12.sp)
+                                    PrivacyCrossfade(privacyMode) { masked ->
+                                        Text(
+                                            "${maskIfPrivate(masked, amountToman(row.installment))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
+                                            fontSize = 12.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                }
+                                // مورد ۱۳A: سود / اصل / مانده‌ی بعد از این قسط - همان عددهایی که
+                                // راهنما برای هر ردیف می‌خواهد.
                                 PrivacyCrossfade(privacyMode) { masked ->
                                     Text(
-                                        "${maskIfPrivate(masked, amountToman(row.installment))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
-                                        fontSize = 12.5.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        "سود ${maskIfPrivate(masked, amountToman(row.interest))} · اصل ${maskIfPrivate(masked, amountToman(row.principal))} · مانده ${maskIfPrivate(masked, amountToman(row.balance))} ${ir.sadteam.loancalc.ui.jibak.unitFa()}",
+                                        color = AppMuted,
+                                        fontSize = 10.sp,
+                                        modifier = Modifier.padding(top = 3.dp),
                                     )
                                 }
                             }

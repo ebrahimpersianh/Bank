@@ -263,6 +263,8 @@ private fun MainSection(
     var showAddForm by remember { mutableStateOf(false) }
     var showNewTx by remember { mutableStateOf(false) }
     var deletingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
+    // مورد ۵A: تراکنشِ در حالِ ویرایش از فهرستِ «همه‌ی تراکنش‌ها» (شیتِ «ویرایشِ تراکنش»).
+    var editingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
     val totalBalance = remember(accounts, allTransactions) { accounts.sumOf { viewModel.balanceOf(it, allTransactions) } }
     // خواسته‌ی صریحِ کاربر: افزودن/مدیریتِ حساب دیگه فقط از تنظیمات نباشه، مستقیم از همین تبِ «دارایی»
     // هم در دسترس باشه. `accountsAddMode` تعیین می‌کنه AccountsScreen مستقیم با فرمِ باز بیاد یا لیستِ عادی.
@@ -465,6 +467,9 @@ private fun MainSection(
                         privacyMode = privacyMode,
                         categories = allCategoryEntries,
                         onUnpair = { viewModel.unpairTransfer(tx) },
+                        // مورد ۵A: تپ روی ردیف، شیتِ «ویرایشِ تراکنش» را باز می‌کند؛
+                        // نگه‌داشتنِ انگشت هنوز منوی حذف است (`SwipeToDeleteRow`).
+                        onClick = { editingTx = tx },
                     )
                 }
             }
@@ -477,6 +482,17 @@ private fun MainSection(
             text = "این تراکنش حذف شود؟ این کار قابلِ‌برگشت نیست.",
             onConfirm = { viewModel.deleteTransaction(tx); deletingTx = null },
             onDismiss = { deletingTx = null },
+        )
+    }
+    // مورد ۵A: شیتِ «ویرایشِ تراکنش» برای ردیف‌های فهرستِ «همه‌ی تراکنش‌ها».
+    editingTx?.let { tx ->
+        ir.sadteam.loancalc.ui.account.EditTransactionDialog(
+            tx = tx,
+            onSave = { amountRial, description ->
+                viewModel.updateTransaction(tx, amountRial, description)
+                editingTx = null
+            },
+            onDismiss = { editingTx = null },
         )
     }
     InAppBannerHost(banner)
@@ -493,11 +509,13 @@ private fun AccountingTransactionRow(
     privacyMode: Boolean,
     categories: List<CategoryEntry>,
     onUnpair: () -> Unit = {},
+    /** مورد ۵A: تپ روی ردیف (شیتِ ویرایش) - نگه‌داشتنِ انگشت هنوز حذف است. */
+    onClick: () -> Unit = {},
 ) {
     val category = categories.find { it.name == tx.category } ?: findCategory(tx.category)
     val isIncome = tx.type == TransactionType.DEPOSIT.name
     AppCard {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically) {
             val tint = category?.color ?: if (isIncome) AppPrimary else AppDanger
             Box(
                 Modifier.size(44.dp).clip(RoundedCornerShape(AppRadius.icon)).background(tint.copy(alpha = 0.14f)),

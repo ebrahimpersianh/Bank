@@ -37,8 +37,9 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 // ⚠️ سومین کپیِ نامِ ماه حذف شد - `faMonthName`. (بندِ «یک زبانِ بصری»ِ README.)
 private val InlineWheelItemHeight = 34.dp
 
-/** بعد از این‌قدر بی‌کاری، چرخونه‌ی اینلاین دوباره قفل می‌شود تا اسکرولِ صفحه را ندزدد. */
-private const val InlineWheelIdleLockMillis = 4_000L
+/** بعد از این‌قدر بی‌کاری، چرخونه‌ی اینلاین دوباره قفل می‌شود تا اسکرولِ صفحه را ندزدد.
+ * مورد ۱۵A: از ۴ ثانیه به ۱٫۵ ثانیه - پنجره‌ای که چرخِ بازشده با اسکرولِ فرم می‌چرخد کوتاه‌تر شد. */
+private const val InlineWheelIdleLockMillis = 1_500L
 
 /**
  * انتخاب تاریخ شمسی به‌صورت اینلاین، چرخونه‌ای (spinner) - قبلاً سه دراپ‌داون بود؛ کاربر چندبار

@@ -123,6 +123,8 @@ data class SearchHit(
     /** متنی که جستجو رویش انجام می‌شود (نرمال‌شده). */
     val haystack: String,
     val accountId: Long? = null,
+    /** مورد ۱۶: برای تراکنش‌ها جهتِ مبلغ (درآمد/خرج) تا ردیف با + / − نشان داده شود. */
+    val isIncome: Boolean? = null,
 )
 
 /** ی/ک عربی، رقمِ فارسی/عربی، نیم‌فاصله و فاصله را یکی می‌کند تا «بانک‌ملت» و «بانك ملت» هر دو پیدا شوند. */
@@ -174,7 +176,8 @@ class GlobalSearchViewModel @Inject constructor(
                     "${ir.sadteam.loancalc.ui.jibak.toFaDate(t.year, t.month, t.day)} · ${accName[t.accountId] ?: ""}" + (t.category?.let { " · $it" } ?: ""),
                     t.amount,
                     normalizeForSearch("${t.description} ${t.category.orEmpty()} ${t.tags.orEmpty()} ${accName[t.accountId].orEmpty()} ${t.amount.toLong()} ${(t.amount / 10).toLong()}"),
-                    accountId = t.accountId))
+                    accountId = t.accountId,
+                    isIncome = t.type == ir.sadteam.loancalc.core.TransactionType.DEPOSIT.name))
             }
             loans.forEach { l ->
                 add(SearchHit(SearchKind.LOAN, l.id, l.name, l.bank, l.amount,
@@ -383,7 +386,11 @@ fun GlobalSearchScreen(
                             }
                             hit.amountRial?.let { rial ->
                                 Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp)) {
-                                    Text(maskIfPrivate(privacy, toFa(fmt(ir.sadteam.loancalc.ui.jibak.rialToToman(rial.toLong()).toDouble()))) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(), maxLines = 1, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                                    // مورد ۱۶: خرج با − و درآمد با + (مثلِ بقیه‌ی فهرست‌ها) - قبلاً
+                                    // همه‌ی مبلغ‌های نتایجِ جستجو بی‌علامت بودند.
+                                    val amountBody = maskIfPrivate(privacy, toFa(fmt(ir.sadteam.loancalc.ui.jibak.rialToToman(rial.toLong()).toDouble())))
+                                    val signed = hit.isIncome?.let { ir.sadteam.loancalc.ui.jibak.isoSigned(it, amountBody) } ?: amountBody
+                                    Text(signed + " " + ir.sadteam.loancalc.ui.jibak.unitFa(), maxLines = 1, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
                                 }
                             }
                         }

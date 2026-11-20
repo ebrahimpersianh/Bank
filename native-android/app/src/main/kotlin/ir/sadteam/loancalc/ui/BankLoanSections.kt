@@ -131,7 +131,7 @@ internal fun BankLoanHeroSection(
                     AppHeroCard(modifier = Modifier.fillMaxWidth()) {
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("قسطِ ماهانه", color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
+                                Text(installmentPeriodLabel(intervalDays), color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
                                 Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
                                     PrivacyCrossfade(privacyMode) { masked ->
                                         AutoShrinkText(

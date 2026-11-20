@@ -286,16 +286,22 @@ internal fun NewTxDetailsSection(
                 }
                 // تقسیمِ یک خرید بینِ چند دسته - هر ردیف یک تراکنشِ جدا با شناسه‌ی مشترک.
                 if (kind == NewTxKind.EXPENSE) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    // مورد ۱۵: تپ روی کلِ ردیف هم سوییچ را می‌زند - قبلاً فقط خودِ سوییچ کار
+                    // می‌کرد و تپ روی متن هیچ نمی‌کرد. رفتارِ پی‌وال همان است (تقسیم پولی می‌ماند).
+                    val toggleSplit: (Boolean) -> Unit = { want ->
+                        if (want && !txPremium) {
+                            ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("split", "تقسیمِ خرید")
+                        } else {
+                            splitMode = want
+                            if (want && splits.isEmpty()) { splits.add(null to ""); splits.add(null to "") }
+                        }
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().clickable { toggleSplit(!splitMode) },
+                    ) {
                         Text("تقسیم بینِ چند دسته", color = AppText, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                        ir.sadteam.loancalc.ui.settings.AppSwitch(checked = splitMode, onCheckedChange = {
-                            if (it && !txPremium) {
-                                ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("split", "تقسیمِ خرید")
-                                return@AppSwitch
-                            }
-                            splitMode = it
-                            if (it && splits.isEmpty()) { splits.add(null to ""); splits.add(null to "") }
-                        })
+                        ir.sadteam.loancalc.ui.settings.AppSwitch(checked = splitMode, onCheckedChange = toggleSplit)
                     }
                     if (splitMode) {
                         // فریمِ `41`ِ ChatGPT: خلاصه‌ی «جمع / باقی‌مانده» بالای ردیف‌ها + نوارِ پیشرفت،

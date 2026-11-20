@@ -88,8 +88,10 @@ import androidx.compose.material.icons.filled.Edit
  * جزئیات یه حساب - موجودی فعلی بزرگ بالای صفحه، فرم افزودن تراکنش (واریز/برداشت + توضیح + تاریخ
  * شمسی)، و دفترچه‌ی تراکنش‌ها (تاریخ نزولی، هر ردیف قابل‌حذف).
  *
- * ⚠️ `onEdit`/`onDelete` **اختیاری**اند - از تبِ دارایی ویرایش هست، حذف نیست: کاربر همون‌جا
- * می‌بینه اسم/فرستنده‌ی پیامک غلطه و باید بتونه درستش کنه، ولی حذف از مسیرِ تماشا جای درستی نیست.
+ * مورد ۶C: `onEdit`/`onDelete` اختیاری‌اند، ولی دکمه‌ها همیشه دیده می‌شوند - اگر فراخواننده
+ * هندلر داده همان استفاده می‌شود؛ وگرنه ویرایش فرمِ داخلیِ همین صفحه را باز می‌کند و حذف
+ * مستقیم با `deleteAccount` + برگشت است. قبلاً از جستجو/صندوق که هندلری نمی‌آمد، هر دو
+ * دکمه غایب بودند.
  */
 @Composable
 fun AccountDetailScreen(
@@ -137,6 +139,11 @@ fun AccountDetailScreen(
     var showCalendar by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    // مورد ۶C: فرمِ ویرایشِ داخلی - وقتی فراخواننده `onEdit` نداده، دکمه‌ی «ویرایش حساب»
+    // همین فرم را روی همین صفحه باز می‌کند.
+    var showEditAccount by remember { mutableStateOf(false) }
+    val effectiveOnEdit: () -> Unit = onEdit ?: { showEditAccount = true }
+    val effectiveOnDelete: () -> Unit = onDelete ?: { viewModel.deleteAccount(account); onBack() }
     var deletingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
     var editingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
     var splitTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
@@ -182,29 +189,24 @@ fun AccountDetailScreen(
             )
         }
 
-        if (onEdit != null || onDelete != null) {
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    onEdit?.let {
-                        OutlinedButton(
-                            onClick = it,
-                            shape = RoundedCornerShape(999.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, AppPrimary.copy(alpha = 0.5f)),
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Icon(Icons.Filled.Edit, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(16.dp))
-                            Text("ویرایش حساب", color = AppPrimary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp))
-                        }
-                    }
-                    onDelete?.let {
-                        OutlinedButton(
-                            onClick = { showDeleteConfirm = true },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text("حذف حساب")
-                        }
-                    }
+        // مورد ۶C: «ویرایش حساب» / «حذف حساب» همیشه هستند، از هر مسیری که این صفحه باز شود.
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = effectiveOnEdit,
+                    shape = RoundedCornerShape(999.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, AppPrimary.copy(alpha = 0.5f)),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(Icons.Filled.Edit, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(16.dp))
+                    Text("ویرایش حساب", color = AppPrimary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp))
+                }
+                OutlinedButton(
+                    onClick = { showDeleteConfirm = true },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("حذف حساب")
                 }
             }
         }
@@ -372,9 +374,21 @@ fun AccountDetailScreen(
                 text = "حسابِ «${account.name} - ${account.bankName}» حذف شود؟ ⚠️ همه‌ی تراکنش‌های این حساب هم پاک می‌شوند و این کار قابلِ‌برگشت نیست.",
                 // پرچم را خودش پایین می‌آورد - وابسته‌بودن به این‌که onDelete صفحه را ببندد
                 // یک وابستگیِ نامرئی بود.
-                onConfirm = { showDeleteConfirm = false; onDelete?.invoke() },
+                onConfirm = { showDeleteConfirm = false; effectiveOnDelete() },
                 onDismiss = { showDeleteConfirm = false },
             )
+        }
+
+        // مورد ۶C: فرمِ ویرایشِ داخلی، روی همین صفحه (هم‌الگوی تقویمِ بالا).
+        if (showEditAccount) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                AddEditAccountScreen(
+                    existing = account,
+                    onSaved = { showEditAccount = false },
+                    onCancel = { showEditAccount = false },
+                    viewModel = viewModel,
+                )
+            }
         }
         splitTx?.let { tx ->
             ir.sadteam.loancalc.ui.settings.FullScreenDialog(onDismissRequest = { splitTx = null }) {
@@ -532,7 +546,7 @@ private fun MonthBar(year: Int, month: Int, hasNext: Boolean, onChange: (Int, In
  * تبدیل به ریال دقیقاً یک بار، لحظه‌ی ذخیره.
  */
 @Composable
-private fun EditTransactionDialog(
+internal fun EditTransactionDialog(
     tx: AccountTransactionEntity,
     onSave: (amountRial: Double, description: String) -> Unit,
     onDismiss: () -> Unit,

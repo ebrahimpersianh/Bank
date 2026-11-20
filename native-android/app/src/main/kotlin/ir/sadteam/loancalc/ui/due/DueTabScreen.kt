@@ -184,6 +184,25 @@ fun DueTabScreen(
         item {
             DueFilterRow(selected = filter, onSelect = { filter = it })
         }
+        // مورد ۳A: دکمه‌ی «افزودنِ چک» فقط وقتی بود که هیچ سررسیدی نبود (`NothingDueCard`)؛
+        // همین‌که چیزی سررسید می‌شد، راهِ افزودنِ چک از این صفحه محو می‌شد. حالا همیشه
+        // این‌جاست - هم‌شکلِ دکمه‌ی همان کارت، ولی جمع‌وجورتر.
+        item {
+            Text(
+                "+ افزودنِ چک",
+                color = Color.White,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .hardShadow(DueGreenDeep, 3.dp, 999.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(DueGreen)
+                    .pressScaleClickable(onClick = onAddCheque)
+                    .padding(vertical = 11.dp),
+            )
+        }
         if (overdue.isEmpty() && thisWeek.isEmpty() && later.isEmpty()) {
             item {
                 Text(

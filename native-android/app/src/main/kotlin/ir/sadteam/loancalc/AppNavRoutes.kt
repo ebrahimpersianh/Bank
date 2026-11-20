@@ -128,7 +128,10 @@ internal fun AppBottomBar(
                         }
                         // دستگیره‌ی کشوی میان‌بُر - کشیدنِ به بالا یا تپ بازش می‌کند (`31c`). باریک است
                         // (۱۲۰dp) تا لمسِ بالای تب‌ها را نگیرد.
-                        if (!ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current) ShortcutDrawerHandle(
+                        // مورد ۳A: دستگیره قبلاً فقط در حالتِ عادی دیده می‌شد (`!SimpleMode`)، ولی
+                        // هر کاربرِ تازه بعدِ آنبوردینگ SimpleMode دارد - یعنی کشو هیچ ماشه‌ی
+                        // قابلِ‌دیدنی نداشت. حالا برای همه‌ی کاربرها همیشه هست.
+                        ShortcutDrawerHandle(
                             onOpen = { shortcutDrawerOpen = true },
                             modifier = Modifier.align(Alignment.TopCenter).width(150.dp).then(Modifier.guideTarget("shortcuts")),
                         )

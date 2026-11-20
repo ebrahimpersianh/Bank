@@ -125,6 +125,14 @@ private fun tomanSliderSteps(range: ClosedFloatingPointRange<Float>): Int =
     ((range.endInclusive - range.start) / AMOUNT_STEP_TOMAN).toInt().minus(1).coerceAtLeast(0)
 internal val intervalChipOptions = listOf(7 to "هفتگی", 14 to "دوهفته‌ای", 30 to "ماهانه", 60 to "دوماهه", 90 to "سه‌ماهه")
 
+/**
+ * مورد ۱۳D: عنوانِ قسط دنبالِ فاصله‌ی اقساط می‌رود («قسطِ هفتگی» / «قسطِ ماهانه» …)، نه
+ * همیشه «قسطِ ماهانه». بازه‌ی ناشناخته «قسطِ هر N روز» می‌شود.
+ */
+internal fun installmentPeriodLabel(intervalDays: Int): String =
+    intervalChipOptions.firstOrNull { it.first == intervalDays }?.second?.let { "قسطِ $it" }
+        ?: "قسطِ هر ${toFa(intervalDays)} روز"
+
 data class BankLoanOutcome(
     val result: LoanResult,
     val startDate: PersianDate,

@@ -6,6 +6,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.sha256Hex
 import ir.sadteam.loancalc.data.prefs.SecurityPrefs
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,7 +82,10 @@ class AppLockViewModel @Inject constructor(
         _unlocked.value = true
     }
 
-    fun verifyPin(pin: String): Boolean = pinHash.value != null && pinHash.value == sha256Hex(pin)
+    // مورد ۲۰A: رقم‌های فارسی/عربی (۰-۹) قبل از هش‌کردن به لاتین تبدیل می‌شوند - وگرنه
+    // «رمزِ فعلی را بزن» با کیبوردِ فارسی همیشه «رمز اشتباه است» می‌داد. `cleanNum("1234")`
+    // همان "1234" است، پس رمزهای قبلی همچنان کار می‌کنند.
+    fun verifyPin(pin: String): Boolean = pinHash.value != null && pinHash.value == sha256Hex(cleanNum(pin))
 
     /** پورت مفهومی قفل موقت بعد از تلاش‌های ناموفق - [MAX_ATTEMPTS] تلاش، بعدش [LOCKOUT_DURATION_MILLIS]
      * قفل موقت. تلاش موفق یا سپری‌شدن مدت قفل، شمارنده رو صفر می‌کنه. */
@@ -113,7 +117,9 @@ class AppLockViewModel @Inject constructor(
 
     fun setPin(pin: String) {
         ir.sadteam.loancalc.data.UsageStats.action("pin_set")
-        viewModelScope.launch { securityPrefs.setPinHash(sha256Hex(pin)) }
+        // مورد ۲۰A: مثلِ `verifyPin` - رقمِ فارسی/عربی به لاتین، تا رمزِ ذخیره‌شده همیشه
+        // با همان هشِ لاتین مقایسه شود.
+        viewModelScope.launch { securityPrefs.setPinHash(sha256Hex(cleanNum(pin))) }
     }
 
     fun clearPin() {

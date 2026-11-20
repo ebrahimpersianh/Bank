@@ -520,7 +520,7 @@ fun ResultScreen(
                                 fontSize = 18.sp,
                             )
                         }
-                        Text("قسط ماهانه", fontSize = 12.5.sp, color = AppMuted)
+                        Text(installmentPeriodLabel(result.intervalDays), fontSize = 12.5.sp, color = AppMuted)
                     }
                 }
             }

@@ -57,6 +57,7 @@ import ir.sadteam.loancalc.ui.account.CompactTransactionRow
 import ir.sadteam.loancalc.ui.accounting.NewTransactionSheet
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.components.SkeletonRowList
+import ir.sadteam.loancalc.ui.components.TodayCard
 import ir.sadteam.loancalc.ui.cheque.ChequeViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppFab
@@ -155,6 +156,8 @@ fun HomeScreen(
     val coins by gamificationViewModel.coins.collectAsState()
     val privacyMode = LocalPrivacyMode.current
     val today = remember { JalaliCalendar.today() }
+    // روزِ انتخاب‌شده‌ی کارتِ «امروز» - فلش‌های کارت روز را جلو/عقب می‌برند (مورد ۳A).
+    var selectedDay by remember { mutableStateOf(today) }
     // شرطِ برگشتنِ قرصِ «فعال» به هدر (`55a`). همان تعریفی که یادآورِ روزانه استفاده می‌کند:
     // امروز تراکنشی ثبت شده یا نه.
     val todayHasEntry = remember(transactions, today) {
@@ -168,6 +171,8 @@ fun HomeScreen(
     }
     val retroBadges by gamificationViewModel.retroUnlocked.collectAsState()
     var showNewTransaction by remember { mutableStateOf(false) }
+    // مورد ۵A: تراکنشِ در حالِ ویرایش از فهرستِ خانه (شیتِ «ویرایشِ تراکنش»، مثلِ صفحه‌ی حساب).
+    var editingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
     var showCoinWallet by remember { mutableStateOf(false) }
     // 🚨 **آدمک حالا مقصد دارد** (خواسته‌ی صریحِ کاربر: «رو آدمک می‌زنم، به جایی برود»).
     // فریمِ `55a` عمداً بی‌مقصدش کرده بود تا با چرخ‌دنده دو درِ یک اتاق نشوند - ولی مقصدِ
@@ -401,6 +406,21 @@ fun HomeScreen(
                     weekChangePercent = if (prevWeekTotal > 0.0) (((weekTotal - prevWeekTotal) / prevWeekTotal) * 100).toInt() else null,
                 )
             }
+            // ── کارتِ «امروز» (مورد ۳A) ───────────────────────────────────────────────
+            // قبلاً کدِ مرده بود: `TodayCard` تعریف شده بود ولی هیچ‌جا صدا نمی‌شد، پس
+            // میان‌برِ «چک» روی خانه اصلاً وجود نداشت. حالا در حالتِ عادیِ خانه هست و
+            // «چک» یک‌راست صفحه‌ی چک‌ها را باز می‌کند.
+            item {
+                TodayCard(
+                    date = selectedDay,
+                    onPrevDay = { selectedDay = PersianCalendar.addDays(selectedDay, -1) },
+                    onNextDay = { selectedDay = PersianCalendar.addDays(selectedDay, 1) },
+                    onDateClick = { onNavigateToRoute("financial-calendar") },
+                    onAddInstallment = { onNavigateToRoute("loan") },
+                    onAddCheque = { onNavigateToRoute("cheque") },
+                    onAddNote = { onNavigateToRoute("notes") },
+                )
+            }
             // 🚨 **چهار درِ همیشه‌درمعرض** (طرحِ مرجعِ کاربر). کشوی میان‌بر قدرتمندتر است
             // ولی باید کشیده شود؛ این ردیف بی هیچ کنشی هم **خبر** می‌دهد: تعدادِ حساب،
             // تعدادِ تراکنشِ ماه، تعدادِ چکِ باز. عدد همان چیزی است که کارتِ بی‌عدد ندارد.
@@ -544,6 +564,7 @@ fun HomeScreen(
                         transactions = transactions,
                         privacyMode = privacyMode,
                         onSeeAll = onOpenTransactions,
+                        onTxClick = { editingTx = it },
                     )
                 }
             }
@@ -573,6 +594,18 @@ fun HomeScreen(
 
         if (showNewTransaction) {
             NewTransactionSheet(onDismiss = { showNewTransaction = false })
+        }
+
+        // مورد ۵A: شیتِ «ویرایشِ تراکنش» برای ردیف‌های فهرستِ خانه.
+        editingTx?.let { tx ->
+            ir.sadteam.loancalc.ui.account.EditTransactionDialog(
+                tx = tx,
+                onSave = { amountRial, description ->
+                    accountViewModel.updateTransaction(tx, amountRial, description)
+                    editingTx = null
+                },
+                onDismiss = { editingTx = null },
+            )
         }
         // نشانِ تازه بازگشتِ سیستمی نمی‌گیرد: باید دیده و تأیید شود، وگرنه بی‌صدا رد
         // می‌شود و کاربر هیچ‌وقت نمی‌فهمد چه گرفته.
@@ -619,8 +652,10 @@ fun HomeScreen(
                 title = "تاییدِ پرداخت",
                 text = "این قسط پرداخت‌شده علامت بخوره؟",
                 onConfirm = {
-                    // بیش از یک حساب ← بپرس از کدام؛ یکی ← همان؛ هیچ ← فقط علامت می‌خورد.
-                    if (accounts.size > 1) pickPayAccountFor = due else urgentDueViewModel.markPaid(due, null)
+                    // مورد ۱۴ (addendum): مثلِ صفحه‌ی وام، هر وقت حسابی هست «از کدام حساب؟»
+                    // پرسیده می‌شود - قبلاً فقط وقتی بیش از یک حساب بود؛ با یک حساب، بی‌سروصدا
+                    // همان حساب انتخاب می‌شد. تراکنش را `markPaid` می‌سازد (`recordLinkedPayment`).
+                    if (accounts.isNotEmpty()) pickPayAccountFor = due else urgentDueViewModel.markPaid(due, null)
                     confirmPayDue = null
                 },
                 onDismiss = { confirmPayDue = null },

@@ -452,6 +452,8 @@ internal fun RecentTransactionsCard(
     transactions: List<AccountTransactionEntity>,
     privacyMode: Boolean,
     onSeeAll: () -> Unit,
+    /** مورد ۵A: تپ روی ردیف، شیتِ «ویرایشِ تراکنش» را باز می‌کند (مثلِ صفحه‌ی حساب). */
+    onTxClick: (AccountTransactionEntity) -> Unit = {},
 ) {
     val recent = remember(transactions) { transactions.sortedByDescending { it.id }.take(3) }
     // ۱۶ مهر: همیشه ۲ تراکنشِ آخر پیداست (سؤالِ «آخرین اتفاقِ مالی چی بود؟»)؛ فلش سومی را باز می‌کند.
@@ -483,7 +485,7 @@ internal fun RecentTransactionsCard(
             val income = tx.type == "DEPOSIT"
             val transfer = tx.sourceType == SOURCE_TYPE_TRANSFER
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = if (index == 0) 10.dp else 9.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = if (index == 0) 10.dp else 9.dp).clickable { onTxClick(tx) },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(

@@ -417,7 +417,8 @@ private fun PriceRow(
         symbol = entry.symbol,
         category = entry.category,
         name = entry.name,
-        subtitle = entry.symbol,
+        // مورد ۱۲A: زیرنویس قبلاً خودِ کدِ فنیِ API بود (GOLD_24 و…) - برای کاربر بی‌معنی است.
+        // `subtitle` اختیاری است و حذفش ردیف را تمیزتر می‌کند؛ `symbol` برای بج و نمودار می‌ماند.
         price = price?.rialToFaCompact(),
         owned = owned,
         onClick = onClick,

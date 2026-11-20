@@ -86,12 +86,14 @@ private fun CalculatorHostTab(
     onAddManualLoan: () -> Unit = {},
     startInInstallment: Boolean = false,
     onLeaveInstallment: () -> Unit = {},
+    formStateHolder: androidx.compose.runtime.saveable.SaveableStateHolder,
 ) {
     BankLoanTab(
         useCalculatorHost = true,
         onAddManualLoan = onAddManualLoan,
         startInInstallment = startInInstallment,
         onLeaveInstallment = onLeaveInstallment,
+        formStateHolder = formStateHolder,
     )
 }
 @Composable
@@ -100,6 +102,7 @@ private fun BankLoanTab(
     onAddManualLoan: () -> Unit = {},
     startInInstallment: Boolean = false,
     onLeaveInstallment: () -> Unit = {},
+    formStateHolder: androidx.compose.runtime.saveable.SaveableStateHolder,
 ) {
     var loanOutcome by remember { mutableStateOf<BankLoanOutcome?>(null) }
     // نگه‌دارنده‌ی حالتِ ذخیره‌پذیر (SaveableStateHolder): وقتی loanOutcome پر می‌شه، BankLoanScreen
@@ -108,7 +111,15 @@ private fun BankLoanTab(
     // با پیچوندنِ BankLoanScreen تو SaveableStateProvider با یه کلیدِ ثابت، حالتِ rememberSaveableِ
     // فیلدهاش (مبلغ/نرخ/ماه/تاریخ/بانکِ‌انتخابی) حتی بعدِ بیرون‌رفتن از کامپوزیشن حفظ می‌شه و با
     // برگشتن (دکمه‌ی «ویرایش» تو ResultScreen) دوباره برمی‌گرده - نه از صفر.
-    val formStateHolder = rememberSaveableStateHolder()
+    //
+    // مورد ۱۳: این نگه‌دارنده قبلاً **خودِ همین‌جا** ساخته می‌شد؛ پس با عوض‌کردنِ زیرتبِ وام
+    // (محاسبه‌گر ↔ وام‌های من) کلِ `BankLoanTab` از کامپوزیشن بیرون می‌رفت و فرم از صفر شروع
+    // می‌شد. حالا از `LoanTab` می‌آید که موقعِ سوییچِ زیرتب سرِ جایش می‌ماند - ورودِ دوباره به
+    // محاسبه‌گر ورودی‌های قبلی را نگه می‌دارد. پاک‌کردنِ صریح هنوز فقط با «محاسبه‌ی جدید» است
+    // (`removeState` پایین) یا ریستِ تب با تپِ دوباره روی تبِ فعال.
+    // (تنفس هم با همین چرخه توضیح داده می‌شود: پیش‌فرضِ فرم خاموش است؛ «روشن با ۶ ماه» فقط
+    // وقتی می‌ماند که کاربر سوییچ را زده یا پیش‌تنظیمِ «وام فرزندآوری» - که ۶ ماه تنفس دارد -
+    // را انتخاب کرده باشد.)
     // اسلاید جهت‌دار فرم→نتیجه (هم‌خانواده‌ی اسلاید تب‌های پایین): نتیجه از چپ میاد تو و فرم به
     // راست می‌ره؛ برگشت به فرم برعکس - به‌جای fade+scale قبلی.
     AnimatedContent(
@@ -177,6 +188,9 @@ internal fun LoanTab(
     isRootTab: Boolean = false,
 ) {
     var subTab by remember { mutableStateOf(LoanSubTab.MY_LOANS) }
+    // مورد ۱۳: نگه‌دارنده‌ی حالتِ فرمِ محاسبه‌گر این‌جاست، نه تو `BankLoanTab` - تا سوییچِ
+    // زیرتبِ وام فرم را از صفر شروع نکند (رجوع کن به توضیحِ بالای `BankLoanTab`).
+    val calcFormStateHolder = rememberSaveableStateHolder()
     // خواسته‌ی کاربر (۲۶ شهریور): دکمه‌ی «+»ِ «وام‌های من» دیگر مستقیم فرمِ دستی را باز نمی‌کند،
     // **محاسبه‌گر** را باز می‌کند؛ و «افزودنِ وامِ دستی» به تهِ همان محاسبه‌گر رفت. این پرچم
     // همان مسیرِ برگشت است: محاسبه‌گر می‌گوید «فرمِ دستی را باز کن» و تبِ «وام‌های من» بازش می‌کند.
@@ -328,6 +342,7 @@ internal fun LoanTab(
                         calcAddLoan = false
                         subTab = LoanSubTab.MY_LOANS
                     },
+                    formStateHolder = calcFormStateHolder,
                 )
                 LoanSubTab.DEPOSIT -> DepositScreen()
                 LoanSubTab.MY_LOANS -> MyLoansScreen(
