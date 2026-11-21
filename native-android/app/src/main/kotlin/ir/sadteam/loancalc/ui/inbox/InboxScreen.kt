@@ -1,5 +1,10 @@
 package ir.sadteam.loancalc.ui.inbox
 
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -118,7 +123,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
     var searching by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(InboxFilter.ALL) }
-    var showAllJibak by remember { mutableStateOf(false) }
+    var showJibakArchive by remember { mutableStateOf(false) }
     var showContact by remember { mutableStateOf(false) }
     fun visible(m: InboxMessageEntity): Boolean {
         val q = query.trim()
@@ -142,6 +147,10 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
             .toSet()
     }
     val jibak = news.filter { it.kind == InboxMessageEntity.Kind.ANNOUNCEMENT && visible(it) }
+    // طرحِ تأییدشده‌ی ۱۸ آبان («ردیف هوشمند»): بالای صفحه فقط خبرهای خوانده‌نشده‌ی جیبک می‌آیند؛
+    // خبرهای خوانده‌شده می‌روند توی آرشیو و فقط با لینکِ کوچکِ پایینِ صفحه دیده می‌شوند.
+    val jibakUnread = jibak.filter { it.readAt == null }
+    val showJibakTop = filter == InboxFilter.ALL && jibakUnread.isNotEmpty() && !showJibakArchive
     // 🎁 هدیه‌ی خوانده‌نشده: با باز شدنِ صندوق، جشنش خودش باز می‌شود (۹ مهر، خواسته‌ی کاربر).
     var celebrate by remember { mutableStateOf<InboxMessageEntity?>(null) }
     // ۱۶ مهر (گزارشِ کاربر: «پیام‌های خوانده‌شده هی دوباره می‌آیند»): جشن فقط برای هدیه‌ی **تازه** (۳ روزِ اخیر)
@@ -254,8 +263,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
 
             // ۱۳ آبان: دو قابِ رنگیِ بزرگ (حتی خالی) + «فقط ۳تا، بقیه با مشاهده‌ی همه» گیج‌کننده بود.
             // حالا: اطلاعیه‌های جیبک (اگر هست) بالا، بعد همه‌ی پیام‌های تو یک فهرستِ ساده؛ خالی = یک پیامِ خالی.
-            val showJibak = filter == InboxFilter.ALL && jibak.isNotEmpty()
-            if (personal.isEmpty() && !showJibak && actionable.isEmpty()) {
+            if (personal.isEmpty() && !showJibakTop && !showJibakArchive && actionable.isEmpty()) {
                 item(key = "empty") {
                     ir.sadteam.loancalc.ui.components.EmptyState(
                         icon = Icons.Filled.Inbox,
@@ -266,21 +274,24 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                 }
             }
 
-            // ── پیام‌های جیبک (اطلاعیه‌های عمومیِ سرور) - فقط در تبِ «همه»، آبی ──
-            if (showJibak) {
+            // ── پیام‌های جیبک (اطلاعیه‌های عمومیِ سرور) - فقط در تبِ «همه»؛ بالای صفحه فقط
+            // خوانده‌نشده‌ها (طرحِ ۱۸ آبان). خوانده‌شده‌ها توی آرشیوِ پایینِ صفحه‌اند.
+            if (showJibakTop) {
                 item(key = "jibak_label") { SectionLabel("از طرفِ جیبک") }
-                val list = if (showAllJibak) jibak else jibak.take(2)
-                items(list, key = { "j_" + it.id }) { message ->
-                    AnnouncementCard(message, onAction = { a -> viewModel.markRead(message.id); runAction(a) }) {
-                        if (isGift(message) && message.readAt == null) celebrate = message
-                        // جوابِ پشتیبانی از همان مسیرِ markRead «دیده شد» می‌خورد، تا ادمین
-                        // ببیند کاربر جواب را خوانده است.
-                        else if (supportTicketOf(message.title) != null) viewModel.markSupportReplyRead(message)
-                        else viewModel.markRead(message.id)
+                items(jibakUnread, key = { "j_" + it.id }) { message ->
+                    DismissibleAnnouncement(onDismiss = { viewModel.markRead(message.id) }) {
+                        AnnouncementCard(
+                            message,
+                            onAction = { a -> viewModel.markRead(message.id); runAction(a) },
+                            onDismiss = { viewModel.markRead(message.id) },
+                        ) {
+                            if (isGift(message) && message.readAt == null) celebrate = message
+                            // جوابِ پشتیبانی از همان مسیرِ markRead «دیده شد» می‌خورد، تا ادمین
+                            // ببیند کاربر جواب را خوانده است.
+                            else if (supportTicketOf(message.title) != null) viewModel.markSupportReplyRead(message)
+                            else viewModel.markRead(message.id)
+                        }
                     }
-                }
-                if (jibak.size > 2) item(key = "jibak_more") {
-                    SeeAllButton(if (showAllJibak) "نمایشِ کمتر" else "همه‌ی خبرهای جیبک (${toFa(jibak.size)})", green = true) { showAllJibak = !showAllJibak }
                 }
             }
 
@@ -323,6 +334,39 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                             else if (message.sourceText != null) sourceOf = message
                         },
                     )
+                }
+            }
+
+            // ── آرشیوِ خبرهای جیبک - لینکِ کوچکِ پایینِ صفحه (طرحِ ۱۸ آبان) ──
+            // وقتی خوانده‌نشده نیست، بالا کاملاً خالی می‌شود و فقط همین لینک می‌ماند؛
+            // با زدنش همه‌ی خبرها (خوانده + خوانده‌نشده) همین‌جا باز می‌شوند.
+            if (filter == InboxFilter.ALL && jibak.isNotEmpty()) {
+                if (showJibakArchive) {
+                    item(key = "jibak_archive_label") { SectionLabel("خبرهای جیبک") }
+                    items(jibak, key = { "ja_" + it.id }) { message ->
+                        AnnouncementCard(message, onAction = { a -> viewModel.markRead(message.id); runAction(a) }) {
+                            if (isGift(message) && message.readAt == null) celebrate = message
+                            else if (supportTicketOf(message.title) != null) viewModel.markSupportReplyRead(message)
+                            else viewModel.markRead(message.id)
+                        }
+                    }
+                }
+                item(key = "jibak_archive_link") {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            if (showJibakArchive) "بستن خبرهای جیبک" else "خبرهای جیبک (${toFa(jibak.size)})",
+                            color = AppMuted,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .clickable { showJibakArchive = !showJibakArchive }
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                        )
+                    }
                 }
             }
 
@@ -371,6 +415,43 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
             }
         }
     }
+}
+/**
+ * ردیفِ خبرِ جیبک که با کشیدن (به هر سمت) «خوانده» می‌شود و از بالای صفحه می‌رود توی آرشیو.
+ * `SwipeToDismissBox` خودش جمع‌شدنِ ردیف را انیمیشن می‌کند و چون پیام دیگر «خوانده‌نشده» نیست،
+ * از فهرستِ بالای صفحه حذف می‌شود؛ نیازی به ریست‌کردنِ دستیِ state نیست.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DismissibleAnnouncement(onDismiss: () -> Unit, content: @Composable () -> Unit) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.StartToEnd || value == SwipeToDismissBoxValue.EndToStart) {
+                onDismiss()
+            }
+            true
+        },
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            if (dismissState.dismissDirection != SwipeToDismissBoxValue.Settled) Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppPrimaryPill, RoundedCornerShape(20.dp))
+                    .padding(horizontal = 20.dp),
+                contentAlignment = when (dismissState.dismissDirection) {
+                    SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                    else -> Alignment.CenterEnd
+                },
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+                    Text("خوانده شد", color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp))
+                }
+            }
+        },
+    ) { content() }
 }
 /**
  * **متنِ خامِ منبع.** تنها راهی که کاربر می‌تواند تشخیصِ غلط را ردیابی کند: عیناً همان

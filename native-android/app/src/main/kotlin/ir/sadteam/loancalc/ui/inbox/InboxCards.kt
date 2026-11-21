@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.ui.graphics.graphicsLayer
@@ -251,7 +252,13 @@ internal fun SeeAllButton(label: String, green: Boolean, onClick: () -> Unit) {
 }
 /** کارتِ اطلاعیه‌ی جیبک؛ نشان و برچسب از نوعِ اطلاعیه (`refId`). */
 @Composable
-internal fun AnnouncementCard(message: InboxMessageEntity, onAction: (String) -> Unit = {}, onClick: () -> Unit) {
+internal fun AnnouncementCard(
+    message: InboxMessageEntity,
+    onAction: (String) -> Unit = {},
+    /** بستنِ خبر از بالای صفحه (خوانده علامت می‌خورد و می‌رود توی آرشیو)؛ null = دکمه‌ی × نه. */
+    onDismiss: (() -> Unit)? = null,
+    onClick: () -> Unit,
+) {
     val kind = message.refId
     // هدیه‌ی گرفته‌شده (پنجره‌اش یک بار نشان داده شد) خاکستری می‌شود تا معلوم باشد استفاده شده.
     val claimed = isGift(message) && message.readAt != null
@@ -294,11 +301,34 @@ internal fun AnnouncementCard(message: InboxMessageEntity, onAction: (String) ->
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
+                // طرحِ تأییدشده‌ی ۱۸ آبان («ردیف هوشمند»): خبرِ تازه برچسبِ «جدید» دارد و با × بسته می‌شود.
                 if (message.readAt == null) {
-                    Box(modifier = Modifier.padding(start = 6.dp).size(7.dp).clip(CircleShape).background(tint))
+                    Text(
+                        "جدید",
+                        color = tint,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier
+                            .padding(start = 6.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(tint.copy(alpha = 0.14f))
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 Text(timeLabel(message.createdAt), color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                if (message.readAt == null && onDismiss != null) {
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 4.dp)
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .clickable(onClick = onDismiss),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Filled.Close, contentDescription = "بستن", tint = AppMuted, modifier = Modifier.size(16.dp))
+                    }
+                }
             }
             Text(message.body, color = AppMuted, fontSize = 11.5.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 4.dp))
             message.sourceLabel?.takeIf { it.startsWith("image:") }?.let { MessageImage(it.removePrefix("image:")) }
