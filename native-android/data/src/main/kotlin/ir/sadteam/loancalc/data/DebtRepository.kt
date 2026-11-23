@@ -33,7 +33,7 @@ class DebtRepository(
      * رنگِ آواتار **قطعی از رو نامه** تعیین می‌شه، نه تصادفی/دستی (جوابِ سوالِ ۱۱ی
      * design/MESSAGE-round4-to-design.md) - همون نام همیشه همون رنگ رو می‌گیره.
      */
-    suspend fun addCounterparty(name: String, phone: String? = null, id: Long = System.currentTimeMillis()): Long = runDbWrite {
+    suspend fun addCounterparty(name: String, phone: String? = null, id: Long = UniqueIds.next()): Long = runDbWrite {
         val color = avatarColorNames[abs(name.hashCode()) % avatarColorNames.size]
         counterpartyDao.upsert(
             CounterpartyEntity(id = id, name = name, createdAt = isoNow(), phone = phone, avatarColor = color),
@@ -72,7 +72,7 @@ class DebtRepository(
         month: Int,
         day: Int,
     ): Long = runDbWrite {
-        val id = System.currentTimeMillis()
+        val id = UniqueIds.next()
         debtDao.upsert(
             DebtEntity(
                 id = id,

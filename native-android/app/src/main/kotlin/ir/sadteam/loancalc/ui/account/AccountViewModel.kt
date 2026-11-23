@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.BadgeEvaluator
 import ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER
 import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
@@ -27,6 +28,11 @@ class AccountViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val authPrefs: AuthPrefs,
     private val gamification: GamificationRepository,
+    // باگ ۱۹/۲۱: ارزیابیِ نشان‌ها فقط در `syncBadges()` (بازدید از صفحه‌ی نشان‌ها) بود،
+    // پس «اولین قدم» ساعت‌ها بعد از اولین تراکنش و «بودجه‌گذار» اصلاً (اگر بودجه زود حذف
+    // می‌شد) باز نمی‌شد. حالا بعد از هر ثبتِ موفق، همان‌جا سنجیده می‌شود - مثلِ
+    // `SavingsGoalViewModel` که `BadgeEvaluator` را تزریق می‌کند.
+    private val badgeEvaluator: BadgeEvaluator,
 ) : ViewModel() {
     val accounts: StateFlow<List<AccountEntity>> = accountRepository.observeAccounts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -174,6 +180,9 @@ class AccountViewModel @Inject constructor(
             }.onSuccess {
                 // فقط ثبتِ دستیِ خودِ کاربر، و فقط بعد از ذخیره‌ی موفق - بی مبلغ و بی عنوان.
                 if (originLabel == null && (sourceType == null || sourceType == "split")) ir.sadteam.loancalc.data.UsageStats.track(ir.sadteam.loancalc.data.UsageStats.TRANSACTION_CREATED)
+                // باگ ۲۱: «اولین قدم» - نشان (و سکه‌اش) همان لحظه‌ی اولین تراکنش باز می‌شود،
+                // نه ساعت‌ها بعد با بازدید از صفحه‌ی نشان‌ها.
+                viewModelScope.launch { badgeEvaluator.evaluate(silent = false) }
                 onSuccess()
             }.onFailure(onFailure)
         }
@@ -257,6 +266,9 @@ class AccountViewModel @Inject constructor(
                 GamificationRepository.Type.FIRST_BUDGET,
                 GamificationRepository.Reward.FIRST_BUDGET,
             )
+            // باگ ۱۹: نشانِ «بودجه‌گذار» همان‌جا باز می‌شود - اگر بودجه پیش از هر ارزیابی
+            // حذف می‌شد، سکه‌اش بود ولی نشانش قفل می‌مانَد.
+            badgeEvaluator.evaluate(silent = false)
             syncIfLoggedIn()
         }
     }

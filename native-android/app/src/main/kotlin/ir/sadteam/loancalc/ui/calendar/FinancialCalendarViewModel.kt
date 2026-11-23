@@ -8,7 +8,10 @@ import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.db.BillDao
 import ir.sadteam.loancalc.data.db.LoanEntity
+import ir.sadteam.loancalc.ui.extras.billKindLabel
+import ir.sadteam.loancalc.ui.extras.createdAfterDueIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -16,7 +19,7 @@ import javax.inject.Inject
 
 /** نوعِ تعهدِ یه روز. طبقِ فریمِ `51a` نوع **با آیکون** تفکیک می‌شه نه با رنگ - رنگِ نقطه‌ی
  * تقویم فقط فوریت/پرداخت‌شدن رو می‌گه، چون سه رنگ تو یه دایره‌ی ۵dp قابلِ تشخیص نیست. */
-enum class DueKind { INSTALLMENT, CHEQUE, RECURRING }
+enum class DueKind { INSTALLMENT, CHEQUE, RECURRING, BILL }
 
 data class DueItem(
     val title: String,
@@ -41,6 +44,8 @@ data class DueItem(
      */
     val loanId: Long? = null,
     val chequeId: Long? = null,
+    /** فقط برای قبض - تپِ ردیف صفحه‌ی قبض‌ها را باز می‌کند. */
+    val billId: Long? = null,
 )
 
 /** پورت مفهومی «تقویم مالی» اپ رقیب (VAMMAN) - سررسیدِ **هر سه منبع** (قسطِ وام، چک، پرداختِ
@@ -52,6 +57,7 @@ class FinancialCalendarViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
     private val chequeRepository: ChequeRepository,
     private val accountRepository: AccountRepository,
+    private val billDao: BillDao,
 ) : ViewModel() {
     val loans: StateFlow<List<LoanEntity>> = loanRepository.observeLoans()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -129,6 +135,37 @@ class FinancialCalendarViewModel @Inject constructor(
                             // الگو است نه ثبت - رجوع کن به `DueItem.paid`.
                             paid = null,
                             kind = DueKind.RECURRING,
+                        ),
+                    )
+                }
+            }
+        }
+        // قبض‌ها تاریخِ ذخیره‌شده ندارند، فقط `dueDay` + دوره (ماهانه/دوماهه) - پس
+        // وقوع‌هایشان مثلِ پرداختِ تکراری برای ماهِ جاری تا ۱۲ ماهِ آینده ساخته
+        // می‌شوند. ماه‌های گذشته نمی‌آیند: `lastPaidKey` فقط آخرین ماهِ پرداخت‌شده
+        // را نگه می‌دارد و وضعیتِ ماه‌های قبل معلوم نیست (همان دلیلی که `paid`ِ
+        // تکراری `null` است). ماهِ جاری: `paid` یعنی همین ماه پرداخت شده.
+        val bills = billDao.getAll()
+        if (bills.isNotEmpty()) {
+            val today = JalaliCalendar.today()
+            for (offset in 0..12) {
+                var m = today.m + offset
+                var y = today.y
+                while (m > 12) { m -= 12; y++ }
+                val daysInMonth = JalaliCalendar.daysInMonth(y, m)
+                for (bill in bills) {
+                    if ((m - 1) % bill.periodMonths.coerceAtLeast(1) != 0) continue
+                    if (bill.createdAfterDueIn(y, m)) continue
+                    val kindLabel = billKindLabel(bill.kind)
+                    put(
+                        PersianDate(y, m, bill.dueDay.coerceIn(1, daysInMonth)),
+                        DueItem(
+                            title = if (bill.name.isBlank() || bill.name.trim() == kindLabel) "قبضِ $kindLabel" else "قبضِ $kindLabel · ${bill.name}",
+                            subtitle = "قبض",
+                            amount = bill.lastAmount,
+                            paid = bill.lastPaidKey == "$y-$m",
+                            kind = DueKind.BILL,
+                            billId = bill.id,
                         ),
                     )
                 }

@@ -237,6 +237,12 @@ fun BankLoanScreen(
     // تپِ «محاسبه کن» با فیلدِ خالی قبلاً بی‌صدا هیچ‌کاری نمی‌کرد.
     val formErrorState = remember { mutableStateOf<String?>(null) }
     var formError by formErrorState
+    // باگِ ۲۷: ذخیره‌ی مستقیم از فرم - همان «ذخیره وام»ِ صفحه‌ی نتیجه، بی رفتن به
+    // جدول. وامِ تازه است، پس تعدادِ پرداخت‌شده ۰ است؛ بعد از ذخیره دکمه پنهان می‌شود
+    // (مثلِ صفحه‌ی نتیجه) تا وامِ تکراری ساخته نشود.
+    val directSavedState = remember { mutableStateOf(false) }
+    val directSaveMessageState = remember { mutableStateOf<String?>(null) }
+    val directSavingState = remember { mutableStateOf(false) }
 
     var showCalendarPicker by rememberSaveable { mutableStateOf(false) }
     var showCheque by rememberSaveable { mutableStateOf(false) }
@@ -544,6 +550,9 @@ fun BankLoanScreen(
                 graceOnState = graceOnState,
                 graceMonthsState = graceMonthsState,
                 formErrorState = formErrorState,
+                directSavedState = directSavedState,
+                directSaveMessageState = directSaveMessageState,
+                directSavingState = directSavingState,
             )
         }
     }

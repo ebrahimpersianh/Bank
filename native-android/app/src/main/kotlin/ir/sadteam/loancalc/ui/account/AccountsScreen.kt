@@ -56,6 +56,7 @@ import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.jibak.faCardTail
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.roundedToDisplayUnitRial
 import ir.sadteam.loancalc.ui.jibak.toFa
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
@@ -96,7 +97,8 @@ fun AccountsScreen(
         accounts.associate { it.id to viewModel.balanceOf(it, transactions) }
     }
     // جمعِ موجودی برای هیرویِ بالای لیست - همون balances که از قبل حساب شده، جمعش بی‌هزینه‌ست.
-    val totalBalance = remember(balances) { balances.values.sum() }
+    // باگ ۲۸: از موجودی‌های گرد‌شده‌ی نمایشی جمع می‌شود تا با جمعِ کارت‌ها بخوانَد.
+    val totalBalance = remember(balances) { balances.values.sumOf { it.roundedToDisplayUnitRial() } }
     val openedAccount = openedAccountId?.let { id -> accounts.firstOrNull { it.id == id } }
     val editingAccount = editingAccountId?.let { id -> accounts.firstOrNull { it.id == id } }
 

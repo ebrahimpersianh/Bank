@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.note
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
@@ -63,6 +64,7 @@ import ir.sadteam.loancalc.ui.theme.AppText
 fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
     val notes by viewModel.notes.collectAsState()
     var showAdd by rememberSaveable { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<NoteEntity?>(null) }
     var title by rememberSaveable { mutableStateOf("") }
     var text by rememberSaveable { mutableStateOf("") }
     val today = remember { JalaliCalendar.today() }
@@ -72,6 +74,29 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
     var photoPath by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDelete by remember { mutableStateOf<NoteEntity?>(null) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    // ضربه روی ردیف = ویرایشِ همان یادداشت در همین فرمِ افزودن (عنوان = خطِ اولِ متن،
+    // توضیح = بقیه‌ی خط‌ها - همان قراردادی که ساخت و فهرست دارند). عکسِ قبلی فقط وقتی
+    // دور انداخته می‌شود که در ذخیره عوض یا حذف شده باشد، نه با «بی‌خیال».
+    fun startEdit(note: NoteEntity) {
+        editing = note
+        title = note.text.lineSequence().firstOrNull().orEmpty()
+        text = note.text.substringAfter('\n', "").trim()
+        year = note.year
+        month = note.month
+        day = note.day
+        photoPath = note.photoPath
+        showAdd = true
+    }
+    fun closeForm() {
+        val edited = editing
+        if (edited != null && photoPath != edited.photoPath) viewModel.discardPhoto(photoPath)
+        if (edited == null) viewModel.discardPhoto(photoPath)
+        photoPath = null
+        title = ""
+        text = ""
+        editing = null
+        showAdd = false
+    }
     val visibleNotes = remember(notes, searchQuery) {
         val q = searchQuery.trim()
         if (q.isBlank()) notes else notes.filter { it.text.contains(q, ignoreCase = true) }
@@ -118,7 +143,7 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                             Modifier.size(42.dp).clip(RoundedCornerShape(AppRadius.icon)).background(NoteAmber.copy(alpha = 0.14f)),
                             contentAlignment = Alignment.Center,
                         ) { Icon(Icons.Filled.EditNote, contentDescription = null, tint = NoteAmber, modifier = Modifier.size(22.dp)) }
-                        Text("یادداشتِ تازه", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 12.dp))
+                        Text(if (editing != null) "ویرایشِ یادداشت" else "یادداشتِ تازه", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 12.dp))
                     }
                     // عنوان ستونِ جدا در دیتابیس ندارد: خطِ اولِ `text` است (همان چیزی که
                     // جستجوی کلی و فهرست هم عنوان حساب می‌کنند) - بی migration.
@@ -143,8 +168,10 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                     )
                     ir.sadteam.loancalc.ui.components.PhotoAttachmentCard(
                         photoPath = photoPath,
-                        onPick = { uri -> viewModel.copyPhoto(uri) { p -> viewModel.discardPhoto(photoPath); photoPath = p } },
-                        onRemove = { viewModel.discardPhoto(photoPath); photoPath = null },
+                        // در ویرایش، عکسِ قبلی تا ذخیره دست نمی‌خورد (حذف/جایگزینی در ذخیره
+                        // انجام می‌شود)؛ در افزودن، رفتارِ قبلی می‌ماند.
+                        onPick = { uri -> viewModel.copyPhoto(uri) { p -> if (editing == null) viewModel.discardPhoto(photoPath); photoPath = p } },
+                        onRemove = { if (editing == null) viewModel.discardPhoto(photoPath); photoPath = null },
                         withCard = false,
                         modifier = Modifier.padding(top = 10.dp),
                     )
@@ -163,19 +190,26 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                         onClick = {
                             if (canSave) {
                                 val full = listOf(title.trim(), text.trim()).filter { it.isNotEmpty() }.joinToString("\n")
-                                viewModel.addNote(full, year, month, day, null, photoPath)
+                                val edited = editing
+                                if (edited != null) {
+                                    if (edited.photoPath != photoPath) viewModel.discardPhoto(edited.photoPath)
+                                    viewModel.updateNote(edited.copy(text = full, year = year, month = month, day = day, photoPath = photoPath))
+                                } else {
+                                    viewModel.addNote(full, year, month, day, null, photoPath)
+                                }
                                 title = ""
                                 text = ""
                                 photoPath = null
+                                editing = null
                                 showAdd = false
                             }
                         },
                         enabled = canSave,
                         modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    ) { Text("ثبتِ یادداشت") }
+                    ) { Text(if (editing != null) "ذخیره‌ی تغییرات" else "ثبتِ یادداشت") }
                     // ⚠️ کارتِ «یادداشتِ جدید» راهِ بستن نداشت - «بی‌خیال» ماند، ولی کم‌رنگ‌تر.
                     TextButton(
-                        onClick = { viewModel.discardPhoto(photoPath); photoPath = null; title = ""; text = ""; showAdd = false },
+                        onClick = { closeForm() },
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text("بی‌خیال", color = AppMuted, fontWeight = FontWeight.Bold) }
                 }
@@ -213,7 +247,14 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
             // `visibleNotes` محاسبه می‌شد و **هیچ‌جا استفاده نمی‌شد**، پس فیلدِ جست‌وجو
             // متن می‌گرفت، فیلتر واقعاً حساب می‌شد، و لیست همان لیستِ کامل می‌ماند.
             items(visibleNotes, key = { it.id }) { note ->
-                AppCard {
+                // ضربه = ویرایش، نگه‌داشتن = حذف (با دیالوگِ تایید) - قبلاً ردیف هیچ ژستی
+                // نداشت و فقط آیکونِ سطلِ کوچک کار می‌کرد.
+                AppCard(
+                    modifier = Modifier.combinedClickable(
+                        onClick = { startEdit(note) },
+                        onLongClick = { pendingDelete = note },
+                    ),
+                ) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         // کاشیِ آیکونِ کهربایی (هم‌سبکِ Claude Design).
                         Box(

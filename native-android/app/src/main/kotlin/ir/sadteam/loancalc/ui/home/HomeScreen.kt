@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,6 +73,7 @@ import ir.sadteam.loancalc.ui.coin.CoinHubScreen
 import ir.sadteam.loancalc.ui.profile.BadgeRetroSheet
 import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.roundedToDisplayUnitRial
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -121,6 +123,11 @@ fun HomeScreen(
      * دومِ** جدا می‌ساخت. `null` یعنی پیشنهادی در کار نیست.
      */
     navSuggestionSlot: (@Composable () -> Unit)? = null,
+    /**
+     * باگ ۱۳ (بازبینیِ ۲ آذر): گزارشِ «لایه‌ی داخلیِ باز» به `PersistentTabs` تا ضربه روی
+     * تبِ فعلی یک مرحله عقب برود (رجوع کن به `SideEffect`های پایین).
+     */
+    onHasBackStepChange: (Boolean) -> Unit = {},
     accountViewModel: AccountViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
     urgentDueViewModel: UrgentDueViewModel = hiltViewModel(),
@@ -134,6 +141,9 @@ fun HomeScreen(
     val homeBills by homeExtrasVm.bills.collectAsState()
     var showHomeBills by remember { mutableStateOf(false) }
     if (showHomeBills) {
+        // باگ ۱۳ (بازبینیِ ۲ آذر): این صفحه با `return` زود برمی‌گردد، پس `SideEffect`ی
+        // پایین هرگز اجرا نمی‌شود — این‌جا جدا گزارش می‌کنیم.
+        SideEffect { onHasBackStepChange(true) }
         androidx.activity.compose.BackHandler { showHomeBills = false }
         ir.sadteam.loancalc.ui.extras.BillsScreen(onBack = { showHomeBills = false }, viewModel = homeExtrasVm)
         return
@@ -184,6 +194,22 @@ fun HomeScreen(
     // فایل را از طراح گرفتید، همین‌جا را چک کنید.
     var confirmPayDue by remember { mutableStateOf<UrgentDueViewModel.UrgentRow?>(null) }
     var pickPayAccountFor by remember { mutableStateOf<UrgentDueViewModel.UrgentRow?>(null) }
+    // باگِ ۸ (مورد ۱۳B): پرداختِ قسط از کارتِ فوریِ خانه هیچ چکِ کسری نمی‌کرد - برخلافِ
+    // صفحه‌ی وام که هشدار می‌دهد. این‌جا هم بعد از انتخابِ حساب، اگر موجودی از قسط کمتر
+    // باشد اول هشدار می‌آید و فقط با تأییدِ صریح ثبت می‌شود (همان الگو و همان دکمه‌ی
+    // «بله، با کسری پرداخت کن»).
+    var overdraftPayDue by remember { mutableStateOf<Pair<UrgentDueViewModel.UrgentRow, ir.sadteam.loancalc.data.db.AccountEntity>?>(null) }
+
+    // باگ ۱۳ (بازبینیِ ۲ آذر): ضربه روی تبِ فعلی یک مرحله عقب می‌رود — این‌جا می‌گوییم
+    // لایه‌ای (شیت یا دیالوگ) باز است یا نه. `showHomeBills` جدا گزارش می‌شود چون آن
+    // صفحه با `return` زود برمی‌گردد (رجوع کن به `SideEffect`ی بالای فایل).
+    SideEffect {
+        onHasBackStepChange(
+            showHomeBills || showNewTransaction || showProfile || editingTx != null ||
+                showCoinWallet || confirmPayDue != null || pickPayAccountFor != null ||
+                overdraftPayDue != null,
+        )
+    }
 
     // ⚠️ هر دو شیت قبلاً با `return` صدا زده می‌شدند و کلِ Box از کامپوزیشن بیرون می‌رفت:
     // پشتِ شیت سفیدِ خالی بود و اسکرولِ صفحه‌ی اول با بستنش صفر می‌شد. حالا **روی** صفحه
@@ -225,7 +251,20 @@ fun HomeScreen(
     val monthSpendByCategory = remember(transactions) {
         accountViewModel.spendByCategory(transactions, today.y, today.m)
     }
-    val monthSpend = remember(monthSpendByCategory) { monthSpendByCategory.values.sum() }
+    // باگِ ۱۱: جمعِ ماه فقط از روی دسته‌ها جمع می‌شد و `spendByCategory` خرج‌های بدونِ
+    // دسته (`category` خالی - مثلِ پرداختِ تکراریِ بدونِ دسته) را جا می‌انداخت؛ هفته
+    // درست بود چون مستقیم از `netTx` می‌آمد. حالا خرجِ بدونِ دسته جدا جمع می‌شود و به
+    // جمعِ ماه اضافه می‌شود - هم‌قاعده با هفته و گزارش. برچسبش «سایر» است، همان که
+    // تبِ گزارش برای دسته‌ی خالی می‌گذارد.
+    val monthUncategorized = remember(netTx) {
+        netTx.filter {
+            it.type != "DEPOSIT" && it.year == today.y && it.month == today.m &&
+                it.category.isNullOrBlank() && ir.sadteam.loancalc.data.countsInReports(it)
+        }.sumOf { it.amount }
+    }
+    val monthSpend = remember(monthSpendByCategory, monthUncategorized) {
+        monthSpendByCategory.values.sum() + monthUncategorized
+    }
     val monthCap = remember(budgets) { budgets.sumOf { it.monthlyCap } }
 
     // پیش‌بینیِ «تا آخرِ ماه کم میاری» - رجوع کن به MonthForecast تو :core.
@@ -244,7 +283,10 @@ fun HomeScreen(
         ir.sadteam.loancalc.core.SmartInsights.compute(
             txs, today, ir.sadteam.loancalc.core.JalaliCalendar.daysInMonth(today.y, today.m),
             upcomingDues7d = upcoming7d,
-            totalBalance = if (accounts.isEmpty()) null else accounts.sumOf { accountViewModel.balanceOf(it, transactions) },
+            // باگِ ۲۸: جمع باید از اجزای گرد‌شده حساب شود، نه از مقادیرِ خام — مثلِ تبِ
+            // دارایی (AssetsTabScreen)؛ وگرنه ۱ تومان با آن فرق می‌کند (۸٬۱۱۷٬۸۴۲ در
+            // برابرِ ۸٬۱۱۷٬۸۴۳). گرد کردنِ خودِ جمع کافی نیست.
+            totalBalance = if (accounts.isEmpty()) null else accounts.sumOf { accountViewModel.balanceOf(it, transactions).roundedToDisplayUnitRial() },
             existingRecurringNames = recurringForInsights.map { it.name }.toSet(),
         )
     }
@@ -259,7 +301,8 @@ fun HomeScreen(
             spentSoFarRial = monthSpend,
             dayOfMonth = today.d,
             daysInMonth = JalaliCalendar.daysInMonth(today.y, today.m),
-            balanceRial = accounts.sumOf { accountViewModel.balanceOf(it, transactions) },
+            // باگِ ۲۸: همان قاعده‌ی بالا — هر حساب اول گرد شود، بعد جمع شود.
+            balanceRial = accounts.sumOf { accountViewModel.balanceOf(it, transactions).roundedToDisplayUnitRial() },
         )
     }
 
@@ -548,7 +591,9 @@ fun HomeScreen(
             if (!simple && monthSpend > 0.0) {
                 item {
                     CategoryBreakdownCard(
-                        byCategory = monthSpendByCategory,
+                        // باگِ ۱۱: خرجِ بدونِ دسته جدا از دسته‌ها می‌آید تا دونات/فهرست با
+                        // «جمع» بخواند؛ وگرنه ردیف‌ها کمتر از جمع نشان می‌دادند.
+                        byCategory = if (monthUncategorized > 0.0) monthSpendByCategory + ("سایر" to monthUncategorized) else monthSpendByCategory,
                         total = monthSpend,
                         privacyMode = privacyMode,
                         onClick = { onNavigateToRoute("report") },
@@ -643,7 +688,12 @@ fun HomeScreen(
         pickPayAccountFor?.let { due ->
             ir.sadteam.loancalc.ui.components.AccountPickerDialog(
                 accounts = accounts,
-                onSelect = { acc -> urgentDueViewModel.markPaid(due, acc.id); pickPayAccountFor = null },
+                onSelect = { acc ->
+                    pickPayAccountFor = null
+                    // باگِ ۸: بی‌سروصدا منفی نشود - کسری اول هشدار می‌خواهد.
+                    if (accountViewModel.balanceOf(acc, transactions) < due.amount) overdraftPayDue = due to acc
+                    else urgentDueViewModel.markPaid(due, acc.id)
+                },
                 onDismiss = { pickPayAccountFor = null },
             )
         }
@@ -659,6 +709,18 @@ fun HomeScreen(
                     confirmPayDue = null
                 },
                 onDismiss = { confirmPayDue = null },
+            )
+        }
+        // باگِ ۸ (مورد ۱۳B): هشدارِ کسریِ موجودی - همان متنِ صفحه‌ی وام: موجودی، مبلغِ
+        // قسط و مانده‌ی منفیِ بعد از پرداخت؛ فقط با تأییدِ صریح ثبت می‌شود.
+        overdraftPayDue?.let { (due, account) ->
+            val balance = accountViewModel.balanceOf(account, transactions)
+            ConfirmPayDialog(
+                title = "موجودیِ حساب کم است",
+                text = "موجودیِ «${account.name}» ${rialToToman(balance.toLong()).toFaMoney()} ${ir.sadteam.loancalc.ui.jibak.unitFa()} است، ولی مبلغِ این قسط ${rialToToman(due.amount.toLong()).toFaMoney()} ${ir.sadteam.loancalc.ui.jibak.unitFa()} است. با پرداخت، موجودی ${rialToToman((balance - due.amount).toLong()).toFaMoney()} ${ir.sadteam.loancalc.ui.jibak.unitFa()} می‌شود.",
+                onConfirm = { urgentDueViewModel.markPaid(due, account.id); overdraftPayDue = null },
+                onDismiss = { overdraftPayDue = null },
+                confirmLabel = "بله، با کسری پرداخت کن",
             )
         }
     }

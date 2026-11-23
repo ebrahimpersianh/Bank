@@ -66,6 +66,10 @@ class AuthRepository(
                 result.subscribedUntil,
                 result.subscriptionTier,
             )
+            // آخرین شماره‌ی واردشده را جدا از سشن نگه دار (رجوع کن به AuthPrefs.lastPhone):
+            // حتی بعد از خروج/پایانِ نشست، صفحه‌ی ورود باید بداند آخرین حساب کدام بود تا
+            // ورود به شماره‌ای دیگر بی‌هشدار رخ ندهد (باگِ تعویضِ بی‌صدای حساب، ۲۳ نوامبر ۲۰۲۶).
+            authPrefs.setLastPhone(result.phone)
             // شماره‌ی کاربری/نام از `/me` می‌آید؛ بی این، تا بازکردنِ دوباره‌ی اپ خالی می‌ماند.
             refreshSubscriptionStatus()
             AuthResult.Success

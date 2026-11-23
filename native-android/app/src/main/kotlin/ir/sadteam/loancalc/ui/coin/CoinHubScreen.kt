@@ -196,7 +196,13 @@ fun CoinHubScreen(
 
         Box(modifier = Modifier.fillMaxSize()) {
             if (onWallet) {
-                CoinWalletScreen(onBack = onBack, todayHasEntry = todayHasEntry, embedded = true)
+                CoinWalletScreen(
+                    onBack = onBack,
+                    todayHasEntry = todayHasEntry,
+                    embedded = true,
+                    // باگ ۲۲: ضربه روی کارتِ «هدفِ سکه»ی کیف، تبِ فروشگاه را باز می‌کند.
+                    onOpenShop = { onWallet = false },
+                )
             } else {
                 ShopScreen(onBack = onBack, embedded = true)
             }

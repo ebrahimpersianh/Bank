@@ -62,9 +62,6 @@ data class OverspentCategory(val name: String, val percent: Int)
 private const val EXPENSE = "WITHDRAWAL"
 private const val DEPOSIT = "DEPOSIT"
 
-/** «۷ ماهِ گذشته تا همین ماه» - همون تعدادی که نمودارِ هیرو نشون می‌ده. */
-private const val BAR_MONTHS = 7
-
 /**
  * قاعده‌ی کارتِ کشفِ دوم، عیناً از `design/ANSWERS-section-37.md` بندِ ۵:
  *
@@ -131,7 +128,10 @@ fun buildReportStats(
             expenses.filter { it.year == today.y && it.month == today.m && it.day == day }.sumOf { it.amount }
         }
     } else {
-        (BAR_MONTHS - 1 downTo 0).map { back ->
+        // باگ ۲۴: میله‌ها همیشه ۷ ماه بودند (`BAR_MONTHS`)، حتی در «فصل» (۳ ماه) - پس محور
+        // «خرداد — آذر» می‌خواند در حالی که عددِ بالای کارت مالِ ۳ ماه بود. حالا تعدادِ
+        // میله‌ها همان بازه‌ی انتخاب‌شده است: فصل ۳ میله، سال ۱۲ میله.
+        (period.months - 1 downTo 0).map { back ->
             val (y, m) = monthBack(today, back)
             expenses.filter { it.year == y && it.month == m }.sumOf { it.amount }
         }
@@ -193,7 +193,8 @@ fun buildReportStats(
         } else if (period == ReportPeriod.MONTH) {
             "${1.toFa()} ${persianMonthName(today.m)}"
         } else {
-            persianMonthName(monthBack(today, BAR_MONTHS - 1).second)
+            // باگ ۲۴: سرِ اولِ محور هم ۷ ماه عقب بود - حالا سرِ بازه‌ی واقعی است.
+            persianMonthName(monthBack(today, period.months - 1).second)
         },
         lastBarLabel = if (period == ReportPeriod.WEEK) {
             "امروز"

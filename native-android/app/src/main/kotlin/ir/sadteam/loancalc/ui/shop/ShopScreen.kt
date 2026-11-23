@@ -142,6 +142,15 @@ fun ShopScreen(
     // دیگر در نوارِ تب و یک جای دیگر برای گم‌شدن؛ قرص کنارِ همان نوار می‌نشیند و
     // **صفر پیکسل** ارتفاع می‌گیرد. پیش‌فرض خاموش است چون ویترین برای دیدنِ نداشته‌هاست.
     var onlyMine by rememberSaveable { mutableStateOf(false) }
+    // باگ ۲۹: دسته‌ی «جایزه» هیچ قلمی در کاتالوگ ندارد (`SHOP_CATALOG` قلمِ `REWARD` ندارد)،
+    // پس سرگروهِ «جایزه — به‌زودی» همیشه خالی می‌مانَد. تب و بخشش فقط وقتی دیده می‌شوند که
+    // قلمی باشد - همان قاعده‌ی «تازه رسیده‌ها» که بخشِ خالی را پنهان می‌کند.
+    val hasRewards = catalog.any {
+        it.kind.category == ShopCategory.REWARD && it.window == null &&
+            (!onlyMine || it.id in owned || active[ShopCategory.REWARD] == it.id)
+    }
+    // اگر «جایزه» خالی شد (کاتالوگ عوض شد)، تبِ انتخاب‌شده‌اش به «همه» برگردد تا صفحه خالی نماند.
+    LaunchedEffect(hasRewards) { if (!hasRewards && tab == ShopCategory.REWARD) tab = null }
     val banner = rememberInAppBanner()
     // کلیدِ جلالیِ امروز - مبنای «تازه‌رسیده». یک‌بار خوانده می‌شود؛ روزِ تقویم وسطِ
     // یک ترکیب عوض نمی‌شود.
@@ -260,7 +269,7 @@ fun ShopScreen(
         }
         stickyHeader {
             Box(modifier = Modifier.fillMaxWidth().background(AppBg).padding(vertical = 4.dp)) {
-                ShopTabs(tab, onlyMine, { tab = it; if (it == null) onlyMine = false }) { onlyMine = !onlyMine }
+                ShopTabs(tab, onlyMine, hasRewards, { tab = it; if (it == null) onlyMine = false }) { onlyMine = !onlyMine }
             }
         }
 
@@ -438,8 +447,11 @@ fun ShopScreen(
 
         if (tab == null || tab == ShopCategory.REWARD) {
             val rewards = rowsOf(ShopCategory.REWARD)
-            item { GroupHeader("جایزه", "به‌زودی") }
-            grid(rewards)
+            // باگ ۲۹: بخشِ خالی پنهان می‌شود تا وقتی قلمِ جایزه‌ای نیست.
+            if (rewards.isNotEmpty()) {
+                item { GroupHeader("جایزه", "به‌زودی") }
+                grid(rewards)
+            }
         }
     }
     }
@@ -580,6 +592,7 @@ private fun GroupHeader(title: String, trailing: String?) {
 private fun ShopTabs(
     selected: ShopCategory?,
     onlyMine: Boolean,
+    hasRewards: Boolean,
     onSelect: (ShopCategory?) -> Unit,
     onToggleMine: () -> Unit,
 ) {
@@ -593,7 +606,9 @@ private fun ShopTabs(
         TabChip("مجموعه من", onlyMine, Icons.Filled.Inventory2, onClick = onToggleMine)
         Spacer(modifier = Modifier.width(5.dp))
         TabChip("همه", selected == null && !onlyMine, Icons.Filled.GridView) { onSelect(null) }
-        ShopCategory.entries.forEach { category ->
+        // باگ ۲۹: چیپِ «جایزه» هم فقط وقتی هست که قلمی برای نمایش باشد - وگرنه تبِ خالی
+        // همان بن‌بستِ سرگروهِ خالی است.
+        ShopCategory.entries.filter { it != ShopCategory.REWARD || hasRewards }.forEach { category ->
             Spacer(modifier = Modifier.width(5.dp))
             TabChip(category.tab, selected == category, tabIcon(category)) { onSelect(category) }
         }

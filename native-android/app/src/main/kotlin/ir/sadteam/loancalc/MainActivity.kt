@@ -603,7 +603,9 @@ internal fun LoanCalcApp(
     // **انتخاب** جدا از **ترتیب** ذخیره می‌شه (فریمِ `53a`) - خالی یعنی کاربر هنوز چیزی
     // انتخاب نکرده، پس همون هشتِ پیش‌فرض می‌مونه، نه کشوی خالی.
     val savedShortcutSelection by shortcutViewModel.selection.collectAsState()
-    val shortcutDrawerOpenState = remember { mutableStateOf(false) }
+    // باگ ۱۴: `remember`ی ساده بود - بازسازیِ Activity (مثلاً چرخش یا کشته‌شدنِ برنامه)
+    // کشوی باز را «خودبه‌خود» می‌بست. `rememberSaveable` وضعیتش را نگه می‌دارد.
+    val shortcutDrawerOpenState = rememberSaveable { mutableStateOf(false) }
     var shortcutDrawerOpen by shortcutDrawerOpenState
     // ۱۴ مهر (خواسته‌ی کاربر): میان‌برهایی که فقط یک تبِ نوارِ پایین را باز می‌کردند («ثبتِ خرج»،
     // «گزارشِ ماه»، «انتقال»، «طلا»، «بودجه» و…) یک بار به «همه‌ی ابزارها» می‌روند و جایشان را
@@ -759,12 +761,11 @@ internal fun LoanCalcApp(
         if (currentRoute != LOAN_ROUTE) bottomBarVisible = true
     }
 
-    // تپ دوباره رو هر تبی که از قبل انتخابه باید به صفحه‌ی اصلیِ همون تب ریست کنه (قبلاً فقط «وام
-    // بانکی» این رفتار رو داشت؛ الان رو هر ۴ تب یکسانه) — چون launchSingleTop جلوی navigate دوباره
-    // به همون مقصد رو می‌گیره، این ریست از طریق یه کلیدِ جدا به‌ازای هر تب اعمال می‌شه (remount کامل
-    // یعنی هر state داخلیِ خودِ اسکرین - فرم‌های نیمه‌پرشده، جزئیاتِ بازشده‌ی یه وام، و... - به مقدارِ
-    // اولیه برمی‌گرده).
-    val tabResetKeys = remember { mutableStateMapOf<BottomTab, Int>() }
+    // باگ ۱۳ (بازبینیِ ۲ آذر — طراحیِ خودِ کاربر): ضربه روی تبِ فعلی یک مرحله عقب می‌رود
+    // (مثلِ دکمه‌ی برگشت)، نه تا ریشه. هر تب با `SideEffect` گزارش می‌کند لایه‌ی داخلیِ
+    // بازی دارد یا نه؛ `AppBottomBar` فقط وقتی لایه‌ای باز است برگشت را صدا می‌زند.
+    // تعویضِ تب حالتِ تبِ مقصد را نگه می‌دارد (طراحیِ `PersistentTabs`).
+    val tabBackStep = remember { mutableStateMapOf<BottomTab, Boolean>() }
 
     // مختصاتِ واقعیِ هر هدفِ تور رو صفحه (چهارتا تبِ نوارِ پایین + سه‌تا آیکونِ TopAppBar + دکمه‌ی
     // افزودنِ دستیِ MyLoansScreen) - برای اینکه AppTourOverlay بتونه دقیقاً دورِ المانِ واقعی یه
@@ -880,10 +881,20 @@ internal fun LoanCalcApp(
                     currentRoute = currentRoute,
                     navSlots = navSlots,
                     navigateTo = ::navigateTo,
-                    tabResetKeys = tabResetKeys,
+                    tabBackStep = tabBackStep,
                     tourBounds = tourBounds,
                     shortcutDrawerOpenState = shortcutDrawerOpenState,
                     bottomBarVisibleState = bottomBarVisibleState,
+                    // باگ ۱۳: ضربه روی تبِ پایین اورلی‌های سطحِ اپ (پیام‌ها، تنظیمات، جستجو،
+                    // همه‌ی تراکنش‌ها) و کشوی میان‌بر را هم می‌بندد - وگرنه تبِ «خانه» زیرِ
+                    // اورلی می‌مانَد و ضربه بی‌اثر به‌نظر می‌رسد.
+                    onTabTap = {
+                        showInbox = false
+                        showSettings = false
+                        showGlobalSearch = false
+                        showAllTransactions = false
+                        shortcutDrawerOpen = false
+                    },
                 )
             },
         ) { padding ->
@@ -909,7 +920,7 @@ internal fun LoanCalcApp(
                 navSuggestion = navSuggestion,
                 navigateTo = ::navigateTo,
                 goBack = ::goBack,
-                tabResetKeys = tabResetKeys,
+                tabBackStep = tabBackStep,
                 showSettingsState = showSettingsState,
                 showInboxState = showInboxState,
                 showGlobalSearchState = showGlobalSearchState,
@@ -949,7 +960,6 @@ internal fun LoanCalcApp(
                     navigateTo = ::navigateTo,
                     goBack = ::goBack,
                     deepLinkLoanId = deepLinkLoanId,
-                    tabResetKeys = tabResetKeys,
                     showSettingsState = showSettingsState,
                     showInboxState = showInboxState,
                     showGlobalSearchState = showGlobalSearchState,

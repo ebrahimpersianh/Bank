@@ -59,7 +59,8 @@ internal fun PersistentTabs(
     navSuggestion: ir.sadteam.loancalc.core.NavSuggestion.Result?,
     navigateTo: (String) -> Unit,
     goBack: () -> Unit,
-    tabResetKeys: androidx.compose.runtime.snapshots.SnapshotStateMap<BottomTab, Int>,
+    /** باگ ۱۳ (بازبینیِ ۲ آذر): هر تب گزارش می‌کند لایه‌ی داخلیِ بازی دارد یا نه. */
+    tabBackStep: androidx.compose.runtime.snapshots.SnapshotStateMap<BottomTab, Boolean>,
     showSettingsState: MutableState<Boolean>,
     showInboxState: MutableState<Boolean>,
     showGlobalSearchState: MutableState<Boolean>,
@@ -122,51 +123,52 @@ internal fun PersistentTabs(
                 ) {
                     CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides (if (active) (realOwner ?: dummyOwner) else dummyOwner)) {
                         holder.SaveableStateProvider(tab.route) {
-                            key(tabResetKeys[tab] ?: 0) {
-                                when (tab) {
-                                    BottomTab.HOME -> HomeScreen(
-                                        onNavigateToRoute = navigateTo,
-                                        onOpenSettings = { showSettings = true },
-                                        onOpenInbox = { showInbox = true },
-                                        onOpenSearch = { showGlobalSearch = true },
-                                        onOpenTransactions = { showAllTransactions = true },
-                                        onOpenLoan = { deepLinkViewModel.openLoan(it) },
-                                        // نوعِ صریح عمدیه: بدونش `let` لامبدا رو `() -> Unit`ِ ساده حساب می‌کنه.
-                                        navSuggestionSlot = navSuggestion?.let { suggestion ->
-                                            @Composable {
-                                                NavSuggestionCard(
-                                                    suggestion = suggestion,
-                                                    currentSlots = navSlots,
-                                                    onApply = { navSlotsViewModel.applySuggestion(suggestion) },
-                                                    onEdit = {
-                                                        navSlotsViewModel.snoozeSuggestion()
-                                                        shortcutDrawerOpen = true
-                                                    },
-                                                    onDismiss = { navSlotsViewModel.dismissSuggestion(suggestion) },
-                                                )
-                                            }
-                                        },
-                                    )
-                                    BottomTab.ASSETS -> AssetsTabScreen()
-                                    BottomTab.REPORT -> ReportTabScreen(
-                                        onOpenLoanStats = { navigateTo(LOAN_STATS_ROUTE) },
-                                        onOpenChequeReport = { navigateTo(CHEQUE_REPORT_ROUTE) },
-                                    )
-                                    BottomTab.BUDGET -> BudgetScreen()
-                                    BottomTab.DUE -> DueTabScreen(
-                                        onAddCheque = { navigateTo(CHEQUE_ROUTE) },
-                                        onAddLoan = { navigateTo(LOAN_ROUTE) },
-                                        onOpenCheque = { id ->
-                                            deepLinkViewModel.openCheque(id)
-                                            navigateTo(CHEQUE_ROUTE)
-                                        },
-                                        onOpenDebt = { id ->
-                                            deepLinkViewModel.openDebt(id)
-                                            navigateTo(DEBT_ROUTE)
-                                        },
-                                        onOpenLoan = { loanId -> deepLinkViewModel.openLoan(loanId) },
-                                    )
-                                }
+                            when (tab) {
+                                BottomTab.HOME -> HomeScreen(
+                                    onNavigateToRoute = navigateTo,
+                                    onOpenSettings = { showSettings = true },
+                                    onOpenInbox = { showInbox = true },
+                                    onOpenSearch = { showGlobalSearch = true },
+                                    onOpenTransactions = { showAllTransactions = true },
+                                    onOpenLoan = { deepLinkViewModel.openLoan(it) },
+                                    // نوعِ صریح عمدیه: بدونش `let` لامبدا رو `() -> Unit`ِ ساده حساب می‌کنه.
+                                    navSuggestionSlot = navSuggestion?.let { suggestion ->
+                                        @Composable {
+                                            NavSuggestionCard(
+                                                suggestion = suggestion,
+                                                currentSlots = navSlots,
+                                                onApply = { navSlotsViewModel.applySuggestion(suggestion) },
+                                                onEdit = {
+                                                    navSlotsViewModel.snoozeSuggestion()
+                                                    shortcutDrawerOpen = true
+                                                },
+                                                onDismiss = { navSlotsViewModel.dismissSuggestion(suggestion) },
+                                            )
+                                        }
+                                    },
+                                    onHasBackStepChange = { tabBackStep[BottomTab.HOME] = it },
+                                )
+                                BottomTab.ASSETS -> AssetsTabScreen(onHasBackStepChange = { tabBackStep[BottomTab.ASSETS] = it })
+                                BottomTab.REPORT -> ReportTabScreen(
+                                    onOpenLoanStats = { navigateTo(LOAN_STATS_ROUTE) },
+                                    onOpenChequeReport = { navigateTo(CHEQUE_REPORT_ROUTE) },
+                                    onHasBackStepChange = { tabBackStep[BottomTab.REPORT] = it },
+                                )
+                                BottomTab.BUDGET -> BudgetScreen()
+                                BottomTab.DUE -> DueTabScreen(
+                                    onAddCheque = { navigateTo(CHEQUE_ROUTE) },
+                                    onAddLoan = { navigateTo(LOAN_ROUTE) },
+                                    onOpenCheque = { id ->
+                                        deepLinkViewModel.openCheque(id)
+                                        navigateTo(CHEQUE_ROUTE)
+                                    },
+                                    onOpenDebt = { id ->
+                                        deepLinkViewModel.openDebt(id)
+                                        navigateTo(DEBT_ROUTE)
+                                    },
+                                    onOpenLoan = { loanId -> deepLinkViewModel.openLoan(loanId) },
+                                    onHasBackStepChange = { tabBackStep[BottomTab.DUE] = it },
+                                )
                             }
                         }
                     }

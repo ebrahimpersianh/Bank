@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,20 +94,24 @@ fun AddManualLoanScreen(
         // مبنای جدولِ اقساط است، وامِ تازه سررسیدهای گذشته می‌گرفت.
         editingLoan?.let { viewModel.getLoanStartDate(it) } ?: viewModel.todayJalali()
     }
-    var name by remember(editingLoan) { mutableStateOf(editingLoan?.name ?: "") }
-    var bank by remember(editingLoan) { mutableStateOf(editingLoan?.bank ?: "") }
+    // باگِ ۹: مثلِ فرمِ چک - مقدارهای تایپ‌شده با `remember`ِ ساده بودند و چرخشِ گوشی
+    // یا رفتنِ اپ به پس‌زمینه فرمِ نیمه‌پر را پاک می‌کرد. حالا همه‌ی فیلدها
+    // `rememberSaveable`اند؛ `error`/`saving`/`savedOk`/تقویم گذرا هستند و همان
+    // `remember` می‌مانند. (خطای درون‌خطی و دکمه‌ی مستقیمِ «ذخیره وام» از قبل این‌جا بود.)
+    var name by rememberSaveable(editingLoan) { mutableStateOf(editingLoan?.name ?: "") }
+    var bank by rememberSaveable(editingLoan) { mutableStateOf(editingLoan?.bank ?: "") }
     // فیلد **تومان**ه (بندِ ۲ی README): ذخیره ریال، نمایش و ورودی تومان. پس مقدارِ
     // پیش‌پرکرده‌ی حالتِ ویرایش هم باید از ریالِ دیتابیس به تومان برگرده.
-    var installmentText by remember(editingLoan) {
+    var installmentText by rememberSaveable(editingLoan) {
         mutableStateOf(
             editingLoan?.installment?.let { rialToToman(it.toLong()).toString() } ?: "",
         )
     }
-    var totalCountText by remember(editingLoan) { mutableStateOf(editingLoan?.n?.toString() ?: "") }
-    var paidCountText by remember { mutableStateOf("") }
-    var startYear by remember(editingLoan) { mutableIntStateOf(initialStartDate.y) }
-    var startMonth by remember(editingLoan) { mutableIntStateOf(initialStartDate.m) }
-    var startDay by remember(editingLoan) { mutableIntStateOf(initialStartDate.d) }
+    var totalCountText by rememberSaveable(editingLoan) { mutableStateOf(editingLoan?.n?.toString() ?: "") }
+    var paidCountText by rememberSaveable { mutableStateOf("") }
+    var startYear by rememberSaveable(editingLoan) { mutableIntStateOf(initialStartDate.y) }
+    var startMonth by rememberSaveable(editingLoan) { mutableIntStateOf(initialStartDate.m) }
+    var startDay by rememberSaveable(editingLoan) { mutableIntStateOf(initialStartDate.d) }
     var error by remember { mutableStateOf<String?>(null) }
     var showCalendarPicker by remember { mutableStateOf(false) }
     // موقعِ ذخیره (خصوصاً وقتی لاگین باشیم و پوشِ شبکه‌ای به سرور طول بکشه) دکمه هیچ نشونه‌ای نداشت -

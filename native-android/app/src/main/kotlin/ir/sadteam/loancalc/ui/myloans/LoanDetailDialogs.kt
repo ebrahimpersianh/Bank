@@ -221,7 +221,8 @@ internal fun LoanEditMetaDialog(
                     // اسم را دست نزده و فقط بانک را عوض کرده، اسمِ فهرست هم با بانکِ تازه هماهنگ شود.
                     val newBank = editMetaBank.trim()
                     val nameIsAuto = editMetaName.trim() == loan.name &&
-                        (loan.name == loan.bank || loan.name == "مشخص‌نشده")
+                        (loan.name == loan.bank || loan.name == "مشخص‌نشده" ||
+                            (loan.name.startsWith("وام ") && loan.name.endsWith("تومانی")))
                     val effectiveName = if (nameIsAuto && newBank.isNotEmpty()) newBank
                     else editMetaName.trim().ifEmpty { loan.name }
                     if (canEditComputedAmount) {
@@ -757,8 +758,11 @@ internal fun LoanDeletePaymentsDialog(
             confirmButton = {
                 TextButton(onClick = {
                     showDeletePaymentsAsk = false
-                    viewModel.deleteLoanPayments(loan.id)
-                    onDelete()
+                    // بازپرداخت + حذف در یک کوروتین انجام می‌شود و onDelete (حذف + ناوبری)
+                    // فقط بعد از تمام‌شدنِ آن صدا زده می‌شود — وگرنه حذفِ وام می‌توانست
+                    // زودتر برسد و بازپرداخت ماهِ پرداخت‌شده‌ای پیدا نکند (باگِ ۲۳ نوامبر
+                    // ۲۰۲۶). حذفِ دوباره‌ی وام در onDelete روی ردیفِ پاک‌شده بی‌اثر است.
+                    viewModel.deleteLoanWithRefund(loan) { onDelete() }
                 }) { Text("پاک شود") }
             },
             dismissButton = {

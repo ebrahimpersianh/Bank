@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
@@ -113,6 +114,14 @@ fun FinancialCalendarScreen(
         dueMap = viewModel.dueItemsByDate(loans)
     }
     val today = remember { JalaliCalendar.today() }
+
+    // تپ روی ردیفِ قبض → صفحه‌ی قبض‌ها (همان الگوی DueTabScreen).
+    var showBills by remember { mutableStateOf(false) }
+    if (showBills) {
+        androidx.activity.compose.BackHandler { showBills = false }
+        ir.sadteam.loancalc.ui.extras.BillsScreen(onBack = { showBills = false })
+        return
+    }
 
     var viewYear by remember { mutableIntStateOf(today.y) }
     var viewMonth by remember { mutableIntStateOf(today.m) }
@@ -332,6 +341,7 @@ fun FinancialCalendarScreen(
                                 // ردیفِ مستقلی ندارد، پس عمداً بی‌کنش می‌مانَد.
                                 val target: (() -> Unit)? = item.loanId?.let { id -> { onOpenLoan(id) } }
                                     ?: item.chequeId?.let { id -> { onOpenCheque(id) } }
+                                    ?: item.billId?.let { { showBills = true } }
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -356,11 +366,13 @@ fun FinancialCalendarScreen(
                                                 DueKind.INSTALLMENT -> Icons.Filled.AccountBalance
                                                 DueKind.CHEQUE -> Icons.Filled.ReceiptLong
                                                 DueKind.RECURRING -> Icons.Filled.Repeat
+                                                DueKind.BILL -> Icons.Filled.Receipt
                                             },
                                             contentDescription = when (item.kind) {
                                                 DueKind.INSTALLMENT -> "قسط"
                                                 DueKind.CHEQUE -> "چک"
                                                 DueKind.RECURRING -> "پرداخت تکراری"
+                                                DueKind.BILL -> "قبض"
                                             },
                                             tint = AppPrimaryInk,
                                             modifier = Modifier.size(14.dp),

@@ -72,7 +72,11 @@ fun CompactTransactionRow(
     onDang: (() -> Unit)? = null,
 ) {
     val isIn = tx.type == TransactionType.DEPOSIT.name
-    val ink = if (isIn) AppTxIn else AppTxOut
+    // واریز به هدفِ پس‌انداز (باگ ۱۸) با `sourceType="goal"` و نوعِ `WITHDRAWAL` ثبت می‌شود
+    // (پول واقعاً از حساب خارج شده)، ولی برای کاربر «ورودی» است نه خرج: رنگش سبز می‌شود.
+    // علامتِ مبلغ عمداً منفی می‌مانَد - فقط رنگ (و پس‌زمینه‌ی آیکون) عوض می‌شود.
+    val isGoalDeposit = tx.sourceType == "goal" && tx.type == TransactionType.WITHDRAWAL.name
+    val ink = if (isIn || isGoalDeposit) AppTxIn else AppTxOut
     val privacyMode = LocalPrivacyMode.current
     // «دستی» صریح نوشته می‌شود، نه با خالی‌گذاشتنِ منبع (قاعده‌ی ۳): خطِ خالی یعنی «نمی‌دانم».
     // ⚠️ در یک `val` محلی خوانده می‌شود: `originLabel` پراپرتیِ ماژولِ `:data` است و کاتلین
@@ -88,7 +92,7 @@ fun CompactTransactionRow(
     // خانه‌ی آیکونِ ثبتِ دستی خنثی است - رنگِ جهت را فقط خودکارها می‌گیرند.
     val iconBg = when {
         originLabel == null -> AppChipBg
-        isIn -> AppPrimaryPill
+        isIn || isGoalDeposit -> AppPrimaryPill
         else -> AppDangerPill
     }
     val iconTint = if (originLabel == null) AppMuted else ink

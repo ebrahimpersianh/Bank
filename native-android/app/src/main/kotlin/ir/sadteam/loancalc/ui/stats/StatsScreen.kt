@@ -134,9 +134,12 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
         if (uri != null) {
             scope.launch(Dispatchers.IO) {
                 val ok = runCatching {
-                    context.contentResolver.openOutputStream(uri)?.use { out ->
-                        StatsXlsxExporter.export(summary, loans, out)
-                    }
+                    // `openOutputStream` اگر null برگرداند، `?.use` بی‌صدا رد می‌شد و runCatching
+                    // «موفق» گزارش می‌داد — یعنی «اکسل ذخیره شد» در حالی که فایل ۰ بایت است
+                    // (باگِ ۳). null حالا شکست حساب می‌شود تا بنرِ خطا بیاید.
+                    val out = context.contentResolver.openOutputStream(uri)
+                        ?: throw IllegalStateException("openOutputStream returned null")
+                    out.use { StatsXlsxExporter.export(summary, loans, it) }
                 }.isSuccess
                 withContext(Dispatchers.Main) {
                     val message = if (ok) "اکسل ذخیره شد" else "ذخیره‌ی اکسل ناموفق بود"

@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.BillEntity
@@ -107,6 +108,32 @@ fun BillEntity.createdAfterDueIn(y: Int, m: Int): Boolean {
 /** دسترسیِ بی‌ایمپورت به [isDueSoon] از فایل‌های دیگر. */
 object BillsDue {
     fun BillEntity.dueSoon(y: Int, m: Int, d: Int) = isDueSoon(y, m, d)
+}
+
+/**
+ * موعدِ بعدیِ قبض از امروز به بعد - برای تبِ سررسید و تقویمِ مالی.
+ *
+ * - اگر موعدِ این ماه هنوز نرسیده یا گذشته و پرداخت نشده، همان ماهِ جاری (گذشته = عقب‌افتاده)؛
+ * - اگر این ماه پرداخت شده، ماهِ دوره‌ی بعد؛
+ * - ماه‌های دوره از فروردین می‌شمارند: `(m - 1) % periodMonths == 0` - همان قاعده‌ی [isDueSoon]؛
+ * - قبضی که بعد از موعدِ ماهِ ساختش ساخته شده، موعدِ اولش دوره‌ی بعد است ([createdAfterDueIn]).
+ */
+fun BillEntity.nextDueDate(today: PersianDate): PersianDate {
+    val period = periodMonths.coerceAtLeast(1)
+    var y = today.y
+    var m = today.m
+    repeat(13) {
+        val dueMonth = (m - 1) % period == 0
+        if (dueMonth && lastPaidKey != "$y-$m" && !createdAfterDueIn(y, m)) {
+            return PersianDate(y, m, dueDay.coerceIn(1, JalaliCalendar.daysInMonth(y, m)))
+        }
+        m += 1
+        if (m > 12) {
+            m = 1
+            y += 1
+        }
+    }
+    return PersianDate(y, m, dueDay.coerceIn(1, JalaliCalendar.daysInMonth(y, m)))
 }
 
 /** فهرست و افزودنِ قبض‌ها (برگرفته از پولکس، ۶ مهر). */

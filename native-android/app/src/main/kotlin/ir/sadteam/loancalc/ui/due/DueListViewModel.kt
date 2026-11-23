@@ -9,7 +9,10 @@ import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.DebtRepository
 import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.db.BillDao
 import ir.sadteam.loancalc.data.db.LoanEntity
+import ir.sadteam.loancalc.ui.extras.billKindLabel
+import ir.sadteam.loancalc.ui.extras.nextDueDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,6 +35,7 @@ class DueListViewModel @Inject constructor(
     private val chequeRepository: ChequeRepository,
     private val debtRepository: DebtRepository,
     private val accountRepository: AccountRepository,
+    private val billDao: BillDao,
 ) : ViewModel() {
 
     /**
@@ -43,6 +47,7 @@ class DueListViewModel @Inject constructor(
         CHEQUE("چک"),
         RECURRING("تکراری"),
         DEBT("قرض"),
+        BILL("قبض"),
     }
 
     /** یه ردیفِ سررسید، مستقل از اینکه قسطه یا چک یا بدهی. */
@@ -61,6 +66,8 @@ class DueListViewModel @Inject constructor(
         val chequeId: Long? = null,
         /** فقط برای طلب‌وبدهی. */
         val debtId: Long? = null,
+        /** فقط برای قبض - تپِ ردیف صفحه‌ی قبض‌ها را باز می‌کند. */
+        val billId: Long? = null,
         val kind: DueSource = DueSource.LOAN,
         /** `true` = پولی که قرار است **به تو برسد** (چکِ دریافتی، طلب) - در جمعِ «باید بدهی» حساب نمی‌شود. */
         val incoming: Boolean = false,
@@ -132,7 +139,8 @@ class DueListViewModel @Inject constructor(
                 debtRepository.observeDebts(),
                 accountRepository.observeRecurringPayments(),
                 accountRepository.observeTransactions(),
-            ) { _, _, _, _, _ -> Unit }
+                billDao.observeAll(),
+            ) { _, _, _, _, _, _ -> Unit }
                 .debounce(250)
                 .collect { refresh() }
         }
@@ -146,8 +154,10 @@ class DueListViewModel @Inject constructor(
             val debtRows = loadDebts(today)
             _debts.value = bucket(debtRows)
             // فقط چیزی که کاربر **باید بدهد**: قسط، چکِ پرداختنی، پرداختِ تکراری، و قرضی
-            // که خودش گرفته.
-            val unified = (loadInstallments(today) + loadCheques(today) + loadRecurring(today) + debtRows)
+            // که خودش گرفته - و قبض (موعدِ بعدی‌اش از [nextDueDate]؛ مثلِ پرداختِ
+            // تکراری، `paid` همیشه `false` است چون موعدِ نمایش‌داده‌شده همیشه موعدِ
+            // پرداخت‌نشده‌ی بعدی است).
+            val unified = (loadInstallments(today) + loadCheques(today) + loadRecurring(today) + debtRows + loadBills(today))
                 .filter { !it.paid }
             _all.value = DueList(
                 // مرزها روزِ شمسی‌اند نه ۲۴ ساعت: «امروز» یعنی `daysOverdue == 0` و در
@@ -277,6 +287,28 @@ class DueListViewModel @Inject constructor(
                     subtitle = "پرداختِ تکراری",
                 )
             }
+
+    /**
+     * قبض‌ها سررسیدِ ذخیره‌شده ندارند، فقط **روزِ موعد** + دوره - پس موعدِ بعدیِ هر قبض
+     * از [nextDueDate] می‌آید. مبلغ = آخرین مبلغِ ثبت‌شده (۰ اگر هنوز هیچ پرداختی
+     * ثبت نشده - همان چیزی که کارتِ قبض هم نشان می‌دهد: خانه‌ی بی‌مقدار).
+     */
+    private suspend fun loadBills(today: PersianDate): List<DueRow> =
+        billDao.getAll().map { bill ->
+            val due = bill.nextDueDate(today)
+            val kindLabel = billKindLabel(bill.kind)
+            DueRow(
+                id = "bill-${bill.id}",
+                title = if (bill.name.isBlank() || bill.name.trim() == kindLabel) "قبضِ $kindLabel" else "قبضِ $kindLabel · ${bill.name}",
+                amount = bill.lastAmount,
+                daysOverdue = JalaliCalendar.daysBetween(due, today),
+                date = due,
+                paid = false,
+                billId = bill.id,
+                kind = DueSource.BILL,
+                subtitle = "قبض",
+            )
+        }
 
     /**
      * تقسیم به سه گروهِ فریم.

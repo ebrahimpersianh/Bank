@@ -311,7 +311,12 @@ class MyLoansViewModel @Inject constructor(
         ir.sadteam.loancalc.data.UsageStats.action("loan_saved_from_calc")
         launchDb(onFailure) {
             val r = outcome.result
-            val loanName = outcome.borrower.takeIf { it != "—" && it.isNotBlank() } ?: outcome.bankName
+            // نامِ خودکارِ وامِ بی‌نام: اول وام‌گیرنده، بعد بانک، و اگر هیچ‌کدام نبود مبلغِ
+            // فرمت‌شده (باگِ ۲۶: قبلاً «وام 10000000»ِ خام می‌ساخت). «مشخص‌نشده» نامِ
+            // واقعیِ بانک نیست و نباید به‌عنوان نامِ وام بنشیند.
+            val loanName = outcome.borrower.takeIf { it != "—" && it.isNotBlank() }
+                ?: outcome.bankName.takeIf { it.isNotBlank() && it != "مشخص‌نشده" }
+                ?: "وام ${amountToman(r.principal)} تومانی"
             loanRepository.saveComputedLoan(
                 name = loanName,
                 bank = outcome.bankName,
@@ -338,9 +343,33 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
-    /** پاک‌کردنِ تراکنش‌های پرداختِ قسط‌های یک وام (قبل از حذفِ خودِ وام). */
-    fun deleteLoanPayments(id: Long) {
-        viewModelScope.launch { accountRepository.removeLinkedPaymentsByPrefix("loan", "$id:") }
+    /**
+     * حذفِ وام **همراه با بازپرداختِ قسط‌های پرداخت‌شده‌اش** — یک کارِ واحد در یک کوروتین،
+     * نه دو فراخوانِ جدا (باگِ ۲۳ نوامبر ۲۰۲۶).
+     *
+     * دو دلیل برای یکی‌کردنشان: (۱) بازپرداخت فقط باید تراکنش‌های **همین** وام را بزند —
+     * [ir.sadteam.loancalc.data.AccountRepository.removeLoanPayments] با تجزیه‌ی دقیقِ
+     * شناسه‌ی پیوند (`"<loanId>:<m1,m2,...>"`) و تطابقِ دقیقِ شناسه‌ی وام، نه پیشوندِ
+     * رشته‌ای؛ رسیدِ طلب/بدهی یا وامِ دیگر هیچ‌وقت جور نمی‌شود. (۲) قبلاً بازپرداخت و
+     * حذفِ وام دو کوروتینِ جدا بودند و اگر حذف زودتر می‌رسید، ردیف‌های قسط پاک شده
+     * بودند و بازپرداخت ماهِ پرداخت‌شده‌ای پیدا نمی‌کرد — یعنی پول برنمی‌گشت. حالا
+     * اول ماه‌های پرداخت‌شده خوانده می‌شوند، بعد بازپرداخت، بعد حذفِ وام، بعد سینک.
+     *
+     * [onDone] بعد از تمام‌شدنِ همه‌ی این‌ها صدا زده می‌شود (ناوبری/بستنِ صفحه)؛
+     * فراخواننده نباید حذفِ وام را جداگانه هم صدا بزند — اگر بزند، حذفِ دوم روی ردیفِ
+     * از قبل پاک‌شده بی‌اثر است (idempotent).
+     */
+    fun deleteLoanWithRefund(loan: LoanEntity, onDone: () -> Unit = {}) {
+        launchDb {
+            val paidMonths = loanRepository.getRows(loan)
+                .filter { it["paid"] == true }
+                .mapNotNull { (it["m"] as? Number)?.toInt() }
+                .toSet()
+            accountRepository.removeLoanPayments(loan.id, paidMonths)
+            loanRepository.deleteLoan(loan.id)
+            syncIfLoggedIn()
+            onDone()
+        }
     }
 
     fun deleteLoan(id: Long) {

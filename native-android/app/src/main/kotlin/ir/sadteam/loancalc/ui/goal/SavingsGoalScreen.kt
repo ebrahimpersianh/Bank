@@ -105,7 +105,11 @@ fun SavingsGoalScreen(
     var contributeTo by remember { mutableStateOf<SavingsGoalEntity?>(null) }
     var pendingGoalMoney by remember { mutableStateOf<Triple<SavingsGoalEntity, Double, Int>?>(null) }
     val accounts by viewModel.accounts.collectAsState()
+    val transactions by viewModel.transactions.collectAsState()
     var pendingDelete by remember { mutableStateOf<SavingsGoalEntity?>(null) }
+    // هشدارِ کسریِ موجودیِ واریز به هدف (باگِ ۸، هم‌الگو با موردِ ۱۳B در صفحه‌ی وام):
+    // (حساب، هدف، مبلغِ واریز) — فقط وقتی واریز (delta مثبت) موجودی را منفی می‌کند پر می‌شود.
+    var overdraftGoal by remember { mutableStateOf<Triple<ir.sadteam.loancalc.data.db.AccountEntity, SavingsGoalEntity, Double>?>(null) }
 
     val totalTarget = goals.sumOf { it.targetRial }
     val totalSaved = goals.sumOf { it.savedRial }
@@ -241,9 +245,30 @@ fun SavingsGoalScreen(
         ir.sadteam.loancalc.ui.components.AccountPickerDialog(
             accounts = accounts,
             title = if (delta >= 0) "این پول از کدام حساب کم شود؟ (بستن = فقط در هدف ثبت بماند)" else "این پول به کدام حساب برگردد؟ (بستن = فقط از هدف کم شود)",
-            onSelect = { acc -> viewModel.recordGoalMoney(acc.id, goal.id, goal.title, delta); pendingGoalMoney = null },
+            onSelect = { acc ->
+                pendingGoalMoney = null
+                // واریز (delta مثبت) از حساب کم می‌کند — اگر موجودی نرسد، اول تایید بگیر.
+                // برداشت از هدف (delta منفی) به حساب برمی‌گردد و هشداری ندارد.
+                if (delta >= 0 && viewModel.balanceOf(acc, transactions) < delta) {
+                    overdraftGoal = Triple(acc, goal, delta)
+                } else {
+                    viewModel.recordGoalMoney(acc.id, goal.id, goal.title, delta)
+                }
+            },
             onDismiss = { pendingGoalMoney = null },
             dismissHint = "حساب را انتخاب نکردی؛ فقط در هدف ثبت شد و از موجودی حساب کم نشد.",
+        )
+    }
+
+    // دیالوگِ تاییدِ پرداخت با کسری (باگِ ۸، هم‌الگو با موردِ ۱۳B در صفحه‌ی وام).
+    overdraftGoal?.let { (acc, goal, delta) ->
+        val balance = viewModel.balanceOf(acc, transactions)
+        ir.sadteam.loancalc.ui.components.ConfirmPayDialog(
+            title = "موجودیِ حساب کم است",
+            text = "موجودیِ «${acc.name}» ${amountToman(balance)} ${ir.sadteam.loancalc.ui.jibak.unitFa()} است، ولی مبلغِ این واریز ${amountToman(delta)} ${ir.sadteam.loancalc.ui.jibak.unitFa()} است. با پرداخت، موجودی ${amountToman(balance - delta)} ${ir.sadteam.loancalc.ui.jibak.unitFa()} می‌شود.",
+            onConfirm = { viewModel.recordGoalMoney(acc.id, goal.id, goal.title, delta); overdraftGoal = null },
+            onDismiss = { overdraftGoal = null },
+            confirmLabel = "بله، با کسری پرداخت کن",
         )
     }
 

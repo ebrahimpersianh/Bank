@@ -65,19 +65,26 @@ import ir.sadteam.loancalc.ui.archive.AnnualArchiveScreen
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import androidx.compose.runtime.MutableState
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 
 @Composable
 internal fun AppBottomBar(
     currentRoute: String,
     navSlots: List<NavDestination>,
     navigateTo: (String) -> Unit,
-    tabResetKeys: androidx.compose.runtime.snapshots.SnapshotStateMap<BottomTab, Int>,
+    /** باگ ۱۳ (بازبینیِ ۲ آذر): هر تب گزارش می‌کند لایه‌ی داخلیِ بازی دارد یا نه. */
+    tabBackStep: androidx.compose.runtime.snapshots.SnapshotStateMap<BottomTab, Boolean>,
     tourBounds: androidx.compose.runtime.snapshots.SnapshotStateMap<TourTarget, androidx.compose.ui.geometry.Rect>,
     shortcutDrawerOpenState: MutableState<Boolean>,
     bottomBarVisibleState: MutableState<Boolean>,
+    /** باگ ۱۳: هر ضربه روی تبِ پایین اورلی‌های سطحِ اپ را می‌بندد (از `MainActivity`). */
+    onTabTap: () -> Unit = {},
 ) {
     var shortcutDrawerOpen by shortcutDrawerOpenState
     var bottomBarVisible by bottomBarVisibleState
+    /** باگ ۱۳ (بازبینیِ ۲ آذر): ضربه روی تبِ فعلی یک مرحله عقب می‌رود — همان زنجیره‌ی
+     * دکمه‌ی برگشتِ سیستم را صدا می‌زنیم (لایه‌ی داخلیِ تب اول بسته می‌شود). */
+    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
                 AnimatedVisibility(
                     visible = bottomBarVisible,
                     enter = slideInVertically(tween(220)) { it } + expandVertically(tween(220)),
@@ -116,11 +123,19 @@ internal fun AppBottomBar(
                                 onPositioned = { rect -> registerTabTourBounds(dest.route, rect, tourBounds) },
                                 onLongClick = { shortcutDrawerOpen = true },
                                 onClick = {
-                                    val tab = BottomTab.entries.firstOrNull { it.route == dest.route }
-                                    if (dest.route == currentRoute) {
-                                        if (tab != null) tabResetKeys[tab] = (tabResetKeys[tab] ?: 0) + 1
-                                    } else {
+                                    // باگ ۱۳ (بازبینیِ ۲ آذر — طراحیِ خودِ کاربر): ضربه روی تبِ
+                                    // فعلی یک مرحله عقب می‌رود (مثلِ دکمه‌ی برگشت)، نه تا ریشه؛
+                                    // ضربه‌های پی‌درپی مرحله‌به‌مرحله تا ریشه برمی‌گردند و آن‌جا
+                                    // دیگر هیچ نمی‌کنند. تعویضِ تب حالتِ تبِ مقصد را نگه می‌دارد
+                                    // (طراحیِ `PersistentTabs` — جای اسکرول و state می‌مانَد).
+                                    onTabTap()
+                                    if (dest.route != currentRoute) {
                                         navigateTo(dest.route)
+                                    } else {
+                                        val tab = BottomTab.entries.firstOrNull { it.route == dest.route }
+                                        if (tab != null && (tabBackStep[tab] == true)) {
+                                            backDispatcher?.onBackPressed()
+                                        }
                                     }
                                 },
                             )
@@ -149,7 +164,6 @@ internal fun NavGraphBuilder.appRoutes(
     navigateTo: (String) -> Unit,
     goBack: () -> Unit,
     deepLinkLoanId: Long?,
-    tabResetKeys: androidx.compose.runtime.snapshots.SnapshotStateMap<BottomTab, Int>,
     showSettingsState: MutableState<Boolean>,
     showInboxState: MutableState<Boolean>,
     showGlobalSearchState: MutableState<Boolean>,

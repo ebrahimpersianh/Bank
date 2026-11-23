@@ -135,6 +135,17 @@ fun BudgetTabScreen(
     }
     // ویرایش/حذفِ بودجه‌ی یک دسته: روی هر ردیفِ دسته بزن (۱۵ مهر).
     var editingRow by remember { mutableStateOf<BudgetRowData?>(null) }
+    // حذفِ بودجه با دیالوگِ تایید - قبلاً دکمه‌ی «حذفِ بودجه» در همین برگه مستقیم حذف
+    // می‌کرد (همان الگوی ConfirmDeleteDialog که در بقیه‌ی برنامه هست).
+    var deletingBudget by remember { mutableStateOf<ir.sadteam.loancalc.data.db.BudgetEntity?>(null) }
+    deletingBudget?.let { b ->
+        ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog(
+            title = "حذفِ بودجه",
+            text = "سقفِ بودجه‌ی «${b.categoryName}» برداشته شود؟ تراکنش‌ها دست نمی‌خورند.",
+            onConfirm = { viewModel.deleteBudget(b); deletingBudget = null },
+            onDismiss = { deletingBudget = null },
+        )
+    }
     editingRow?.let { r ->
         val entity = budgets.firstOrNull { it.categoryName == r.category.name }
         var capText by remember(r) { mutableStateOf((r.cap / ir.sadteam.loancalc.ui.jibak.unitDiv).toLong().toString()) }
@@ -153,7 +164,7 @@ fun BudgetTabScreen(
             secondaryLabel = "حذفِ بودجه",
             secondaryColor = ir.sadteam.loancalc.ui.theme.AppDanger,
             onSecondary = {
-                entity?.let { viewModel.deleteBudget(it) }
+                deletingBudget = entity
                 editingRow = null
             },
         ) {
@@ -361,6 +372,9 @@ fun BudgetTabScreen(
             // ۱۴ مهر: سه کاشیِ ناهم‌اندازه → یک کارت با سه ردیفِ مرتب (همه‌ی درها سرِ جایشان).
             item {
                 val dueSoon = bills.count { it.isDueSoon(today.y, today.m, today.d) }
+                // «همه پرداخت شده» فقط وقتی درست است که قبضی هست و همه‌شان این ماه پرداخت
+                // شده‌اند - قبلاً برای هر قبضِ «در انتظار» هم همین نوشته می‌شد.
+                val pendingBills = bills.count { it.lastPaidKey != "${today.y}-${today.m}" }
                 ir.sadteam.loancalc.ui.components.AppCard {
                     BudgetToolRow(
                         icon = Icons.Filled.ReceiptLong,
@@ -368,6 +382,7 @@ fun BudgetTabScreen(
                         subtitle = when {
                             bills.isEmpty() -> "آب، برق، گاز، موبایل…"
                             dueSoon > 0 -> "${toFa(dueSoon)} قبض نزدیکِ موعد"
+                            pendingBills > 0 -> "${toFa(pendingBills)} قبض در انتظار"
                             else -> "${toFa(bills.size)} قبض · همه پرداخت شده"
                         },
                         onClick = { showBills = true },

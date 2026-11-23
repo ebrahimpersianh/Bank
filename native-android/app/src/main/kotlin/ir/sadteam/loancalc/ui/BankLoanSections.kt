@@ -14,15 +14,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -31,10 +33,12 @@ import androidx.compose.material3.SwitchDefaults
 import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,9 +62,13 @@ import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankTile
 import ir.sadteam.loancalc.ui.components.BankTileShimmer
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.components.lazyRowScrollbar
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.auth.AuthViewModel
+import ir.sadteam.loancalc.ui.auth.GateState
+import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -468,6 +476,10 @@ internal fun BankLoanActionsSection(
     graceOnState: MutableState<Boolean>,
     graceMonthsState: MutableState<Float>,
     formErrorState: MutableState<String?>,
+    // باگِ ۲۷: وضعیتِ ذخیره‌ی مستقیم از فرم (رجوع کن به BankLoanScreen).
+    directSavedState: MutableState<Boolean>,
+    directSaveMessageState: MutableState<String?>,
+    directSavingState: MutableState<Boolean>,
 ) {
     var borrowerName by borrowerNameState
     var rateSource by rateSourceState
@@ -482,9 +494,61 @@ internal fun BankLoanActionsSection(
     var graceOn by graceOnState
     var graceMonths by graceMonthsState
     var formError by formErrorState
+    var directSaved by directSavedState
+    var directSaveMessage by directSaveMessageState
+    var directSaving by directSavingState
+    // باگِ ۲۷: همان گیتِ «۱ وام رایگان»ِ صفحه‌ی نتیجه (ResultSaveSection) - بی آن،
+    // ذخیره‌ی مستقیم سقفِ رایگان را دور می‌زد. خودِ ViewModelها فقط خوانده می‌شوند،
+    // نه ویرایش (MyLoansViewModel و AuthViewModel مالِ هماهنگ‌کننده‌اند).
+    val myLoansViewModel: MyLoansViewModel = hiltViewModel()
+    val authViewModel: AuthViewModel = hiltViewModel()
+    val savedLoans by myLoansViewModel.loans.collectAsState()
+    val gateState by authViewModel.gateState.collectAsState()
+    val subscribed by authViewModel.subscribed.collectAsState()
+    val canSaveAnotherLoan = savedLoans.isEmpty() || (gateState == GateState.LOGGED_IN && subscribed)
+    val ratePromptViewModel: ir.sadteam.loancalc.ui.rating.RatePromptViewModel = hiltViewModel()
             val tomanAmount = cleanNum(amountText).toLongOrNull() ?: 0L
             val n = customMonthsText.toIntOrNull() ?: selectedMonths
             val rate = rateText.toDoubleOrNull() ?: 0.0
+            // باگِ ۲۷: ساختِ نتیجه یک‌جاست تا دکمه‌ی «جدول» و دکمه‌ی «ذخیره وام» همان
+            // اعتبارسنجی و همان محاسبه را ببینند؛ `null` یعنی خطا (متنش در `formError`).
+            fun buildOutcome(): BankLoanOutcome? {
+                // قبلاً `return@GradientButton`ِ خالی بود: تپ روی فیلدِ خالی بی هیچ نشونه‌ای
+                // هیچ‌کاری نمی‌کرد و کاربر فکر می‌کرد دکمه خرابه.
+                if (tomanAmount <= 0) {
+                    formError = "مبلغِ وام را وارد کن"
+                    return null
+                }
+                if (n <= 0) {
+                    formError = "تعدادِ اقساط باید بیشتر از صفر باشد"
+                    return null
+                }
+                // 🚨 روشِ قرض‌الحسنه قسطِ اولِ هر سال را کاملاً کارمزدی می‌گیرد، پس با یک قسط
+                // هیچ قسطی برای اصلِ وام نمی‌مانَد و محاسبه تقسیم بر صفر می‌شد (کرش).
+                // ⚠️ نرخِ **صفر** هم عمداً از این مسیر بیرون رفت: خریدِ اقساطیِ بدونِ سود
+                // (مثلِ پیش‌تنظیمِ چهارقسطی) باید اصل را بینِ همه‌ی اقساط مساوی تقسیم کند،
+                // نه اینکه قسطِ اولش صفر شود - و مسیرِ STANDARD در نرخِ صفر دقیقاً همین است.
+                if (rate in 0.0..4.0 && rate > 0.0 && n == 1) {
+                    formError = "وامِ قرض‌الحسنه با یک قسط قابلِ محاسبه نیست"
+                    return null
+                }
+                formError = null
+                val method = if (rate > 0.0 && rate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD
+                val grace = if (graceOn) graceMonths.toInt() else 0
+                // ورودی تومانه و موتورِ محاسبه ریال - تبدیل فقط همین یک نقطه.
+                val rialAmount = tomanToRial(tomanAmount)
+                val result = LoanCalculator.compute(rialAmount.toDouble(), rate, n, method, grace, intervalDays)
+                return BankLoanOutcome(
+                    result = result,
+                    startDate = PersianDate(startYear, startMonth, startDay),
+                    ratePct = rate,
+                    n = n,
+                    method = method,
+                    borrower = borrowerName.ifBlank { "—" },
+                    bankName = selectedBank?.name ?: "مشخص‌نشده",
+                    rateSourceLabel = rateSource.label,
+                )
+            }
             formError?.let {
                 Text(
                     it,
@@ -497,43 +561,8 @@ internal fun BankLoanActionsSection(
             }
             GradientButton(
                 onClick = {
-                    // قبلاً `return@GradientButton`ِ خالی بود: تپ روی فیلدِ خالی بی هیچ نشونه‌ای
-                    // هیچ‌کاری نمی‌کرد و کاربر فکر می‌کرد دکمه خرابه.
-                    if (tomanAmount <= 0) {
-                        formError = "مبلغِ وام را وارد کن"
-                        return@GradientButton
-                    }
-                    if (n <= 0) {
-                        formError = "تعدادِ اقساط باید بیشتر از صفر باشد"
-                        return@GradientButton
-                    }
-                    // 🚨 روشِ قرض‌الحسنه قسطِ اولِ هر سال را کاملاً کارمزدی می‌گیرد، پس با یک قسط
-                    // هیچ قسطی برای اصلِ وام نمی‌مانَد و محاسبه تقسیم بر صفر می‌شد (کرش).
-                    // ⚠️ نرخِ **صفر** هم عمداً از این مسیر بیرون رفت: خریدِ اقساطیِ بدونِ سود
-                    // (مثلِ پیش‌تنظیمِ چهارقسطی) باید اصل را بینِ همه‌ی اقساط مساوی تقسیم کند،
-                    // نه اینکه قسطِ اولش صفر شود - و مسیرِ STANDARD در نرخِ صفر دقیقاً همین است.
-                    if (rate in 0.0..4.0 && rate > 0.0 && n == 1) {
-                        formError = "وامِ قرض‌الحسنه با یک قسط قابلِ محاسبه نیست"
-                        return@GradientButton
-                    }
-                    formError = null
-                    val method = if (rate > 0.0 && rate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD
-                    val grace = if (graceOn) graceMonths.toInt() else 0
-                    // ورودی تومانه و موتورِ محاسبه ریال - تبدیل فقط همین یک نقطه.
-                    val rialAmount = tomanToRial(tomanAmount)
-                    val result = LoanCalculator.compute(rialAmount.toDouble(), rate, n, method, grace, intervalDays)
-                    onCalculated(
-                        BankLoanOutcome(
-                            result = result,
-                            startDate = PersianDate(startYear, startMonth, startDay),
-                            ratePct = rate,
-                            n = n,
-                            method = method,
-                            borrower = borrowerName.ifBlank { "—" },
-                            bankName = selectedBank?.name ?: "مشخص‌نشده",
-                            rateSourceLabel = rateSource.label,
-                        ),
-                    )
+                    val outcome = buildOutcome() ?: return@GradientButton
+                    onCalculated(outcome)
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -541,6 +570,64 @@ internal fun BankLoanActionsSection(
                 // می‌شد. با هیروِ زنده، محاسبه از قبل جلوی چشم است و دکمه کارِ واقعی‌اش را
                 // می‌گوید: رفتن به جدول.
                 Text("جدولِ اقساط را ببین", fontWeight = FontWeight.Bold)
+            }
+            // باگِ ۲۷: «ذخیره وام» مستقیم در فرم - همان مسیرِ صفحه‌ی نتیجه، بی رفتن به
+            // جدول. وامِ تازه است (تعدادِ پرداخت‌شده ۰)؛ بعد از ذخیره دکمه پنهان می‌شود
+            // (مثلِ صفحه‌ی نتیجه) تا وامِ تکراری ساخته نشود.
+            if (directSaved) {
+                Text(
+                    "✓ وام تو «وام‌های من» ذخیره شد",
+                    color = AppPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.5.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                )
+            } else {
+                OutlinedButton(
+                    enabled = !directSaving,
+                    onClick = {
+                        if (directSaving) return@OutlinedButton
+                        val outcome = buildOutcome() ?: return@OutlinedButton
+                        when {
+                            canSaveAnotherLoan -> {
+                                directSaving = true
+                                directSaveMessage = null
+                                myLoansViewModel.saveComputedLoan(outcome, 0, {
+                                    directSaving = false
+                                    directSaved = true
+                                    ratePromptViewModel.maybeShowAfterSuccess(ir.sadteam.loancalc.BuildConfig.VERSION_NAME)
+                                }, {
+                                    directSaving = false
+                                    directSaveMessage = ir.sadteam.loancalc.data.userMessageForDbError(it)
+                                        ?: "ذخیره‌ی وام ناموفق بود؛ دوباره تلاش کن."
+                                })
+                            }
+                            gateState == null -> Unit
+                            gateState != GateState.LOGGED_IN ->
+                                directSaveMessage = "برای ذخیره‌ی وام دوم اول باید وارد شوی — از تب «وام‌های من» وارد شو"
+                            else ->
+                                directSaveMessage = "برای ذخیره‌ی بیش از یک وام باید اشتراک بگیری — از تب «وام‌های من»"
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) {
+                    if (directSaving) {
+                        LottieSpinner(modifier = Modifier.size(18.dp))
+                    } else {
+                        Text("ذخیره وام", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            directSaveMessage?.let {
+                Text(
+                    it,
+                    color = AppDanger,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    textAlign = TextAlign.Center,
+                )
             }
 
             // فریمِ `69b` بندِ ۵: پانویس `AppCard` نمی‌گیرد - یک کارت که فقط متنِ

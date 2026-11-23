@@ -38,7 +38,7 @@ object AccountingXlsxExporter {
                         // این فایل را ماشین می‌خواند نه آدم: تاریخِ فارسی ستون را متنی می‌کند،
                         // پس مرتب‌سازی و فرمولِ اکسل روی آن کار نمی‌کند. صفرِ پیشوند هم لازم
                         // است تا مرتب‌سازیِ الفبایی همان مرتب‌سازیِ زمانی باشد.
-                        String.format(Locale.US, "%04d/%02d/%02d", java.util.Locale.US, tx.year, tx.month, tx.day),
+                        String.format(Locale.US, "%04d/%02d/%02d", tx.year, tx.month, tx.day),
                         if (tx.type == "DEPOSIT") "درآمد" else "هزینه",
                         tx.category ?: "—",
                         toman(tx.amount),

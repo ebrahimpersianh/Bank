@@ -22,6 +22,16 @@ class SavingsGoalViewModel @Inject constructor(
     val accounts = accountRepository.observeAccounts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** تراکنش‌ها + موجودیِ هر حساب - برای هشدارِ کسریِ موجودیِ واریز به هدف (باگِ ۸،
+     * مورد ۱۳B): خودِ دیالوگ در `SavingsGoalScreen` است و از همین‌جا می‌پرسد. */
+    val transactions = accountRepository.observeTransactions()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun balanceOf(
+        account: ir.sadteam.loancalc.data.db.AccountEntity,
+        allTransactions: List<ir.sadteam.loancalc.data.db.AccountTransactionEntity>,
+    ): Double = accountRepository.currentBalance(account, allTransactions)
+
     /** پولِ واریز به هدف (یا برداشت از آن) را در حساب هم ثبت می‌کند؛ [goalId]+[stamp] یکتاست. */
     fun recordGoalMoney(accountId: Long, goalId: Long, goalTitle: String, deltaRial: Double) {
         viewModelScope.launch {

@@ -107,7 +107,9 @@ fun ChequeBooksScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column {
-                            Text("${book.ownerName} - ${book.bankName}", color = AppText, fontSize = 14.sp)
+                            // باگ ۱۶: بانکِ خالی « - » آویزان می‌گذاشت - جداکننده فقط وقتی هر
+                            // دو بخش هست می‌آید.
+                            Text(listOfNotNull(book.ownerName, book.bankName.takeIf { it.isNotBlank() }).joinToString(" - "), color = AppText, fontSize = 14.sp)
                             Text(
                                 "سریال ${toFa(book.startSerial)} تا ${toFa(book.endSerial)}",
                                 color = AppMuted,
@@ -274,7 +276,7 @@ fun ChequeBooksScreen(
     bookPendingDelete?.let { book ->
         ConfirmDeleteDialog(
             title = "حذف دسته‌چک",
-            text = "دسته‌چکِ «${book.ownerName} - ${book.bankName}» حذف شود؟",
+            text = "دسته‌چکِ «${listOfNotNull(book.ownerName, book.bankName.takeIf { it.isNotBlank() }).joinToString(" - ")}» حذف شود؟",
             onConfirm = { onDelete(book) },
             onDismiss = { bookPendingDelete = null },
         )

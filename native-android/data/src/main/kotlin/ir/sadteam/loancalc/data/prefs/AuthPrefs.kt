@@ -19,6 +19,7 @@ class AuthPrefs(private val context: Context) {
     private object Keys {
         val TOKEN = stringPreferencesKey("auth_token")
         val PHONE = stringPreferencesKey("phone")
+        val LAST_PHONE = stringPreferencesKey("last_phone")
         val USER_NAME = stringPreferencesKey("user_name")
         val USER_ID = androidx.datastore.preferences.core.longPreferencesKey("user_id")
         val USER_CODE = androidx.datastore.preferences.core.stringPreferencesKey("user_code")
@@ -36,6 +37,19 @@ class AuthPrefs(private val context: Context) {
 
     val authToken: Flow<String?> = context.authDataStore.data.map { it[Keys.TOKEN] }
     val phone: Flow<String?> = context.authDataStore.data.map { it[Keys.PHONE] }
+
+    /** آخرین شماره‌ای که کاربر با آن وارد شده — برخلافِ `phone`، با [clearSession] پاک
+     * **نمی‌شود**، تا صفحه‌ی ورود همیشه بداند آخرین حساب کدام بود (باگِ تعویضِ بی‌صدای
+     * حساب، ۲۳ نوامبر ۲۰۲۶: نشست که تمام می‌شد، صفحه‌ی ورود با فیلدی خالی می‌آمد و ورود
+     * به شماره‌ای دیگر هیچ هشداری نمی‌داد — داده‌ی محلیِ حسابِ قبلی بی‌خبر از دسترس
+     * خارج می‌شد). فقط برای نمایش/هشدار است، نه برای احراز هویت. */
+    val lastPhone: Flow<String?> = context.authDataStore.data.map { it[Keys.LAST_PHONE] }
+
+    suspend fun setLastPhone(value: String?) {
+        context.authDataStore.edit { prefs ->
+            if (value.isNullOrBlank()) prefs.remove(Keys.LAST_PHONE) else prefs[Keys.LAST_PHONE] = value
+        }
+    }
 
     /** نامِ اختیاریِ کاربر - null یعنی وارد نکرده، که کاملاً عادیه. جای مصرفش سربرگِ خروجیِ
      * PDF/اکسله؛ عمداً برای پیامِ خوش‌آمد استفاده نمی‌شه (قبلاً ساخته و به‌خواستِ کاربر حذف شد). */

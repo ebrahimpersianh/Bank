@@ -57,8 +57,11 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.jibak.faDigits
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.data.GamificationRepository
+import ir.sadteam.loancalc.data.Badge
 import ir.sadteam.loancalc.data.db.CoinEventEntity
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.shop.CoinGoalCard
+import ir.sadteam.loancalc.ui.shop.ShopViewModel
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.ConfirmDialog
 import ir.sadteam.loancalc.ui.components.ConfirmTone
@@ -102,11 +105,23 @@ fun CoinWalletScreen(
      */
     todayHasEntry: Boolean,
     viewModel: GamificationViewModel = hiltViewModel(),
+    shopViewModel: ShopViewModel = hiltViewModel(),
+    /**
+     * باگ ۲۲: ضربه روی کارتِ «هدفِ سکه» به فروشگاه می‌رود تا قلم خریده شود - میزبان
+     * (`CoinHubScreen`) تب را عوض می‌کند. این صفحه فقط از آن‌جا باز می‌شود.
+     */
+    onOpenShop: () -> Unit = {},
 ) {
     val coins by viewModel.coins.collectAsState()
     val events by viewModel.events.collectAsState()
     val activeDays by viewModel.activeDays.collectAsState()
     val repairable by viewModel.repairable.collectAsState()
+    // باگ ۲۲: «هدفِ سکه» فقط در فروشگاه دیده می‌شد، نه در کیف - همان قلمِ نشان‌شده
+    // (اگر هنوز خریده نشده باشد) با همان کارتِ فروشگاه این‌جا هم می‌آید.
+    val coinGoalId by shopViewModel.coinGoal.collectAsState()
+    val catalog by shopViewModel.catalog.collectAsState()
+    val ownedShopItems by shopViewModel.owned.collectAsState()
+    val coinGoalItem = coinGoalId?.let { id -> catalog.firstOrNull { it.id == id && it.id !in ownedShopItems } }
     var confirmRepair by remember { mutableStateOf(false) }
     /** فیلترِ تاریخچه: `null` همه، `true` فقط دریافت‌ها، `false` فقط خرج‌ها. */
     var earnedOnly by remember { mutableStateOf<Boolean?>(null) }
@@ -187,6 +202,18 @@ fun CoinWalletScreen(
                 // `repairable` جای صفر می‌نشیند.
                 brokenDays = repairable?.lostDays,
             )
+        }
+        // باگ ۲۲: کارتِ «هدفِ سکه» - بالای تاریخچه، تا پیشرفتِ تا قیمتِ قلم در کیف هم
+        // دیده شود؛ ضربه‌اش به فروشگاه می‌رود، × برش می‌دارد.
+        coinGoalItem?.let { goal ->
+            item {
+                CoinGoalCard(
+                    item = goal,
+                    balance = coins,
+                    onOpen = onOpenShop,
+                    onClear = { shopViewModel.setCoinGoal(null) },
+                )
+            }
         }
         item {
             // سرگروهِ تاریخچه + فیلترِ «همه موارد» (طرحِ مرجعِ کاربر، ۱ مهر).
@@ -464,7 +491,7 @@ private fun CoinEventRow(event: CoinEventEntity) {
                 )
             }
             Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                Text(coinEventLabel(event.type), color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                Text(coinEventLabel(event), color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
                 Text(
                     formatEventTime(event.createdAt),
                     color = AppMuted,
@@ -509,21 +536,43 @@ private fun HistoryFilterChip(earnedOnly: Boolean?, onChange: (Boolean?) -> Unit
 }
 
 /** برچسبِ فارسیِ هر نوعِ رویداد - عیناً واژه‌های جدولِ `20e`. */
-private fun coinEventLabel(type: String): String = when (type) {
-    GamificationRepository.Type.NEW_PHONE_GIFT -> "هدیه‌ی شروع"
-    GamificationRepository.Type.DAILY_LOG -> "ثبتِ روزانه"
-    GamificationRepository.Type.DAILY_OPEN -> "سر زدنِ روزانه"
-    GamificationRepository.Type.DAILY_OPEN_WEEK -> "جایزه‌ی هفت روزِ پیاپی"
-    GamificationRepository.Type.WEEK_COMPLETE -> "هفته‌ی کاملِ فعال بودن"
-    GamificationRepository.Type.CONNECT_SMS -> "وصل‌کردنِ پیامکِ بانکی"
-    GamificationRepository.Type.CONNECT_NOTIFICATION -> "وصل‌کردنِ اعلانِ بانک"
-    GamificationRepository.Type.COMPLETE_PROFILE -> "تکمیلِ پروفایل"
-    GamificationRepository.Type.FIRST_BUDGET -> "اولین بودجه"
-    GamificationRepository.Type.FIRST_BACKUP -> "اولین پشتیبان‌گیری"
-    GamificationRepository.Type.BADGE -> "نشانِ تازه"
-    GamificationRepository.Type.SPEND_SUBSCRIPTION -> "تخفیفِ تمدیدِ اشتراک"
-    else -> "سکه"
+private fun coinEventLabel(event: CoinEventEntity): String {
+    val type = event.type
+    // هدیه‌ی دستیِ ادمین - نوعش پویاست (`"admin_gift_<id>"`)، پس پیشوندش خوانده می‌شود.
+    if (type.startsWith("admin_gift_")) return "هدیه‌ی جیبک"
+    return when (type) {
+        GamificationRepository.Type.NEW_PHONE_GIFT -> "هدیه‌ی شروع"
+        GamificationRepository.Type.DAILY_LOG -> "ثبتِ روزانه"
+        GamificationRepository.Type.DAILY_OPEN -> "سر زدنِ روزانه"
+        GamificationRepository.Type.DAILY_OPEN_WEEK -> "جایزه‌ی هفت روزِ پیاپی"
+        GamificationRepository.Type.WEEK_COMPLETE -> "هفته‌ی کاملِ فعال بودن"
+        GamificationRepository.Type.CONNECT_SMS -> "وصل‌کردنِ پیامکِ بانکی"
+        GamificationRepository.Type.CONNECT_NOTIFICATION -> "وصل‌کردنِ اعلانِ بانک"
+        GamificationRepository.Type.COMPLETE_PROFILE -> "تکمیلِ پروفایل"
+        GamificationRepository.Type.FIRST_BUDGET -> "اولین بودجه"
+        GamificationRepository.Type.FIRST_BACKUP -> "اولین پشتیبان‌گیری"
+        // باگ ۲۰: ردیفِ نشان فقط «نشانِ تازه» می‌گفت - کدِ نشان در `dateKey`ی رویداد
+        // است، پس نامِ نشان هم می‌آید («نشانِ «بودجه‌گذار»»).
+        GamificationRepository.Type.BADGE -> badgeEventLabel(event.dateKey)
+        GamificationRepository.Type.BADGE_RETRO -> badgeEventLabel(event.dateKey)
+        GamificationRepository.Type.SPEND_SUBSCRIPTION -> "تخفیفِ تمدیدِ اشتراک"
+        GamificationRepository.Type.SPEND_THEME -> "خریدِ تم"
+        GamificationRepository.Type.SPEND_ICON -> "خریدِ آیکونِ برنامه"
+        GamificationRepository.Type.SPEND_SYMBOL -> "خریدِ نمادِ دسته"
+        GamificationRepository.Type.SPEND_FRAME -> "خریدِ قابِ آواتار"
+        GamificationRepository.Type.SPEND_BACKDROP -> "خریدِ پس‌زمینه‌ی زنده"
+        GamificationRepository.Type.SPEND_FONT -> "خریدِ قلم"
+        GamificationRepository.Type.SPEND_CHART -> "خریدِ سبکِ نمودار"
+        GamificationRepository.Type.STREAK_REPAIR -> "ترمیمِ رشته"
+        GamificationRepository.Type.TEST_GRANT -> "شارژِ آزمایشی"
+        "guide_done" -> "پایانِ راهنمای برنامه"
+        else -> "سکه"
+    }
 }
+
+/** نامِ نشانِ رویدادِ سکه - از روی کدِ نشان در `dateKey`؛ اگر کد ناشناخته بود، همان «نشانِ تازه». */
+private fun badgeEventLabel(code: String): String =
+    Badge.entries.firstOrNull { it.code == code }?.label?.let { "نشانِ «$it»" } ?: "نشانِ تازه"
 
 /** نرخِ تبدیلِ صریحِ طرح: **هر ۱۰ سکه = ۱٬۰۰۰ ریال تخفیف**. */
 internal fun coinsToRial(coins: Int): Double = coins * 100.0

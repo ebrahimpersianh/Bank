@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.first
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import ir.sadteam.loancalc.core.TransactionType
+import ir.sadteam.loancalc.core.parseLoanPaymentSourceId
 import androidx.room.withTransaction
 import ir.sadteam.loancalc.data.db.AccountDao
 import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
@@ -112,7 +113,7 @@ class AccountRepository(
     ) = runDbWrite {
         accountDao.upsert(
             AccountEntity(
-                id = System.currentTimeMillis(),
+                id = UniqueIds.next(),
                 name = name,
                 bankName = bankName,
                 initialBalance = initialBalance,
@@ -166,9 +167,10 @@ class AccountRepository(
         sourceType: String? = null,
         sourceId: String? = null,
         /** ⚠️ هر جا تو یه حلقه/پشتِ‌هم چند تراکنش می‌سازی، **شمارنده‌ی صریح پاس بده**: پیش‌فرضِ
-         * `System.currentTimeMillis()` تو فراخوانی‌های سریعِ پشتِ‌هم می‌تونه یکی دربیاد و چون
-         * DAO از `@Upsert` استفاده می‌کنه، تراکنش‌ها بی‌صدا رو هم نوشته می‌شن (باگِ ثبت‌شده تو
-         * CLAUDE.md). برای ثبتِ تکیِ عادی خالی گذاشتنش امنه. */
+         * [UniqueIds.next] یکتای صعودی است (برخلافِ `System.currentTimeMillis()`ی خام که تو
+         * فراخوانی‌های سریعِ پشتِ‌هم می‌تونست یکی دربیاد و چون DAO از `@Upsert` استفاده
+         * می‌کنه، تراکنش‌ها بی‌صدا رو هم نوشته می‌شدن — باگِ ۲۳ نوامبر ۲۰۲۶). برای ثبتِ تکیِ
+         * عادی خالی گذاشتنش امنه. */
         id: Long? = null,
         /** `false` فقط برای ثبتِ **خودکار** از پیامک/اعلانِ بانکی - تا تاییدِ کاربر رو موجودی
          * اثر نمی‌ذاره. ثبتِ دستیِ خودِ کاربر همیشه تاییدشده‌ست. */
@@ -195,7 +197,7 @@ class AccountRepository(
                 return twin.id
             }
         }
-        val txId = id ?: System.currentTimeMillis()
+        val txId = id ?: UniqueIds.next()
         transactionDao.upsert(
             AccountTransactionEntity(
                 id = txId,
@@ -246,7 +248,7 @@ class AccountRepository(
         year: Int,
         month: Int,
         day: Int,
-        transferId: Long = System.currentTimeMillis(),
+        transferId: Long = UniqueIds.next(),
     ): Long = inTransaction {
         addTransaction(
             accountId = fromAccountId,
@@ -479,6 +481,29 @@ class AccountRepository(
     }
 
     /**
+     * حذفِ دقیقِ پرداخت‌های قسطِ **همین** وام — مسیرِ امنِ بازپرداخت موقعِ حذفِ وام
+     * (باگِ ۲۳ نوامبر ۲۰۲۶: حذفِ وام با «پاک شود» یک تراکنشِ نامربوط را هم پاک کرد).
+     *
+     * برخلافِ [removeLinkedPaymentsByPrefix] که با پیشوندِ رشته‌ای جور می‌کند، این‌جا
+     * هر تراکنش فقط وقتی حذف می‌شود که هر سه شرط با هم برقرار باشند:
+     * ۱) `sourceType` آن دقیقاً `"loan"` باشد؛ ۲) `sourceId` آن با تجزیه‌ی دقیقِ
+     * [parseLoanPaymentSourceId] همان `loanId` را بدهد (نه پیشوندِ آن)؛ ۳) همه‌ی
+     * ماه‌هایش جزوِ [paidMonths] — یعنی ماه‌های پرداخت‌شده‌ی همین وام — باشند.
+     * پس رسیدِ طلب/بدهی (`sourceId` بدونِ `:`)، انتقال، یا پرداختِ وامِ دیگر هیچ‌وقت
+     * با این فیلتر جور نمی‌شود. تعدادِ حذف‌شده را برمی‌گرداند تا فراخواننده بتواند
+     * با تعدادِ موردانتظار مقایسه کند.
+     */
+    suspend fun removeLoanPayments(loanId: Long, paidMonths: Set<Int>): Int = runDbWrite {
+        val victims = observeTransactions().first().filter { tx ->
+            if (tx.sourceType != "loan") return@filter false
+            val (id, months) = parseLoanPaymentSourceId(tx.sourceId) ?: return@filter false
+            id == loanId && months.isNotEmpty() && months.all { it in paidMonths }
+        }
+        victims.forEach { transactionDao.delete(it) }
+        victims.size
+    }
+
+    /**
      * 🚨 خیلی از بانک‌ها برای یک تراکنش **هم پیامک می‌دهند هم اعلانِ اپ** (بازبینیِ ۹ مهر). اگر در
      * ۱۵ دقیقه‌ی اخیر همین مبلغ و نوع روی همین حساب از **منبعِ دیگری** ثبتِ خودکار شده، دوباره نساز.
      */
@@ -640,7 +665,7 @@ class AccountRepository(
     ) = runDbWrite {
         budgetDao.upsert(
             BudgetEntity(
-                id = existingId ?: System.currentTimeMillis(),
+                id = existingId ?: UniqueIds.next(),
                 categoryName = categoryName,
                 monthlyCap = monthlyCap,
                 accountId = accountId,
@@ -677,7 +702,14 @@ class AccountRepository(
         budgetDao.delete(budget)
     }
 
-    /** جمعِ خرجِ هر دسته تو یه ماهِ خاص (فقط برداشت‌ها) - برای مقایسه با سقفِ بودجه. */
+    /** جمعِ خرجِ هر دسته تو یه ماهِ خاص (فقط برداشت‌ها) - برای مقایسه با سقفِ بودجه.
+     *
+     * باگِ ۱۰ (گزارشِ ۲٫۰٫۸۷۱): این‌جا **ناخالص** می‌شمرد (مبلغِ کاملِ خرجِ دنگ) در حالی که تبِ
+     * گزارش با `netDangShares` **خالص** می‌شمرد (فقط سهمِ خودت) - یک خرج دو عددِ متفاوت
+     * داشت. قاعده‌ی واحدِ برنامه **خالص** است (خودِ صفحه‌ی دنگ می‌گوید «در گزارش فقط سهمِ
+     * خودت حساب می‌شود»)، پس این کوئری هم اول سهمِ برگشتیِ دنگ را کم می‌کند. همه‌ی
+     * مصرف‌کننده‌ها (ردیف‌های بودجه، هشدارِ بودجه، خانه، پیشنهادِ ماهِ قبل) همین قاعده را
+     * می‌خواهند، پس اصلاح این‌جا (تنها جای تصمیم) همه‌شان را یک‌دست می‌کند. */
     fun spendByCategory(
         transactions: List<AccountTransactionEntity>,
         year: Int,
@@ -685,7 +717,7 @@ class AccountRepository(
         /** فقط خرجِ همین حساب‌کتاب حساب بشه؛ null یعنی همه‌ی حساب‌کتاب‌ها (رفتارِ قبلی). */
         accountId: Long? = null,
     ): Map<String, Double> =
-        transactions
+        transactions.netDangShares()
             .filter { accountId == null || it.accountId == accountId }
             .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == year && it.month == month && !it.category.isNullOrBlank() && countsInReports(it) }
             .groupBy { it.category!! }
@@ -708,7 +740,7 @@ class AccountRepository(
     ) = runDbWrite {
         recurringPaymentDao.upsert(
             RecurringPaymentEntity(
-                id = System.currentTimeMillis(),
+                id = UniqueIds.next(),
                 name = name,
                 amount = amount,
                 type = type.name,

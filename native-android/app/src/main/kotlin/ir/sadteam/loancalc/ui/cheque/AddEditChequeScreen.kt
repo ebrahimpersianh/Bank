@@ -34,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -90,32 +91,36 @@ fun AddEditChequeScreen(
         blocked = existing == null && chequeCount >= ir.sadteam.loancalc.ui.subscription.FreeLimits.CHEQUES,
         key = "cheques", label = "ثبتِ بیش از یک چک", onBlocked = onCancel,
     )
-    var type by remember { mutableStateOf(existing?.let { ChequeType.valueOf(it.type) } ?: ChequeType.RECEIVED) }
-    var amountText by remember { mutableStateOf(existing?.amount?.toLong()?.let { rialToToman(it).toString() } ?: "") }
-    var chequeNumber by remember { mutableStateOf(existing?.chequeNumber ?: "") }
-    var sayadId by remember { mutableStateOf(existing?.sayadId ?: "") }
-    var bankName by remember { mutableStateOf(existing?.bankName ?: "") }
-    var branchName by remember { mutableStateOf(existing?.branchName ?: "") }
-    var ownerName by remember { mutableStateOf(existing?.ownerName ?: "") }
-    var notes by remember { mutableStateOf(existing?.notes ?: "") }
+    // باگِ ۹: مقدارهای تایپ‌شده با `remember`ِ ساده بودند - چرخشِ گوشی یا رفتنِ اپ به
+    // پس‌زمینه فرمِ نیمه‌پر را پاک می‌کرد (همان «مبلغ بعد از اسکرول پاک شد»ی دورِ ۳).
+    // حالا همه‌ی فیلدها `rememberSaveable`اند؛ `error`/`savedOk`/پنجره‌ها گذرا هستند و
+    // همان `remember` می‌مانند.
+    var type by rememberSaveable { mutableStateOf(existing?.let { ChequeType.valueOf(it.type) } ?: ChequeType.RECEIVED) }
+    var amountText by rememberSaveable { mutableStateOf(existing?.amount?.toLong()?.let { rialToToman(it).toString() } ?: "") }
+    var chequeNumber by rememberSaveable { mutableStateOf(existing?.chequeNumber ?: "") }
+    var sayadId by rememberSaveable { mutableStateOf(existing?.sayadId ?: "") }
+    var bankName by rememberSaveable { mutableStateOf(existing?.bankName ?: "") }
+    var branchName by rememberSaveable { mutableStateOf(existing?.branchName ?: "") }
+    var ownerName by rememberSaveable { mutableStateOf(existing?.ownerName ?: "") }
+    var notes by rememberSaveable { mutableStateOf(existing?.notes ?: "") }
     // چکِ تازه پیش‌فرض امروز است (قبلاً ۱ فروردین ۱۴۰۴ ثابت بود).
     val todayJ = remember { ir.sadteam.loancalc.core.JalaliCalendar.today() }
-    var dueYear by remember { mutableStateOf(existing?.dueYear ?: todayJ.y) }
-    var dueMonth by remember { mutableStateOf(existing?.dueMonth ?: todayJ.m) }
-    var dueDay by remember { mutableStateOf(existing?.dueDay ?: todayJ.d) }
-    var chequeBookId by remember { mutableStateOf(existing?.chequeBookId) }
-    var photoPath by remember { mutableStateOf(existing?.photoPath) }
-    var showMoreInfo by remember { mutableStateOf(existing != null) }
+    var dueYear by rememberSaveable { mutableStateOf(existing?.dueYear ?: todayJ.y) }
+    var dueMonth by rememberSaveable { mutableStateOf(existing?.dueMonth ?: todayJ.m) }
+    var dueDay by rememberSaveable { mutableStateOf(existing?.dueDay ?: todayJ.d) }
+    var chequeBookId by rememberSaveable { mutableStateOf(existing?.chequeBookId) }
+    var photoPath by rememberSaveable { mutableStateOf(existing?.photoPath) }
+    var showMoreInfo by rememberSaveable { mutableStateOf(existing != null) }
     // بعدِ ذخیره‌ی موفق، یه تیکِ سبزِ متحرک قبل از بستنِ صفحه - رجوع کن به SuccessCheckmark.kt.
     var savedOk by remember { mutableStateOf(false) }
-    var nationalId by remember { mutableStateOf(existing?.nationalId ?: "") }
-    var previousBalanceText by remember { mutableStateOf(existing?.previousBalance?.let { fmt(it) } ?: "") }
-    var depositAmountText by remember { mutableStateOf(existing?.depositAmount?.let { fmt(it) } ?: "") }
+    var nationalId by rememberSaveable { mutableStateOf(existing?.nationalId ?: "") }
+    var previousBalanceText by rememberSaveable { mutableStateOf(existing?.previousBalance?.let { fmt(it) } ?: "") }
+    var depositAmountText by rememberSaveable { mutableStateOf(existing?.depositAmount?.let { fmt(it) } ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
     var showCalendarPicker by remember { mutableStateOf(false) }
 
     // طرفِ‌حسابِ لینک‌شده - جوابِ سوالِ ۶: انتخاب یا ساختِ طرفِ‌حساب موقعِ ثبتِ چکِ جدید اجباریه.
-    var counterpartyId by remember { mutableStateOf(existing?.counterpartyId) }
+    var counterpartyId by rememberSaveable { mutableStateOf(existing?.counterpartyId) }
     var showCounterpartyPicker by remember { mutableStateOf(false) }
     val counterparties by debtViewModel.counterparties.collectAsState()
     val selectedCounterparty = counterparties.firstOrNull { it.id == counterpartyId }
@@ -585,7 +590,10 @@ private fun ChequeBookDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selectedBook = chequeBooks.firstOrNull { it.id == selected }
-    val selectedLabel = selectedBook?.let { "${it.ownerName} - ${it.bankName}" } ?: "بدون دسته‌چک"
+    // باگِ ۱۶: اگر یک طرف خالی باشد، « - » هم چاپ نمی‌شود (الگوی listOfNotNull).
+    val selectedLabel = selectedBook?.let {
+        listOfNotNull(it.ownerName.takeIf { s -> s.isNotBlank() }, it.bankName.takeIf { s -> s.isNotBlank() }).joinToString(" - ")
+    }?.takeIf { it.isNotBlank() } ?: "بدون دسته‌چک"
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
         OutlinedTextField(
             value = selectedLabel,
@@ -598,7 +606,7 @@ private fun ChequeBookDropdown(
             DropdownMenuItem(text = { Text("بدون دسته‌چک") }, onClick = { onSelect(null); expanded = false })
             chequeBooks.forEach { book ->
                 DropdownMenuItem(
-                    text = { Text("${book.ownerName} - ${book.bankName}") },
+                    text = { Text(listOfNotNull(book.ownerName.takeIf { it.isNotBlank() }, book.bankName.takeIf { it.isNotBlank() }).joinToString(" - ")) },
                     onClick = { onSelect(book); expanded = false },
                 )
             }

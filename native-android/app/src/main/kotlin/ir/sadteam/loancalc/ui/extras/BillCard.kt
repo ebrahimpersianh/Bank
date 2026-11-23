@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.extras
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -78,7 +79,15 @@ internal fun BillCard(
     val due = bill.isDueSoon(todayY, todayM, todayD)
     val overdue = due && todayD > bill.dueDay && !bill.createdAfterDueIn(todayY, todayM)
     var menu by remember { mutableStateOf(false) }
-    AppCard(modifier = Modifier.pressScaleClickable(scale = 0.99f) { onEdit() }) {
+    // ضربه = ویرایش، نگه‌داشتن = حذف (با دیالوگِ تایید در BillsScreen) - همان الگوی
+    // نگه‌داشتن‌برای‌حذفِ الگوها و پرداخت‌های تکراری. قبلاً هر سه ژست (ضربه/نگه‌داشتن/
+    // سوایپ) ویرایش را باز می‌کرد و حذف فقط پشتِ منوی ⋮ پنهان بود.
+    AppCard(
+        modifier = Modifier.combinedClickable(
+            onClick = onEdit,
+            onLongClick = onDelete,
+        ),
+    ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(

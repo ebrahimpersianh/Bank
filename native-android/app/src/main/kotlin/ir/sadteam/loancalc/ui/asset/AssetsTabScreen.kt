@@ -43,6 +43,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +70,7 @@ import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
+import ir.sadteam.loancalc.ui.jibak.roundedToDisplayUnitRial
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -110,6 +112,11 @@ fun AssetsTabScreen(
     privacyViewModel: PrivacyModeViewModel = hiltViewModel(),
     statsViewModel: ir.sadteam.loancalc.ui.stats.StatsViewModel = hiltViewModel(),
     debtViewModel: ir.sadteam.loancalc.ui.debt.DebtViewModel = hiltViewModel(),
+    /**
+     * باگ ۱۳ (بازبینیِ ۲ آذر): گزارشِ «لایه‌ی داخلیِ باز» به `PersistentTabs` (رجوع کن به
+     * `SideEffect` پایین).
+     */
+    onHasBackStepChange: (Boolean) -> Unit = {},
 ) {
     val accounts by accountViewModel.accounts.collectAsState()
     // بدهی‌ها (پیشنهادِ گزارشِ پولکی): اقساطِ پرداخت‌نشده‌ی وام‌ها + بدهی‌های تسویه‌نشده به دیگران.
@@ -182,6 +189,17 @@ fun AssetsTabScreen(
         }
     }
 
+    // باگ ۱۳ (بازبینیِ ۲ آذر): ضربه روی تبِ فعلی یک مرحله عقب می‌رود — این‌جا می‌گوییم
+    // لایه‌ای باز است یا نه (همان شرط‌های `BackHandler`های این صفحه + `showDebts` و
+    // `showWealthDetail` که هر کدام `BackHandler`ی جدا دارند).
+    SideEffect {
+        onHasBackStepChange(
+            showDebts || openAsset != null || openAccount != null || openEditAccount != null ||
+                showAddAsset || showAddAccount || showAccountList || showPrices ||
+                buyEntry != null || showWealthDetail,
+        )
+    }
+
     if (showDebts) {
         BackHandler { showDebts = false }
         ir.sadteam.loancalc.ui.debt.DebtScreen(onBack = { showDebts = false })
@@ -191,7 +209,9 @@ fun AssetsTabScreen(
     // امروزِ جلالی - مبنای نمودارِ روند.
     val today = remember { JalaliCalendar.today() }
     val cashTotal = remember(accounts, transactions) {
-        accounts.sumOf { acc -> accountViewModel.balanceOf(acc, transactions) }
+        // باگ ۲۸: جمع از موجودی‌های گرد‌شده‌ی نمایشی حساب می‌شود، نه خام - وگرنه جمعِ
+        // نمایشی با جمعِ اجزای نمایشی ۱ تومان فرق می‌کند.
+        accounts.sumOf { acc -> accountViewModel.balanceOf(acc, transactions).roundedToDisplayUnitRial() }
     }
     val marketPrices by assetViewModel.marketPrices.collectAsState()
     // marketPrices کلیدِ remember است: بی آن، داراییِ تازه‌ثبت‌شده تا رفتن و برگشتن به تب
@@ -206,7 +226,8 @@ fun AssetsTabScreen(
         }.filter { it.quantity > 0.0 }
     }
     val byCategory = remember(holdings) { holdings.groupBy { it.asset.category } }
-    val totalOf: (String) -> Double = { cat -> byCategory[cat]?.sumOf { it.value ?: 0.0 } ?: 0.0 }
+    // باگ ۲۸: جمعِ هر دسته هم از مقادیرِ گرد‌شده‌ی نمایشیِ هر دارایی حساب می‌شود.
+    val totalOf: (String) -> Double = { cat -> byCategory[cat]?.sumOf { (it.value ?: 0.0).roundedToDisplayUnitRial() } ?: 0.0 }
     val goldTotal = totalOf(ASSET_CATEGORY_GOLD)
     val fiatTotal = totalOf(ASSET_CATEGORY_FIAT)
     val cryptoTotal = totalOf(ASSET_CATEGORY_CRYPTO)

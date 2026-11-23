@@ -369,9 +369,12 @@ fun AccountDetailScreen(
         }
 
         if (showDeleteConfirm) {
+            // باگ ۱۶: وقتی `bankName` خالی است، « - » آویزان می‌مانَد («TestB - ») - جداکننده
+            // فقط وقتی هر دو بخش هست می‌آید (همان الگوی `listOfNotNull` بالای همین صفحه).
+            val deleteName = listOfNotNull(account.name, account.bankName.takeIf { it.isNotBlank() }).joinToString(" - ")
             ConfirmDeleteDialog(
                 title = "حذف حساب",
-                text = "حسابِ «${account.name} - ${account.bankName}» حذف شود؟ ⚠️ همه‌ی تراکنش‌های این حساب هم پاک می‌شوند و این کار قابلِ‌برگشت نیست.",
+                text = "حسابِ «$deleteName» حذف شود؟ ⚠️ همه‌ی تراکنش‌های این حساب هم پاک می‌شوند و این کار قابلِ‌برگشت نیست.",
                 // پرچم را خودش پایین می‌آورد - وابسته‌بودن به این‌که onDelete صفحه را ببندد
                 // یک وابستگیِ نامرئی بود.
                 onConfirm = { showDeleteConfirm = false; effectiveOnDelete() },

@@ -109,7 +109,7 @@ class LoanRepository(
         paidCount: Int,
         startDate: Map<String, Int>,
     ) = runDbWrite {
-        val id = System.currentTimeMillis()
+        val id = UniqueIds.next()
         val amount = installment * n
         val createdAt = isoNow()
         val webShape = linkedMapOf(
@@ -417,7 +417,7 @@ class LoanRepository(
         // می‌کنه - همون قابلیتِ فرمِ افزودنِ دستی (addManualLoan)، این‌جا هم برای وامِ محاسبه‌شده.
         paidCount: Int = 0,
     ): Long = runDbWrite {
-        val id = System.currentTimeMillis()
+        val id = UniqueIds.next()
         val createdAt = isoNow()
         val webShape = linkedMapOf(
             "id" to id,

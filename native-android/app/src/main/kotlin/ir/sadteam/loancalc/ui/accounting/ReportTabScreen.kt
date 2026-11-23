@@ -41,6 +41,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -110,6 +111,11 @@ fun ReportTabScreen(
     discoveryDismissViewModel: DiscoveryDismissViewModel = hiltViewModel(),
     loansViewModel: MyLoansViewModel = hiltViewModel(),
     chequeViewModel: ChequeViewModel = hiltViewModel(),
+    /**
+     * باگ ۱۳ (بازبینیِ ۲ آذر): گزارشِ «لایه‌ی داخلیِ باز» به `PersistentTabs` (رجوع کن به
+     * `SideEffect` پایین).
+     */
+    onHasBackStepChange: (Boolean) -> Unit = {},
 ) {
     val isPremium = ir.sadteam.loancalc.ui.subscription.LocalIsPremium.current
     androidx.compose.runtime.LaunchedEffect(Unit) {
@@ -155,6 +161,10 @@ fun ReportTabScreen(
     var showNewTransaction by remember { mutableStateOf(false) }
     var showSubscriptionFinder by remember { mutableStateOf(false) }
 
+    // باگ ۱۳ (بازبینیِ ۲ آذر): ضربه روی تبِ فعلی یک مرحله عقب می‌رود — این‌جا می‌گوییم
+    // لایه‌ای باز است یا نه (همان شرطِ `BackHandler` پایین).
+    SideEffect { onHasBackStepChange(showNewTransaction || showSubscriptionFinder) }
+
     // خروجیِ همین ماه (بسته‌ی ChatGPT، ۷ مهر): دو دکمه‌ی جدا به‌جای ردیفی که به جایی وصل نبود.
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -174,9 +184,14 @@ fun ReportTabScreen(
         if (uri == null) return
         scope.launch(Dispatchers.IO) {
             val ok = runCatching {
-                context.contentResolver.openOutputStream(uri)?.use { out ->
-                    if (pdf) AccountingPdfExporter.export(monthRangeLabel, "همه‌ی حساب‌ها", monthIncome, monthExpense, monthBreakdown, monthTx, out)
-                    else AccountingXlsxExporter.export(monthIncome, monthExpense, monthBreakdown, monthTx, out)
+                // `openOutputStream` اگر null برگرداند، `?.use` بی‌صدا رد می‌شد و runCatching
+                // «موفق» گزارش می‌داد — یعنی «اکسل ذخیره شد» در حالی که فایل ۰ بایت است
+                // (باگِ ۳). null حالا شکست حساب می‌شود تا بنرِ خطا بیاید.
+                val out = context.contentResolver.openOutputStream(uri)
+                    ?: throw IllegalStateException("openOutputStream returned null")
+                out.use {
+                    if (pdf) AccountingPdfExporter.export(monthRangeLabel, "همه‌ی حساب‌ها", monthIncome, monthExpense, monthBreakdown, monthTx, it)
+                    else AccountingXlsxExporter.export(monthIncome, monthExpense, monthBreakdown, monthTx, it)
                 }
             }.isSuccess
             withContext(Dispatchers.Main) {

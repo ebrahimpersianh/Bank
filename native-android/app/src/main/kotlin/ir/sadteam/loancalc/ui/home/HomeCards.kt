@@ -484,6 +484,10 @@ internal fun RecentTransactionsCard(
         (if (expanded) recent else recent.take(2)).forEachIndexed { index, tx ->
             val income = tx.type == "DEPOSIT"
             val transfer = tx.sourceType == SOURCE_TYPE_TRANSFER
+            // باگِ ۱۸: واریز به هدفِ پس‌انداز با deposit=false ثبت می‌شود (یعنی WITHDRAWAL)،
+            // ولی پول به پس‌انداز رفته نه خرج — مثلِ ردیفِ فهرستِ تراکنش سبز نشان داده
+            // می‌شود؛ علامتِ مبلغ منفی می‌ماند چون پول واقعاً از حساب خارج شده است.
+            val isGoalDeposit = tx.sourceType == "goal" && tx.type == "WITHDRAWAL"
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = if (index == 0) 10.dp else 9.dp).clickable { onTxClick(tx) },
                 verticalAlignment = Alignment.CenterVertically,
@@ -495,7 +499,7 @@ internal fun RecentTransactionsCard(
                         .background(
                             when {
                                 transfer -> AppIconFrame
-                                income -> AppPrimaryPill
+                                income || isGoalDeposit -> AppPrimaryPill
                                 else -> AppDangerPill
                             },
                         ),
@@ -510,7 +514,7 @@ internal fun RecentTransactionsCard(
                         contentDescription = null,
                         tint = when {
                             transfer -> AppMuted
-                            income -> AppPrimaryInk
+                            income || isGoalDeposit -> AppPrimaryInk
                             else -> AppDangerInk
                         },
                         modifier = Modifier.size(14.dp),
@@ -539,7 +543,7 @@ internal fun RecentTransactionsCard(
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         ir.sadteam.loancalc.ui.jibak.isoSigned(income, maskIfPrivate(masked, tx.amount.rialToFaCompact())) + " " + ir.sadteam.loancalc.ui.jibak.unitFa(),
-                        color = if (income) AppPrimaryInk else AppDangerInk,
+                        color = if (income || isGoalDeposit) AppPrimaryInk else AppDangerInk,
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Black,
                     )

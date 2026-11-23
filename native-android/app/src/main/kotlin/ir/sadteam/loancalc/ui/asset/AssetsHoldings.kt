@@ -5,7 +5,6 @@ import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import androidx.compose.foundation.layout.height
 import ir.sadteam.loancalc.ui.components.AppCard
 import androidx.compose.foundation.layout.heightIn
-import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.HeroChart
 import ir.sadteam.loancalc.ui.components.HeroChartStyle
 import androidx.compose.ui.draw.shadow
@@ -40,9 +39,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.data.accountIconForKey
+import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_CRYPTO
+import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_CUSTOM
+import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_FIAT
+import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_GOLD
 import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AssetEntity
+
+// باگ ۱۷: خطِ دومِ ردیفِ دارایی کدِ داخلیِ نماد را نشان می‌داد («GOLD_18» برای طلا، یا
+// برای داراییِ دلخواه عینِ نامِ خطِ اول). به‌جایش برچسبِ فارسیِ دسته می‌آید - همان
+// واژه‌هایی که انتخاب‌کننده‌ی دارایی استفاده می‌کند («طلا»/«ارز»/«رمزارز»/«دلخواه»).
+private fun assetCategoryLabel(category: String): String = when (category) {
+    ASSET_CATEGORY_GOLD -> "طلا"
+    ASSET_CATEGORY_FIAT -> "ارز"
+    ASSET_CATEGORY_CRYPTO -> "رمزارز"
+    ASSET_CATEGORY_CUSTOM -> "دلخواه"
+    else -> "دلخواه"
+}
 import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
@@ -431,7 +445,7 @@ internal fun MyAssetsSection(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        Ltr { Text(h.asset.symbol.removePrefix("CUSTOM_"), color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
+                        Text(assetCategoryLabel(h.asset.category), color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                     MiniTrend(h.asset.symbol, change, viewModel, modifier = Modifier.weight(1f).padding(horizontal = 6.dp))
                     Column(horizontalAlignment = Alignment.End) {

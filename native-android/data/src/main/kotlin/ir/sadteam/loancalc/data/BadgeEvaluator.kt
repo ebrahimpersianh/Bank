@@ -67,6 +67,9 @@ class BadgeEvaluator(
         val activeDays: Int,
         val goals: List<SavingsGoalEntity>,
         val ownedShopItems: Set<String>,
+        // باگ ۱۹: سکه‌ی «اولین بودجه» داده شده یعنی کاربر بودجه داشته، حتی اگر بودجه‌اش
+        // را پیش از هر ارزیابی حذف کرده باشد - نشانِ «بودجه‌گذار» نباید قفل بمانَد.
+        val hasFirstBudgetCoin: Boolean,
     )
 
     private suspend fun snapshot() = Snapshot(
@@ -76,11 +79,12 @@ class BadgeEvaluator(
         activeDays = gamification.activeDays.first(),
         goals = savingsGoalRepository.getGoals(),
         ownedShopItems = uiPrefs.ownedItems.first(),
+        hasFirstBudgetCoin = gamification.events.first().any { it.type == GamificationRepository.Type.FIRST_BUDGET },
     )
 
     private fun progressOf(badge: Badge, s: Snapshot): Float = when (badge) {
         Badge.FIRST_STEP -> if (s.transactions.isNotEmpty()) 1f else 0f
-        Badge.BUDGETER -> if (s.budgets.any { it.monthlyCap > 0 }) 1f else 0f
+        Badge.BUDGETER -> if (s.budgets.any { it.monthlyCap > 0 } || s.hasFirstBudgetCoin) 1f else 0f
         Badge.FULL_WEEK -> s.activeDays / 7f
         Badge.STEADY_MONTH -> s.activeDays / 30f
         // تنها شرطی که میانگین می‌خواد: هفت روزِ پشتِ‌سرهم که خرجِ هر روز کمتر از

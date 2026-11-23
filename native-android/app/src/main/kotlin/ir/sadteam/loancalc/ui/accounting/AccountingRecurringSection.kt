@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,6 +70,25 @@ internal fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Ca
     var deletingPayment by remember { mutableStateOf<RecurringPaymentEntity?>(null) }
     val allTx by viewModel.transactions.collectAsState()
     val nowDate = remember { JalaliCalendar.today() }
+    // هشدارِ کسریِ موجودیِ «ثبتِ پرداختِ این ماه» (باگِ ۸، هم‌الگو با موردِ ۱۳B در صفحه‌ی وام):
+    // (پرداختِ تکراری، شناسه‌ی حساب) — فقط برای برداشت (هزینه) که موجودی را منفی می‌کند.
+    var overdraftRecurring by remember { mutableStateOf<Pair<RecurringPaymentEntity, Long>?>(null) }
+
+    // ثبتِ یک‌ماهه‌ی پرداختِ تکراری — یک‌جا، تا دکمه و دیالوگِ تایید همان تراکنش را بسازند.
+    fun recordRecurring(p: RecurringPaymentEntity, accountId: Long) {
+        viewModel.addTransaction(
+            accountId = accountId,
+            type = if (p.type == TransactionType.DEPOSIT.name) TransactionType.DEPOSIT else TransactionType.WITHDRAWAL,
+            amount = p.amount,
+            description = p.name,
+            year = nowDate.y,
+            month = nowDate.m,
+            day = nowDate.d,
+            category = p.categoryName,
+            sourceType = "recurring",
+            sourceId = "${p.id}:${nowDate.y}-${nowDate.m}",
+        )
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -127,11 +148,18 @@ internal fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Ca
                                     modifier = Modifier.padding(top = 2.dp),
                                 )
                             }
-                            Text(
-                                ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt((p.amount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
-                                color = if (p.type == TransactionType.DEPOSIT.name) AppPrimary else AppDanger,
-                                fontSize = 13.sp,
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt((p.amount) / ir.sadteam.loancalc.ui.jibak.unitDiv)} ${ir.sadteam.loancalc.ui.jibak.unitFa()}"),
+                                    color = if (p.type == TransactionType.DEPOSIT.name) AppPrimary else AppDanger,
+                                    fontSize = 13.sp,
+                                )
+                                // باگ ۲۳: حذف فقط با کشیدن یا نگه‌داشتنِ ردیف پیدا می‌شد - دکمه‌ی
+                                // واضحِ حذف با همان دیالوگِ تاییدِ موجود (`deletingPayment`).
+                                IconButton(onClick = { deletingPayment = p }) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "حذفِ پرداختِ تکراری", tint = AppDanger, modifier = Modifier.size(18.dp))
+                                }
+                            }
                         }
                         // «ثبتِ پرداختِ این ماه»: همان تراکنشِ قسط/قبض - از حساب کم (یا به آن اضافه) می‌شود و
                         // دوباره زدن، دو بار ثبت نمی‌کند؛ «برگردان» همان را پاک می‌کند.
@@ -144,18 +172,16 @@ internal fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Ca
                             }
                         } else if (targetAccount != null) {
                             TextButton(onClick = {
-                                viewModel.addTransaction(
-                                    accountId = targetAccount,
-                                    type = if (p.type == TransactionType.DEPOSIT.name) TransactionType.DEPOSIT else TransactionType.WITHDRAWAL,
-                                    amount = p.amount,
-                                    description = p.name,
-                                    year = nowDate.y,
-                                    month = nowDate.m,
-                                    day = nowDate.d,
-                                    category = p.categoryName,
-                                    sourceType = "recurring",
-                                    sourceId = periodId,
-                                )
+                                val acc = accounts.firstOrNull { it.id == targetAccount }
+                                // برداشت (هزینه) از حساب کم می‌کند — اگر موجودی نرسد، اول تایید بگیر.
+                                // واریز (درآمد) به حساب اضافه می‌شود و هشداری ندارد.
+                                if (p.type != TransactionType.DEPOSIT.name && acc != null &&
+                                    viewModel.balanceOf(acc, allTx) < p.amount
+                                ) {
+                                    overdraftRecurring = p to targetAccount
+                                } else {
+                                    recordRecurring(p, targetAccount)
+                                }
                             }) {
                                 Text("ثبتِ پرداختِ این ماه", color = AppPrimary, fontSize = 12.sp)
                             }
@@ -173,6 +199,23 @@ internal fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Ca
             onConfirm = { viewModel.deleteRecurringPayment(p); deletingPayment = null },
             onDismiss = { deletingPayment = null },
         )
+    }
+
+    // دیالوگِ تاییدِ پرداخت با کسری (باگِ ۸، هم‌الگو با موردِ ۱۳B در صفحه‌ی وام).
+    overdraftRecurring?.let { (p, accountId) ->
+        val acc = accounts.firstOrNull { it.id == accountId }
+        if (acc != null) {
+            val balance = viewModel.balanceOf(acc, allTx)
+            val unit = ir.sadteam.loancalc.ui.jibak.unitFa()
+            val div = ir.sadteam.loancalc.ui.jibak.unitDiv
+            ir.sadteam.loancalc.ui.components.ConfirmPayDialog(
+                title = "موجودیِ حساب کم است",
+                text = "موجودیِ «${acc.name}» ${fmt(balance / div)} $unit است، ولی مبلغِ این پرداخت ${fmt(p.amount / div)} $unit است. با پرداخت، موجودی ${fmt((balance - p.amount) / div)} $unit می‌شود.",
+                onConfirm = { recordRecurring(p, accountId); overdraftRecurring = null },
+                onDismiss = { overdraftRecurring = null },
+                confirmLabel = "بله، با کسری پرداخت کن",
+            )
+        }
     }
 }
 @Composable

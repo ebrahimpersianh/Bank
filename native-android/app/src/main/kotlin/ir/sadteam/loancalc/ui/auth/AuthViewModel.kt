@@ -95,6 +95,12 @@ class AuthViewModel @Inject constructor(
     val phone: StateFlow<String?> = authPrefs.phone
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** آخرین شماره‌ای که کاربر با آن وارد شده (حتی بعد از پایانِ نشست هم می‌ماند) — صفحه‌ی
+     * ورود با آن فیلد را از پیش پر می‌کند و ورود به شماره‌ای دیگر را تایید می‌گیرد (باگِ
+     * تعویضِ بی‌صدای حساب، ۲۳ نوامبر ۲۰۲۶). رجوع کن به [AuthPrefs.lastPhone]. */
+    val lastPhone: StateFlow<String?> = authPrefs.lastPhone
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     /** نامِ اختیاریِ کاربر - null یعنی وارد نکرده (کاملاً عادی). */
     val userId: StateFlow<Long?> = authPrefs.userId
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -275,11 +281,34 @@ class AuthViewModel @Inject constructor(
      */
     fun verifyOtp(phone: String, code: String, onSuccess: () -> Unit, onError: (String?) -> Unit) {
         viewModelScope.launch {
+            // شماره‌ی حسابِ فعلی را **پیش** از فراخوانی بخوان: verifyOtp سشنِ جدید را جای
+            // سشنِ قبلی می‌نویسد و بعد از آن دیگر نمی‌شود فهمید حساب عوض شده یا نه.
+            val previousPhone = authPrefs.phone.first()
             when (val result = authRepository.verifyOtp(phone, code)) {
                 is AuthResult.Success -> {
                     ir.sadteam.loancalc.data.UsageStats.action("login")
                     val token = authPrefs.authToken.first()
                     if (!token.isNullOrEmpty()) {
+                        // 🚨 تعویضِ حساب بدونِ خروجِ قبلی (باگِ ۲۳ نوامبر ۲۰۲۶): اگر با شماره‌ای
+                        // دیگر وارد شده‌ایم و داده‌ی محلیِ حسابِ قبلی هنوز روی گوشی است، اول
+                        // آن را پاک می‌کنیم و **بعد** از سرورِ حسابِ جدید می‌خوانیم. بی این،
+                        // syncAfterLogin چون سرورِ حسابِ جدید خالی است ولی محلی داده دارد،
+                        // آن را «پوش به سرور» تفسیر می‌کند و وام‌ها/حساب‌های حسابِ قبلی را زیرِ
+                        // حسابِ جدید آپلود می‌کند (همان خطری که کامنتِ logout توضیح می‌دهد).
+                        // ورودِ دوباره به همان شماره یا اولین ورود، این شاخه را نمی‌گیرد.
+                        if (previousPhone != null && previousPhone != phone) {
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                                loanRepository.clearLocal()
+                                chequeRepository.clearLocal()
+                                accountRepository.clearLocal()
+                                incomeRepository.clearLocal()
+                                debtRepository.clearLocal()
+                                dangRepository.clearLocal()
+                                noteRepository.clearLocal()
+                                wealthSnapshotRepository.clearLocal()
+                                clearLocalFiles()
+                            }
+                        }
                         when (val outcome = loanRepository.syncAfterLogin(token)) {
                             is SyncOutcome.ConflictNeedsChoice -> _syncConflict.value = outcome.serverLoans
                             else -> Unit

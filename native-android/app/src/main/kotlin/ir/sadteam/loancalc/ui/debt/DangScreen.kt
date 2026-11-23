@@ -257,6 +257,12 @@ internal fun DangReceiptCard(
 }
 
 /** فرمِ ساختِ دنگِ تازه - هر ۴ روش (جوابِ سوالِ ۷). */
+
+// برچسب‌های سریعِ عنوان (باگ ۱۵): چیپ فقط یک **پیشنهاد** است، نه پیشوند. اگر کاربر بعد از
+// زدنِ چیپ تایپ کند، متنِ تایپ‌شده **جای** برچسب می‌نشیند نه دنباله‌اش («رستورانDinner»
+// نمی‌شود) - رجوع کن به `titleFromChip` پایین‌تر.
+private val DANG_TITLE_TAGS = listOf("رستوران", "کافه", "خرید", "تفریح", "سفر", "سایر")
+
 @Composable
 fun DangCreateScreen(
     counterparties: List<CounterpartyEntity>,
@@ -282,6 +288,11 @@ fun DangCreateScreen(
     onExpenseSplit: (txId: Long) -> Unit = {},
 ) {
     var title by rememberSaveable { mutableStateOf("") }
+    // باگ ۱۵: برچسبِ چیپی که عنوان از آن پر شده (`null` یعنی عنوان از چیپ نیامده). تا وقتی
+    // عنوان دقیقاً همان برچسب است، تایپِ کاربر جای آن را می‌گیرد؛ بعد از آن `null` می‌شود
+    // و تایپ عادی ادامه می‌یابد. توضیحِ خرجِ انتخاب‌شده برچسب نیست، پس `null` می‌مانَد و
+    // کاربر می‌تواند به آن اضافه کند.
+    var titleFromChip by rememberSaveable { mutableStateOf<String?>(null) }
     var totalText by rememberSaveable { mutableStateOf("") }
     var method by rememberSaveable { mutableStateOf(DangMethod.EQUAL) }
     var isEventMode by rememberSaveable { mutableStateOf(false) }
@@ -303,6 +314,7 @@ fun DangCreateScreen(
             expenses.firstOrNull { it.id == initialExpenseId }?.let { e ->
                 pickedExpenseId = e.id
                 title = e.description.take(40)
+                titleFromChip = null
                 totalText = (e.amount / ir.sadteam.loancalc.ui.jibak.unitDiv).toLong().toString()
                 year = e.year; month = e.month; day = e.day
             }
@@ -324,6 +336,7 @@ fun DangCreateScreen(
                                 .clickable {
                                     pickedExpenseId = e.id
                                     title = e.description.take(40)
+                                    titleFromChip = null
                                     totalText = (e.amount / ir.sadteam.loancalc.ui.jibak.unitDiv).toLong().toString()
                                     year = e.year; month = e.month; day = e.day
                                     showExpensePicker = false
@@ -352,6 +365,8 @@ fun DangCreateScreen(
         val (ps, its, shares) = loadExisting(ev.id)
         val div = ir.sadteam.loancalc.ui.jibak.unitDivD
         title = ev.title
+        // عنوانِ ویرایش اگر دقیقاً یکی از برچسب‌ها بود، مثلِ چیپِ تازه‌زده رفتار می‌کند.
+        titleFromChip = ev.title.takeIf { it in DANG_TITLE_TAGS }
         totalText = Math.round(ev.totalAmount / div).toString()
         method = runCatching { DangMethod.valueOf(ev.method) }.getOrDefault(DangMethod.EQUAL)
         isEventMode = ev.isEventMode
@@ -516,12 +531,24 @@ fun DangCreateScreen(
             DangFormCard(icon = Icons.Filled.Edit, title = "عنوان") {
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it.take(40) },
+                    onValueChange = { typed ->
+                        val next = typed.take(40)
+                        // باگ ۱۵: اگر عنوان هنوز همان برچسبِ چیپ است و کاربر ادامه می‌دهد،
+                        // برچسب می‌رود و فقط متنِ تایپ‌شده می‌مانَد («رستوران» + «Dinner» ←
+                        // «Dinner»، نه «رستورانDinner»).
+                        val chip = titleFromChip
+                        title = if (chip != null && next.length > chip.length && next.startsWith(chip)) {
+                            next.removePrefix(chip)
+                        } else {
+                            next
+                        }
+                        titleFromChip = if (title == chip) chip else null
+                    },
                     placeholder = { Text("مثلاً: شامِ جمعه") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     trailingIcon = if (title.isNotEmpty()) ({
-                        IconButton(onClick = { title = "" }) {
+                        IconButton(onClick = { title = ""; titleFromChip = null }) {
                             Icon(Icons.Filled.Close, contentDescription = "پاک کردن", tint = AppMuted, modifier = Modifier.size(18.dp))
                         }
                     }) else null,
@@ -531,8 +558,8 @@ fun DangCreateScreen(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp).horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    listOf("رستوران", "کافه", "خرید", "تفریح", "سفر", "سایر").forEach { tag ->
-                        AppChip(label = tag, selected = title == tag, onClick = { title = tag })
+                    DANG_TITLE_TAGS.forEach { tag ->
+                        AppChip(label = tag, selected = title == tag, onClick = { title = tag; titleFromChip = tag })
                     }
                 }
             }

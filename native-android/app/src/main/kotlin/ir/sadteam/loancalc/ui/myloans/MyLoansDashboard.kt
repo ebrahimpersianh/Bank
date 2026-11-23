@@ -168,7 +168,9 @@ internal fun DashboardSummary(
         val monthsLeft = remember(loans) { loans.maxOfOrNull { it.n - it.paidCount } ?: 0 }
         val paidPct = remember(loans) {
             val totalRows = loans.sumOf { it.n }
-            if (totalRows > 0) loans.sumOf { it.paidCount } * 100 / totalRows else 0
+            // باگِ ۱۲: سربرگ تقسیمِ صحیح (floor) می‌کرد (۱/۳۶ = ۲٪) در حالی که کارت و
+            // جزئیات گرد می‌کنند (۳٪) — حالا همه‌جا گردِ معمولی است.
+            if (totalRows > 0) (loans.sumOf { it.paidCount } * 100.0 / totalRows).roundToInt() else 0
         }
         // 🎨 **کارتِ قهرمانِ مشترک، نه کارتِ طلاییِ اختصاصی** (خواسته‌ی کاربر: «مثلِ بقیه‌ی
         // تب‌ها بشود و با تمِ رنگی عوض شود»).

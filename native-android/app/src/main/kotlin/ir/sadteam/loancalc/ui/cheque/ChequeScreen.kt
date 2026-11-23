@@ -620,20 +620,26 @@ private fun ChequeCard(
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                 )
+                // باگ ۱۶: جداکننده‌ی « · » فقط وقتی می‌آید که شماره‌ی چک هست؛ وقتی شماره
+                // خالی است، «بانک ملت | » آویزان نمی‌مانَد. بانکِ خالی هم چیزی چاپ نمی‌کند.
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "${cheque.bankName} · ",
-                        color = AppText,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                    )
-                    Ltr {
+                    if (cheque.bankName.isNotBlank()) {
                         Text(
-                            toFa(cheque.chequeNumber.takeLast(4)),
+                            "${cheque.bankName} · ",
                             color = AppText,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.ExtraBold,
                         )
+                    }
+                    if (cheque.chequeNumber.isNotBlank()) {
+                        Ltr {
+                            Text(
+                                toFa(cheque.chequeNumber.takeLast(4)),
+                                color = AppText,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                            )
+                        }
                     }
                 }
                 Text(

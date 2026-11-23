@@ -187,7 +187,7 @@ internal enum class LoanSubTab(val label: String) {
     // بیاد - رجوع کن به [CalculatorHostScreen] و فریمِ `27f`.
     MY_LOANS("وام‌های من"),
     DEPOSIT("سپرده"),
-    CALCULATOR("محاسبه‌گر"),
+    CALCULATOR("محاسبه و وام"),
 }
 // نگاشتِ TourTarget های تبی → BottomTab واقعی (برای این‌که AppTourOverlay بدونه با کدوم تب باید
 // هماهنگ بشه - هم گرفتنِ مختصات از BottomNavItem هم ناوبریِ خودکار). «وام»/«چک» دیگه تبِ نوارِ

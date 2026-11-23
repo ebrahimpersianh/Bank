@@ -4,6 +4,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import ir.sadteam.loancalc.ui.extras.isDueSoon
+import ir.sadteam.loancalc.ui.extras.nextDueDate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -120,6 +122,11 @@ fun DueTabScreen(
     onOpenCheque: (Long) -> Unit = {},
     onOpenDebt: (Long) -> Unit = {},
     viewModel: DueListViewModel = hiltViewModel(),
+    /**
+     * باگ ۱۳ (بازبینیِ ۲ آذر): گزارشِ «لایه‌ی داخلیِ باز» به `PersistentTabs` (رجوع کن به
+     * `SideEffect` پایین).
+     */
+    onHasBackStepChange: (Boolean) -> Unit = {},
 ) {
     // 🚨 **بخشِ ۵۱**: تاگلِ سه‌تاییِ «اقساط/چک/طلب‌وبدهی» جایش را به یک فهرستِ یکپارچه داد.
     // سه منبعِ بدهی تا حالا هرکدام صفحه‌ی خودشان را داشتند، ولی کاربر اولِ ماه یک سوال دارد
@@ -136,12 +143,26 @@ fun DueTabScreen(
     var showBills by remember { mutableStateOf(false) }
     val extrasViewModel: ir.sadteam.loancalc.ui.extras.ExtrasViewModel = hiltViewModel()
     val bills by extrasViewModel.bills.collectAsState()
+    // باگ ۱۳ (بازبینیِ ۲ آذر): ضربه روی تبِ فعلی یک مرحله عقب می‌رود — این‌جا می‌گوییم
+    // صفحه‌ی قبض‌ها باز است یا نه.
+    SideEffect { onHasBackStepChange(showBills) }
     if (showBills) {
         androidx.activity.compose.BackHandler { showBills = false }
         ir.sadteam.loancalc.ui.extras.BillsScreen(onBack = { showBills = false }, viewModel = extrasViewModel)
         return
     }
     val dueBills = bills.filter { it.isDueSoon(today.y, today.m, today.d) }
+    // «همه پرداخت شده» فقط وقتی درست است که قبضی هست و همه‌شان این ماه پرداخت شده‌اند -
+    // قبلاً برای هر قبضِ «در انتظار» هم همین نوشته می‌شد.
+    val paidBillsThisMonth = bills.count { it.lastPaidKey == "${today.y}-${today.m}" }
+    val pendingBills = bills.size - paidBillsThisMonth
+    // روزهای موعدِ قبض‌ها در ۱۴ روزِ آینده - برای نوارِ تقویمِ حالتِ خالی.
+    val billDueDays = remember(bills, today) {
+        bills.mapNotNull { bill ->
+            val due = bill.nextDueDate(today)
+            if (JalaliCalendar.daysBetween(today, due) in 0..13) due.d else null
+        }.toSet()
+    }
 
     val overdue = all.overdue.filtered()
     val thisWeek = all.thisWeek.filtered()
@@ -159,7 +180,7 @@ fun DueTabScreen(
                 contentPadding = 12.dp,
             ) {
                 Text(
-                    if (dueBills.isEmpty()) "قبض‌ها · ${if (bills.isEmpty()) "افزودنِ آب، برق، گاز…" else "همه پرداخت شده"}"
+                    if (dueBills.isEmpty()) "قبض‌ها · ${if (bills.isEmpty()) "افزودنِ آب، برق، گاز…" else if (pendingBills > 0) "${toFa(pendingBills)} قبض در انتظار" else "همه پرداخت شده"}"
                     else "قبض‌ها · ${dueBills.joinToString("، ") { it.name }} نزدیکِ موعد",
                     color = if (dueBills.isEmpty()) AppMuted else AppText,
                     fontSize = 12.sp,
@@ -169,7 +190,7 @@ fun DueTabScreen(
         }
         if (all.isEmpty) {
             // کاربرِ تازه یا کسی که همه را پرداخت کرده - فریمِ `21e`/`51b`.
-            item { MonthStripCard(dueDays = emptySet()) }
+            item { MonthStripCard(dueDays = billDueDays) }
             item { NothingDueCard(onAddCheque = onAddCheque, onAddLoan = onAddLoan) }
             return@LazyColumn
         }
@@ -219,19 +240,19 @@ fun DueTabScreen(
         if (overdue.isNotEmpty()) {
             item { GroupLabel("عقب‌افتاده", OverdueInk) }
             items(overdue, key = { it.id }) { row ->
-                DueRowCard(row, privacyMode, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt) })
+                DueRowCard(row, privacyMode, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt, onOpenBill = { showBills = true }) })
             }
         }
         if (thisWeek.isNotEmpty()) {
             item { GroupLabel("همین هفته", AppMuted) }
             items(thisWeek, key = { it.id }) { row ->
-                DueRowCard(row, privacyMode, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt) })
+                DueRowCard(row, privacyMode, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt, onOpenBill = { showBills = true }) })
             }
         }
         if (later.isNotEmpty()) {
             item { GroupLabel("بعد از این", AppMuted) }
             items(later, key = { it.id }) { row ->
-                DueRowCard(row, privacyMode, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt) })
+                DueRowCard(row, privacyMode, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt, onOpenBill = { showBills = true }) })
             }
         }
     }
@@ -343,6 +364,7 @@ private fun DueRowCard(
         DueListViewModel.DueSource.CHEQUE -> Icons.Filled.Receipt
         DueListViewModel.DueSource.RECURRING -> Icons.Filled.Autorenew
         DueListViewModel.DueSource.DEBT -> Icons.Filled.Schedule
+        DueListViewModel.DueSource.BILL -> Icons.Filled.Receipt
     }
     val dayLabel = when {
         overdue -> "${toFa(row.daysOverdue)} روز"
@@ -447,10 +469,12 @@ private fun DueListViewModel.DueRow.open(
     onOpenLoan: (Long) -> Unit,
     onOpenCheque: (Long) -> Unit,
     onOpenDebt: (Long) -> Unit,
+    onOpenBill: () -> Unit = {},
 ) {
     loan?.let { onOpenLoan(it.id); return }
     chequeId?.let { onOpenCheque(it); return }
-    debtId?.let { onOpenDebt(it) }
+    debtId?.let { onOpenDebt(it); return }
+    billId?.let { onOpenBill() }
 }
 
 /**
@@ -571,14 +595,14 @@ private fun NothingDueCard(onAddCheque: () -> Unit, onAddLoan: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                "هیچ چک و قسطی در راه نیست",
+                "هیچ چک، قسط و قبضی در راه نیست",
                 color = AppText,
                 fontSize = 15.5.sp,
                 fontWeight = FontWeight.Black,
                 textAlign = TextAlign.Center,
             )
             Text(
-                "وقتی چک یا وامی ثبت کنی، سررسیدهایش این‌جا و روی ویجت دیده می‌شود.",
+                "وقتی چک، وام یا قبضی ثبت کنی، سررسیدهایش این‌جا و روی ویجت دیده می‌شود.",
                 color = AppMuted,
                 fontSize = 12.sp,
                 lineHeight = 22.sp,

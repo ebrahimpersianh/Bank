@@ -47,6 +47,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.ConfirmDialog
+import ir.sadteam.loancalc.ui.components.ConfirmTone
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.JibakBrandMark
 import ir.sadteam.loancalc.ui.components.JibakLogo
@@ -124,6 +126,11 @@ fun LoginScreen(
         }
     }
     val syncConflict by viewModel.syncConflict.collectAsState()
+    // آخرین شماره‌ای که با آن وارد شده‌اند (حتی بعد از پایانِ نشست هم می‌ماند) — برای
+    // از پیش پر کردنِ فیلد و هشدارِ تعویضِ حساب (باگِ ۲۳ نوامبر ۲۰۲۶).
+    val lastPhone by viewModel.lastPhone.collectAsState()
+    // تاییدِ ورود به شماره‌ای دیگر، پیش از ارسالِ کد.
+    var showSwitchConfirm by remember { mutableStateOf(false) }
 
     if (syncConflict != null) {
         SyncConflictPrompt(
@@ -138,11 +145,29 @@ fun LoginScreen(
     // تایپ می‌کنه، دقیقاً مثل اپ‌های ایرانیِ مشابه.
     val fullPhone = "0$phone"
 
+    // فیلد را با آخرین شماره‌ی واردشده از پیش پر کن — فقط وقتی خالی است، تا تایپِ کاربر
+    // هیچ‌وقت رونویسی نشود (باگِ تعویضِ بی‌صدای حساب، ۲۳ نوامبر ۲۰۲۶).
+    LaunchedEffect(lastPhone) {
+        val lp = lastPhone
+        if (phone.isEmpty() && !lp.isNullOrBlank()) {
+            phone = lp.removePrefix("0").take(10)
+        }
+    }
+
     fun sendOtp() {
         if (phone.length != 10 || !phone.startsWith("9")) {
             error = "شماره را به‌صورت ۹xxxxxxxxx (بعد از +۹۸) وارد کن"
             return
         }
+        // شماره‌ای دیگر از آخرین ورود: اول تاییدِ صریح بگیر، بعد کد بفرست.
+        if (!lastPhone.isNullOrBlank() && fullPhone != lastPhone) {
+            showSwitchConfirm = true
+            return
+        }
+        doSendOtp()
+    }
+
+    fun doSendOtp() {
         error = null
         loading = true
         viewModel.requestOtp(
@@ -158,6 +183,24 @@ fun LoginScreen(
                 error = requestOtpErrors[code] ?: "ارسال کد ناموفق بود"
             },
         )
+    }
+
+    // 🚨 باگِ تعویضِ بی‌صدای حساب (۲۳ نوامبر ۲۰۲۶): فیلدِ شماره خالی می‌آمد و ورود به
+    // شماره‌ای دیگر هیچ هشداری نمی‌داد. حالا فیلد با آخرین شماره پر می‌شود و اگر کاربر
+    // شماره‌ای دیگر بزند، پیش از ارسالِ کد باید صریح تایید کند که می‌داند داده‌ی محلیِ
+    // حسابِ قبلی از این گوشی پاک می‌شود (داده‌ی سروریِ حسابِ قبلی سر جایش می‌ماند).
+    if (showSwitchConfirm) {
+        val lp = lastPhone
+        if (!lp.isNullOrBlank()) {
+            ConfirmDialog(
+                title = "ورود با شماره‌ی دیگر؟",
+                consequence = "آخرین ورود شما با ${toFa(lp)} بود؛ با ورود به این شماره داده‌های حساب قبلی از این گوشی پاک و داده‌های این حساب بارگذاری می‌شود.",
+                actionLabel = "با این شماره وارد شو",
+                tone = ConfirmTone.HEAVY_CHANGE,
+                onConfirm = { showSwitchConfirm = false; doSendOtp() },
+                onDismiss = { showSwitchConfirm = false },
+            )
+        }
     }
 
     fun verify() {
