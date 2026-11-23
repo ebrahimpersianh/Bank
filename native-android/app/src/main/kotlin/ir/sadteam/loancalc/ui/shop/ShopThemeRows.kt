@@ -21,6 +21,8 @@ import androidx.compose.material3.Icon
 import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +41,8 @@ import ir.sadteam.loancalc.data.coin.THEME_CATALOG
 import ir.sadteam.loancalc.data.coin.themeById
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.ConfirmDialog
+import ir.sadteam.loancalc.ui.components.ConfirmTone
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
@@ -191,13 +195,40 @@ internal fun ShopRow(
         }
     }
 }
+/**
+ * ردیفِ «بازگردان»ِ انتهای هر دسته‌ی فروشگاه.
+ *
+ * تأییدیه (تصمیمِ کاربر ۲ آذر): ردیف‌هایی که [confirmTitle] بدهند پیش از اجرا دیالوگِ
+ * تایید می‌گیرند — برداشتنِ پس‌زمینه‌ی زنده، بازگشتِ نمودار و برداشتنِ قاب تا امروز
+ * بی‌درنگ عمل می‌کردند. بقیه‌ی ردیف‌ها مثلِ قبل بی‌درنگ‌اند. لحن `HEAVY_CHANGE` است،
+ * نه مخرب: قلم می‌مانَد و با یک تپ دوباره فعال می‌شود.
+ */
 @Composable
-internal fun ResetRow(label: String, onClick: () -> Unit) {
-    AppCard(modifier = Modifier.pressScaleClickable(scale = 0.99f, onClick = onClick)) {
+internal fun ResetRow(
+    label: String,
+    onClick: () -> Unit,
+    confirmTitle: String? = null,
+    confirmText: String? = null,
+    confirmLabel: String = "بازگردان",
+) {
+    var confirming by remember { mutableStateOf(false) }
+    AppCard(modifier = Modifier.pressScaleClickable(scale = 0.99f, onClick = {
+        if (confirmTitle != null) confirming = true else onClick()
+    })) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(label, color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
             Text("بازگردان", color = AppPrimaryInk, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
         }
+    }
+    if (confirming && confirmTitle != null) {
+        ConfirmDialog(
+            title = confirmTitle,
+            consequence = confirmText ?: "",
+            actionLabel = confirmLabel,
+            tone = ConfirmTone.HEAVY_CHANGE,
+            onConfirm = { confirming = false; onClick() },
+            onDismiss = { confirming = false },
+        )
     }
 }
 /**

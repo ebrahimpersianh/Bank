@@ -362,7 +362,14 @@ fun ShopScreen(
             // خاموش‌شدنی هم باشد. این ردیف یک‌بار حذف شده بود و پس‌زمینه‌ی خریداری‌شده
             // دیگر برداشته نمی‌شد.
             if (active[ShopCategory.BACKDROP] != null) {
-                item { ResetRow("برداشتنِ پس‌زمینه‌ی زنده", viewModel::resetBackdrop) }
+                item {
+                    ResetRow(
+                        "برداشتنِ پس‌زمینه‌ی زنده",
+                        viewModel::resetBackdrop,
+                        confirmTitle = "پس‌زمینه‌ی زنده برداشته شود؟",
+                        confirmText = "زمینه‌ی تختِ برنامه برمی‌گردد؛ پس‌زمینه‌ات می‌مانَد و هر وقت خواستی دوباره فعالش کن.",
+                    )
+                }
             }
         }
 
@@ -415,7 +422,14 @@ fun ShopScreen(
             item { GroupHeader("سبکِ نمودار", "۱۵۰ تا ۵۰۰ سکه") }
             grid(charts)
             if (active[ShopCategory.CHART] != null) {
-                item { ResetRow("بازگشت به نمودارِ پیش‌فرض", viewModel::resetChartStyle) }
+                item {
+                    ResetRow(
+                        "بازگشت به نمودارِ پیش‌فرض",
+                        viewModel::resetChartStyle,
+                        confirmTitle = "نمودار به پیش‌فرض برگردد؟",
+                        confirmText = "سبکِ نمودار به پیش‌فرضِ رایگان برمی‌گردد؛ هر وقت خواستی دوباره سبکِ دیگری را فعال کن.",
+                    )
+                }
             }
         }
 
@@ -432,7 +446,14 @@ fun ShopScreen(
             // فقط وقتی دیده می‌شود که کاربر قابی فعال دارد؛ وگرنه رنگ چیزی برای رنگ‌کردن ندارد.
             if (active[ShopCategory.FRAME] != null) {
                 item { FrameColorRow(selected = frameColor, onSelect = viewModel::setFrameColor) }
-                item { ResetRow("برداشتنِ قاب", viewModel::resetFrame) }
+                item {
+                    ResetRow(
+                        "برداشتنِ قاب",
+                        viewModel::resetFrame,
+                        confirmTitle = "قاب برداشته شود؟",
+                        confirmText = "قابِ آواتار برداشته می‌شود؛ قاب‌ات می‌مانَد و هر وقت خواستی دوباره فعالش کن.",
+                    )
+                }
             }
         }
 
