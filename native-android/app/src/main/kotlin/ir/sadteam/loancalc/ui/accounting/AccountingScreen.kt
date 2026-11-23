@@ -205,7 +205,11 @@ fun BudgetScreen(
     var billsOpen by remember { mutableStateOf(false) }
     // باگ ۱۳: ضربه روی تبِ فعلی یک مرحله عقب می‌رود — این‌جا می‌گوییم زیرصفحه‌ای
     // (دسته‌بندی‌ها/پرداختِ تکراری/قبض‌ها) باز است یا نه.
-    SideEffect { onHasBackStepChange(screenKey != "main" || billsOpen) }
+    // باگ ۱۳(الف): `billsOpen` فقط داخلِ `SideEffect` خوانده می‌شد، پس تغییرش
+    // کامپوزیشن را تحریک نمی‌کرد و `SideEffect` دوباره اجرا نمی‌شد — مقدار را اول
+    // در بدنه‌ی کامپوزیشن می‌خوانیم تا اشتراکِ recomposition ساخته شود.
+    val hasBackStep = screenKey != "main" || billsOpen
+    SideEffect { onHasBackStepChange(hasBackStep) }
     // دکمه‌ی برگشتِ سیستم از زیرصفحه‌های دسته‌بندی/تکراری به «main» برمی‌گردد (خودِ این
     // صفحه‌ها `BackHandler` ندارند؛ قبض‌ها `BackHandler` خودش را در `BudgetTabScreen` دارد).
     BackHandler(enabled = screenKey != "main") { screenKey = "main" }
