@@ -46,17 +46,6 @@ import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_GOLD
 import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AssetEntity
-
-// باگ ۱۷: خطِ دومِ ردیفِ دارایی کدِ داخلیِ نماد را نشان می‌داد («GOLD_18» برای طلا، یا
-// برای داراییِ دلخواه عینِ نامِ خطِ اول). به‌جایش برچسبِ فارسیِ دسته می‌آید - همان
-// واژه‌هایی که انتخاب‌کننده‌ی دارایی استفاده می‌کند («طلا»/«ارز»/«رمزارز»/«دلخواه»).
-private fun assetCategoryLabel(category: String): String = when (category) {
-    ASSET_CATEGORY_GOLD -> "طلا"
-    ASSET_CATEGORY_FIAT -> "ارز"
-    ASSET_CATEGORY_CRYPTO -> "رمزارز"
-    ASSET_CATEGORY_CUSTOM -> "دلخواه"
-    else -> "دلخواه"
-}
 import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
@@ -73,6 +62,17 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+
+// باگ ۱۷: خطِ دومِ ردیفِ دارایی کدِ داخلیِ نماد را نشان می‌داد («GOLD_18» برای طلا، یا
+// برای داراییِ دلخواه عینِ نامِ خطِ اول). به‌جایش برچسبِ فارسیِ دسته می‌آید - همان
+// واژه‌هایی که انتخاب‌کننده‌ی دارایی استفاده می‌کند («طلا»/«ارز»/«رمزارز»/«دلخواه»).
+private fun assetCategoryLabel(category: String): String = when (category) {
+    ASSET_CATEGORY_GOLD -> "طلا"
+    ASSET_CATEGORY_FIAT -> "ارز"
+    ASSET_CATEGORY_CRYPTO -> "رمزارز"
+    ASSET_CATEGORY_CUSTOM -> "دلخواه"
+    else -> "دلخواه"
+}
 
 // ═══ ۳ · حساب‌های بانکی ═════════════════════════════════════════════════════════
 @Composable
