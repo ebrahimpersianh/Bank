@@ -154,7 +154,7 @@ internal fun PersistentTabs(
                                     onOpenChequeReport = { navigateTo(CHEQUE_REPORT_ROUTE) },
                                     onHasBackStepChange = { tabBackStep[BottomTab.REPORT] = it },
                                 )
-                                BottomTab.BUDGET -> BudgetScreen()
+                                BottomTab.BUDGET -> BudgetScreen(onHasBackStepChange = { tabBackStep[BottomTab.BUDGET] = it })
                                 BottomTab.DUE -> DueTabScreen(
                                     onAddCheque = { navigateTo(CHEQUE_ROUTE) },
                                     onAddLoan = { navigateTo(LOAN_ROUTE) },

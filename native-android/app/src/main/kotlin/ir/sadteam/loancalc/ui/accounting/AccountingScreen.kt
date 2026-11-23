@@ -44,6 +44,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -191,8 +192,23 @@ private fun AssetTabShortcutCard(assetCount: Int, onClick: () -> Unit) {
 fun BudgetScreen(
     viewModel: AccountViewModel = hiltViewModel(),
     categoryViewModel: CategoryViewModel = hiltViewModel(),
+    /**
+     * باگ ۱۳ (بازبینیِ ۲ آذر): گزارشِ «لایه‌ی داخلیِ باز» به `PersistentTabs` (رجوع کن به
+     * `SideEffect` پایین).
+     */
+    onHasBackStepChange: (Boolean) -> Unit = {},
 ) {
     var screenKey by remember { mutableStateOf("main") }
+    // باگ ۱۳: صفحه‌ی قبض‌ها داخلِ `BudgetTabScreen` باز می‌شود — وضعیتش این‌جا نگه داشته
+    // می‌شود تا با `screenKey` ترکیب شود (هر دو با هم نمی‌توانند باز باشند: دکمه‌های
+    // دسته‌بندی/تکراری فقط وقتی دیده می‌شوند که قبض‌ها بسته باشد).
+    var billsOpen by remember { mutableStateOf(false) }
+    // باگ ۱۳: ضربه روی تبِ فعلی یک مرحله عقب می‌رود — این‌جا می‌گوییم زیرصفحه‌ای
+    // (دسته‌بندی‌ها/پرداختِ تکراری/قبض‌ها) باز است یا نه.
+    SideEffect { onHasBackStepChange(screenKey != "main" || billsOpen) }
+    // دکمه‌ی برگشتِ سیستم از زیرصفحه‌های دسته‌بندی/تکراری به «main» برمی‌گردد (خودِ این
+    // صفحه‌ها `BackHandler` ندارند؛ قبض‌ها `BackHandler` خودش را در `BudgetTabScreen` دارد).
+    BackHandler(enabled = screenKey != "main") { screenKey = "main" }
     AnimatedContent(
         targetState = screenKey,
         transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(150)) },
@@ -209,6 +225,7 @@ fun BudgetScreen(
             else -> BudgetTabScreen(
                 onOpenCategories = { screenKey = "categories" },
                 onOpenRecurring = { screenKey = "recurring" },
+                onHasBackStepChange = { billsOpen = it },
                 viewModel = viewModel,
                 categoryViewModel = categoryViewModel,
             )

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material3.Icon
 import ir.sadteam.loancalc.ui.text.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -88,6 +89,11 @@ fun BudgetTabScreen(
     onOpenRecurring: () -> Unit,
     viewModel: AccountViewModel = hiltViewModel(),
     categoryViewModel: CategoryViewModel = hiltViewModel(),
+    /**
+     * باگ ۱۳ (بازبینیِ ۲ آذر): گزارشِ «صفحه‌ی قبض‌ها باز» به `BudgetScreen` (رجوع کن به
+     * `SideEffect` پایین).
+     */
+    onHasBackStepChange: (Boolean) -> Unit = {},
 ) {
     val budgets by viewModel.budgets.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
@@ -99,6 +105,8 @@ fun BudgetTabScreen(
 
     // قبض‌ها (۷ مهر): قبلاً فقط در صفحه‌ی «سررسید» بود که دیگر در نوارِ پایین نیست.
     var showBills by remember { mutableStateOf(false) }
+    // باگ ۱۳: ضربه روی تبِ فعلی یک مرحله عقب می‌رود — این‌جا می‌گوییم صفحه‌ی قبض‌ها باز است یا نه.
+    SideEffect { onHasBackStepChange(showBills) }
     val extrasViewModel: ir.sadteam.loancalc.ui.extras.ExtrasViewModel = hiltViewModel()
     val bills by extrasViewModel.bills.collectAsState()
     if (showBills) {
