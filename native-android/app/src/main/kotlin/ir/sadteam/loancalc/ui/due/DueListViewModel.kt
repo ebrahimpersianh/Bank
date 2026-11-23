@@ -133,6 +133,8 @@ class DueListViewModel @Inject constructor(
         // لحظه‌ای: هر تغییر در وام‌ها، چک‌ها، بدهی‌ها یا پرداخت‌های تکراری (از هر صفحه‌ای) فهرست را
         // تازه می‌کند؛ قبلاً فقط یک‌بار موقعِ باز شدن می‌خواند و بعد کهنه می‌ماند.
         viewModelScope.launch {
+            // فرمِ vararg: ترکیبِ ۶ فلو با `_`های شش‌تایی به ابهامِ overload و خطای
+            // استنتاجِ نوع می‌خورد؛ مقدارها این‌جا لازم نیست، فقط ماشه می‌خواهیم.
             kotlinx.coroutines.flow.combine(
                 loanRepository.observeLoans(),
                 chequeRepository.observeCheques(),
@@ -140,7 +142,7 @@ class DueListViewModel @Inject constructor(
                 accountRepository.observeRecurringPayments(),
                 accountRepository.observeTransactions(),
                 billDao.observeAll(),
-            ) { _, _, _, _, _, _ -> Unit }
+            ) { _ -> Unit }
                 .debounce(250)
                 .collect { refresh() }
         }

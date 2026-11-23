@@ -108,17 +108,8 @@ fun ChequeDetailScreen(
     var pendingPassStatus by remember { mutableStateOf(false) }
     // هشدارِ کسریِ موجودیِ پاس‌کردنِ چکِ پرداختی (باگِ ۸، هم‌الگو با موردِ ۱۳B در صفحه‌ی وام).
     var overdraftPassAccount by remember { mutableStateOf<AccountEntity?>(null) }
-    fun requestPass(account: AccountEntity?) {
-        // فقط چکِ پرداختی (برداشت) می‌تواند حساب را منفی کند؛ چکِ دریافتی پول می‌آورد
-        // و هشداری ندارد. حسابِ null یعنی «بدونِ ثبت در حسابداری» و کسری ندارد.
-        if (account != null && cheque.type != "RECEIVED" &&
-            accountViewModel.balanceOf(account, transactions) < cheque.amount
-        ) {
-            overdraftPassAccount = account
-        } else {
-            commitPass(account)
-        }
-    }
+    // `commitPass` باید پیش از `requestPass` بیاید: تابع‌های محلیِ کاتلین را نمی‌شود پیش
+    // از تعریف صدا زد (ارجاعِ روبه‌جلو خطای کامپایل می‌دهد).
     fun commitPass(account: AccountEntity?) {
         viewModel.setStatus(cheque, ChequeStatus.PASSED)
         if (account != null) {
@@ -141,6 +132,17 @@ fun ChequeDetailScreen(
             // خواسته‌ی صریحِ کاربر («باید جایی اعلام کنی») - قبلاً وقتی هیچ حسابی نبود، پرداخت
             // بی‌سروصدا تو حسابداری ثبت نمی‌شد و هیچ توضیحی هم داده نمی‌شد.
             banner.show("این چک تو حسابداری ثبت نشد - برای اینکه خودکار ثبت شود، از تبِ «دارایی» یک حساب بساز.")
+        }
+    }
+    fun requestPass(account: AccountEntity?) {
+        // فقط چکِ پرداختی (برداشت) می‌تواند حساب را منفی کند؛ چکِ دریافتی پول می‌آورد
+        // و هشداری ندارد. حسابِ null یعنی «بدونِ ثبت در حسابداری» و کسری ندارد.
+        if (account != null && cheque.type != "RECEIVED" &&
+            accountViewModel.balanceOf(account, transactions) < cheque.amount
+        ) {
+            overdraftPassAccount = account
+        } else {
+            commitPass(account)
         }
     }
     if (pendingPassStatus && accounts.isNotEmpty()) {

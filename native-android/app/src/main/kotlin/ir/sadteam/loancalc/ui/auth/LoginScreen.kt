@@ -154,19 +154,8 @@ fun LoginScreen(
         }
     }
 
-    fun sendOtp() {
-        if (phone.length != 10 || !phone.startsWith("9")) {
-            error = "شماره را به‌صورت ۹xxxxxxxxx (بعد از +۹۸) وارد کن"
-            return
-        }
-        // شماره‌ای دیگر از آخرین ورود: اول تاییدِ صریح بگیر، بعد کد بفرست.
-        if (!lastPhone.isNullOrBlank() && fullPhone != lastPhone) {
-            showSwitchConfirm = true
-            return
-        }
-        doSendOtp()
-    }
-
+    // `doSendOtp` باید پیش از `sendOtp` بیاید: تابع‌های محلیِ کاتلین را نمی‌شود پیش از
+    // تعریف صدا زد (ارجاعِ روبه‌جلو خطای کامپایل می‌دهد).
     fun doSendOtp() {
         error = null
         loading = true
@@ -183,6 +172,19 @@ fun LoginScreen(
                 error = requestOtpErrors[code] ?: "ارسال کد ناموفق بود"
             },
         )
+    }
+
+    fun sendOtp() {
+        if (phone.length != 10 || !phone.startsWith("9")) {
+            error = "شماره را به‌صورت ۹xxxxxxxxx (بعد از +۹۸) وارد کن"
+            return
+        }
+        // شماره‌ای دیگر از آخرین ورود: اول تاییدِ صریح بگیر، بعد کد بفرست.
+        if (!lastPhone.isNullOrBlank() && fullPhone != lastPhone) {
+            showSwitchConfirm = true
+            return
+        }
+        doSendOtp()
     }
 
     // 🚨 باگِ تعویضِ بی‌صدای حساب (۲۳ نوامبر ۲۰۲۶): فیلدِ شماره خالی می‌آمد و ورود به

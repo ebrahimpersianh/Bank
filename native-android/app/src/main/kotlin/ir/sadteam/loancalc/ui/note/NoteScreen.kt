@@ -60,6 +60,7 @@ import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /** یادداشتِ مستقل (نه وابسته به یه وام/چکِ خاص) - رجوع کن به تبِ «سررسید» تو CLAUDE.md. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
     val notes by viewModel.notes.collectAsState()

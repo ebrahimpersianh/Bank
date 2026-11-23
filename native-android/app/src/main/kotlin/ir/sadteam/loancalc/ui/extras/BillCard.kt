@@ -61,6 +61,7 @@ internal fun maskBillNumber(raw: String): String {
  * کارتِ قبض - بازطراحیِ ۱۶ مهر (طرحِ تصویریِ کاربر، بی تصویرِ سرِ صفحه): نام و شماره/شناسه‌ی پوشیده،
  * برچسبِ وضعیت، منوی ⋮، و سه خانه‌ی «مبلغِ قبض / موعد / پرداخت».
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 internal fun BillCard(
     bill: BillEntity,
