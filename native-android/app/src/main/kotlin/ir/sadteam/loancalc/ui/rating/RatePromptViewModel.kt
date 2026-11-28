@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.ui.rating
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.data.UsageStats
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +34,22 @@ class RatePromptViewModel @Inject constructor(
         const val PENDING_FRESH_MILLIS = 60_000L
     }
 
+    /**
+     * ثبتِ «دیالوگ نشان داده شد» - فقط روی همین نمونه (نمونه‌ای که MainActivity
+     * می‌بیند) و فقط وقتی از پنهان به نمایان می‌رود، تا یک نمایش دو بار شمرده
+     * نشود. «بعد از موفقیت» از هر صفحه‌ای که بیاید، اول به‌صورتِ درخواستِ در
+     * انتظار (pending) به این نمونه می‌رسد و همین‌جا ثبت می‌شود؛ پس
+     * [maybeShowAfterSuccess] خودش چیزی ثبت نمی‌کند. رویدادها با همان سازوکارِ
+     * [UsageStats.action] می‌روند که بقیه‌ی کارها (`transaction_added` و…)
+     * را به گزارشِ ادمین می‌رساند؛ آن سازوکار فیلد ندارد، پس منشأ (دوره‌ای /
+     * بعد از موفقیت) تو خودِ نامِ رویداد است.
+     */
+    private fun showAndLog(source: String) {
+        if (_shouldShow.value) return
+        _shouldShow.value = true
+        UsageStats.action("rate_prompt_shown_$source")
+    }
+
     init {
         // لحظه‌ی موفقیت از هر صفحه‌ای (دنگ، وام، چک) که باشد، درخواستش را تو UiPrefs
         // (DataStoreِ مشترک) می‌نویسد؛ نمونه‌ای که MainActivity می‌بیند این‌جا آن را
@@ -44,7 +61,7 @@ class RatePromptViewModel @Inject constructor(
                 if (System.currentTimeMillis() - at > PENDING_FRESH_MILLIS) return@collect
                 if (uiPrefs.rateDialogDismissedForever.first()) return@collect
                 uiPrefs.setRatePromptSuccessPendingAt(null)
-                _shouldShow.value = true
+                showAndLog("after_success")
             }
         }
     }
@@ -61,12 +78,13 @@ class RatePromptViewModel @Inject constructor(
             }
             if (due) {
                 uiPrefs.setRateDialogLastShownAtOpens(opens)
-                _shouldShow.value = true
+                showAndLog("periodic")
             }
         }
     }
 
     fun onRateNow() {
+        UsageStats.action("rate_prompt_rate_now")
         viewModelScope.launch { uiPrefs.setRateDialogDismissedForever(true) }
         _shouldShow.value = false
     }
@@ -77,6 +95,7 @@ class RatePromptViewModel @Inject constructor(
      * نیست.
      */
     fun onFeedbackSent() {
+        UsageStats.action("rate_prompt_feedback_sent")
         viewModelScope.launch { uiPrefs.setRateDialogDismissedForever(true) }
         _shouldShow.value = false
     }
@@ -103,16 +122,20 @@ class RatePromptViewModel @Inject constructor(
             if (uiPrefs.claimRatePromptAfterSuccess(version)) {
                 uiPrefs.setRatePromptSuccessLastShownAtMillis(now)
                 uiPrefs.setRatePromptSuccessPendingAt(now)
+                // ثبتِ «نشان داده شد» این‌جا نیست: همین درخواست از راهِ pending به
+                // نمونه‌ی MainActivity می‌رسد و آن‌جا یک بار ثبت می‌شود.
                 _shouldShow.value = true
             }
         }
     }
 
     fun onLater() {
+        UsageStats.action("rate_prompt_later")
         _shouldShow.value = false
     }
 
     fun onDismissForever() {
+        UsageStats.action("rate_prompt_dismiss_forever")
         viewModelScope.launch { uiPrefs.setRateDialogDismissedForever(true) }
         _shouldShow.value = false
     }
